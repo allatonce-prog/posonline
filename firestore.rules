@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // CAUTION: The current application uses a custom client-side authentication system (auth.js)
+    // and does not sign in users via Firebase Authentication.
+    // Therefore, 'request.auth' will always be null in these rules.
+    // To allow the application to function, we must allow public read/write access.
+    // FOR PRODUCTION: You should migrate auth.js to use firebase/auth to enable secure rules.
+
+    // Allow global access for now (Development Mode)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+
+    /* 
+    // --- PRODUCTION SECURE RULES (Requires Firebase Auth Migration) ---
+    // Once you switch to Firebase Auth, use these rules:
+
+    // Users: specific rules
+    match /users/{userId} {
+      // Allow reading user profiles to check roles
+      allow read: if request.auth != null;
+      // Only admins can create/update users
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Products: anyone can read, only auth users (or admins) can write
+    match /products/{productId} {
+      allow read: if true; // or if request.auth != null
+      allow write: if request.auth != null; 
+    }
+
+    // Transactions: 
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Transactions usually shouldn't be updated/deleted after creation
+      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Stock Movements
+    match /stockMovements/{movementId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+    */
+  }
+}
