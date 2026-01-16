@@ -66,7 +66,7 @@ class Auth {
     // Logout
     logout() {
         this.clearSession();
-        window.location.href = '/index.html';
+        window.location.href = 'index.html';
     }
 
     // Check if user is authenticated
@@ -87,7 +87,7 @@ class Auth {
     // Require authentication
     requireAuth() {
         if (!this.isAuthenticated()) {
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
             return false;
         }
         return true;
