@@ -72,6 +72,8 @@
                     <div class="user-details">
                         <h3 id="adminName">Administrator</h3>
                         <p>Admin</p>
+                        <p id="adminStoreName" style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
+                            📍 Store Name</p>
                     </div>
                 </div>
                 <button class="btn btn-danger btn-block btn-sm" onclick="auth.logout()">
@@ -150,6 +152,12 @@
                         <div class="table-header">
                             <h3>Products</h3>
                             <div class="table-actions">
+                                <input type="text" id="productSearchInput" placeholder="Search products..."
+                                    class="form-control" style="max-width: 250px; margin-right: 0.5rem;">
+                                <select id="productCategoryFilter" class="form-control"
+                                    style="max-width: 200px; margin-right: 0.5rem;">
+                                    <option value="all">All Categories</option>
+                                </select>
                                 <button class="btn btn-primary" onclick="showAddProductModal()">
                                     + Add Product
                                 </button>
@@ -444,14 +452,16 @@
                                     </div>
                                 </div>
 
-                                <!-- Currency Settings -->
+
+                                <!-- Inventory Settings -->
                                 <div class="settings-section">
-                                    <h4>Currency Settings</h4>
+                                    <h4>Inventory Settings</h4>
                                     <div class="form-group">
-                                        <label for="currencySymbol">Currency Symbol</label>
-                                        <input type="text" id="currencySymbol" class="form-control" placeholder="₱"
-                                            maxlength="3">
-                                        <small class="form-text">Symbol to display for currency (e.g., ₱, $, €)</small>
+                                        <label for="lowStockThreshold">Low Stock Threshold *</label>
+                                        <input type="number" id="lowStockThreshold" class="form-control"
+                                            placeholder="10" min="0" required>
+                                        <small class="form-text">Products with stock at or below this value will be
+                                            marked as low stock</small>
                                     </div>
                                 </div>
 
@@ -498,7 +508,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="productCategory">Category *</label>
-                            <input type="text" id="productCategory" class="form-control" required>
+                            <input type="text" id="productCategory" class="form-control" list="categoryList" required
+                                autocomplete="off">
+                            <datalist id="categoryList">
+                                <!-- Categories will be populated dynamically -->
+                            </datalist>
                         </div>
                         <div class="form-group">
                             <label for="productPrice">Price *</label>
@@ -514,10 +528,6 @@
                             <label for="productStock">Initial Stock *</label>
                             <input type="number" id="productStock" class="form-control" min="0" required>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="productLowStock">Low Stock Threshold *</label>
-                        <input type="number" id="productLowStock" class="form-control" min="0" required>
                     </div>
                     <div class="form-group">
                         <label for="productDescription">Description</label>

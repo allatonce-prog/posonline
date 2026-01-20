@@ -17,10 +17,12 @@ async function loadInventoryProducts() {
         return;
     }
 
+    const lowStockThreshold = getLowStockThreshold();
+
     tbody.innerHTML = products.map(product => {
         const totalValue = product.stock * product.price;
-        const stockStatus = getStockStatus(product.stock, product.lowStockThreshold);
-        const stockClass = getStockClass(product.stock, product.lowStockThreshold);
+        const stockStatus = getStockStatus(product.stock, lowStockThreshold);
+        const stockClass = getStockClass(product.stock, lowStockThreshold);
 
         return `
       <tr>
@@ -73,7 +75,8 @@ async function updateInventoryStats() {
     const products = await db.getAll('products');
 
     const totalProducts = products.length;
-    const lowStockItems = products.filter(p => p.stock <= p.lowStockThreshold).length;
+    const lowStockThreshold = getLowStockThreshold();
+    const lowStockItems = products.filter(p => p.stock <= lowStockThreshold).length;
     const totalStockValue = products.reduce((sum, p) => sum + (p.stock * p.price), 0);
 
     document.getElementById('totalProductsInventory').textContent = totalProducts;
@@ -285,10 +288,11 @@ async function filterInventoryProducts(query, filter) {
 
     // Apply stock filter
     if (filter !== 'all') {
+        const lowStockThreshold = getLowStockThreshold();
         filteredProducts = filteredProducts.filter(product => {
-            if (filter === 'low') return product.stock <= product.lowStockThreshold && product.stock > 0;
+            if (filter === 'low') return product.stock <= lowStockThreshold && product.stock > 0;
             if (filter === 'out') return product.stock === 0;
-            if (filter === 'normal') return product.stock > product.lowStockThreshold;
+            if (filter === 'normal') return product.stock > lowStockThreshold;
             return true;
         });
     }
@@ -298,10 +302,12 @@ async function filterInventoryProducts(query, filter) {
         return;
     }
 
+    const lowStockThreshold = getLowStockThreshold();
+
     tbody.innerHTML = filteredProducts.map(product => {
         const totalValue = product.stock * product.price;
-        const stockStatus = getStockStatus(product.stock, product.lowStockThreshold);
-        const stockClass = getStockClass(product.stock, product.lowStockThreshold);
+        const stockStatus = getStockStatus(product.stock, lowStockThreshold);
+        const stockClass = getStockClass(product.stock, lowStockThreshold);
 
         return `
       <tr>

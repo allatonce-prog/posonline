@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register New Store - POS System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .register-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-header h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-register:hover {
+            background: var(--primary-dark);
+        }
+
+        .success-message {
+            background: var(--success);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>🏪 Register New Store</h1>
+            <p>Create a new store account for your client</p>
+        </div>
+
+        <div class="success-message" id="successMessage"></div>
+
+        <form id="registerStoreForm">
+            <div class="form-group">
+                <label for="storeName">Store Name *</label>
+                <input type="text" id="storeName" class="form-control" required placeholder="e.g., ABC Grocery Store">
+            </div>
+
+            <div class="form-group">
+                <label for="adminUsername">Admin Username *</label>
+                <input type="text" id="adminUsername" class="form-control" required placeholder="e.g., abc_admin">
+            </div>
+
+            <div class="form-group">
+                <label for="adminName">Admin Full Name *</label>
+                <input type="text" id="adminName" class="form-control" required placeholder="e.g., John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="adminPassword">Admin Password *</label>
+                <input type="password" id="adminPassword" class="form-control" required
+                    placeholder="Minimum 6 characters">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password *</label>
+                <input type="password" id="confirmPassword" class="form-control" required
+                    placeholder="Re-enter password">
+            </div>
+
+            <button type="submit" class="btn-register">Register Store</button>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">← Back to Login</a>
+        </div>
+    </div>
+
+    <script type="module" src="js/firebase-db.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        document.getElementById('registerStoreForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const storeName = document.getElementById('storeName').value.trim();
+            const adminUsername = document.getElementById('adminUsername').value.trim();
+            const adminName = document.getElementById('adminName').value.trim();
+            const adminPassword = document.getElementById('adminPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validation
+            if (adminPassword !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            if (adminPassword.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            showLoading('Registering new store...');
+
+            try {
+                // Initialize database
+                await db.init();
+
+                // Register the store
+                const result = await db.registerNewStore(
+                    storeName,
+                    adminUsername,
+                    adminPassword,
+                    adminName
+                );
+
+                hideLoading();
+
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                successMsg.style.display = 'block';
+                successMsg.innerHTML = `
+                    <strong>✅ Store Registered Successfully!</strong><br>
+                    Store ID: ${result.storeId}<br>
+                    Admin Username: ${adminUsername}<br>
+                    <br>
+                    The admin can now login with these credentials.
+                `;
+
+                // Reset form
+                document.getElementById('registerStoreForm').reset();
+
+                showToast('Store registered successfully!', 'success');
+
+            } catch (error) {
+                hideLoading();
+                console.error('Registration error:', error);
+                showToast('Error registering store: ' + error.message, 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

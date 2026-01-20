@@ -17,7 +17,10 @@
 <body>
     <!-- Header -->
     <header class="cashier-header">
-        <h1 id="cashierHeaderTitle">🛒 POS System</h1>
+        <div>
+            <h1 id="cashierHeaderTitle">🛒 POS System</h1>
+            <p id="cashierStoreName" style="font-size: 0.85rem; color: var(--gray-300); margin: 0;">📍 Store Name</p>
+        </div>
         <div class="cashier-user">
             <span id="cashierName">Cashier</span>
             <button class="btn btn-sm btn-danger" onclick="auth.logout()">Logout</button>

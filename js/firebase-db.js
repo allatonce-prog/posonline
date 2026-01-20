@@ -28,6 +28,17 @@ class FirebaseDatabase {
         this.app = null;
     }
 
+    // Get current user's storeId
+    getCurrentStoreId() {
+        // Check if auth is available and user is logged in
+        if (typeof auth !== 'undefined' && auth.getCurrentUser) {
+            const user = auth.getCurrentUser();
+            return user?.storeId || 'default_store';
+        }
+        // Return null if no auth (e.g., during registration)
+        return null;
+    }
+
     // Initialize database
     async init() {
         try {
@@ -45,12 +56,17 @@ class FirebaseDatabase {
     async add(storeName, data) {
         try {
             const colRef = collection(this.db, storeName);
-            // Add a createdAt timestamp if not present
-            const dataWithTimestamp = {
+
+            // Use provided storeId if exists, otherwise get from current user
+            const storeId = data.storeId || this.getCurrentStoreId();
+
+            // Add storeId and timestamp
+            const dataWithMetadata = {
                 ...data,
+                storeId: storeId,
                 _createdAt: new Date().toISOString()
             };
-            const docRef = await addDoc(colRef, dataWithTimestamp);
+            const docRef = await addDoc(colRef, dataWithMetadata);
 
             // Return the new ID (matching IndexedDB behavior where add returns the key)
             return docRef.id;
@@ -80,8 +96,21 @@ class FirebaseDatabase {
     // Generic getAll method
     async getAll(storeName) {
         try {
+            const storeId = this.getCurrentStoreId();
             const colRef = collection(this.db, storeName);
-            const querySnapshot = await getDocs(colRef);
+
+            // If no storeId (not logged in) or accessing 'stores' collection, don't filter
+            if (!storeId || storeName === 'stores') {
+                const querySnapshot = await getDocs(colRef);
+                return querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            }
+
+            // Otherwise filter by storeId
+            const q = query(colRef, where('storeId', '==', storeId));
+            const querySnapshot = await getDocs(q);
             return querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -126,7 +155,39 @@ class FirebaseDatabase {
     // Get by index (simulated with where query)
     async getByIndex(storeName, indexName, value) {
         try {
+            const storeId = this.getCurrentStoreId();
             const colRef = collection(this.db, storeName);
+
+            // For users collection (login), don't filter by storeId
+            // We need to search all users to find the username
+            if (storeName === 'users') {
+                const q = query(colRef, where(indexName, "==", value));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    return { id: doc.id, ...doc.data() };
+                }
+                return null;
+            }
+
+            // For other collections, filter by storeId if available
+            if (storeId) {
+                const q = query(
+                    colRef,
+                    where(indexName, "==", value),
+                    where('storeId', '==', storeId)
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    return { id: doc.id, ...doc.data() };
+                }
+                return null;
+            }
+
+            // If no storeId, just search by index
             const q = query(colRef, where(indexName, "==", value));
             const querySnapshot = await getDocs(q);
 
@@ -144,8 +205,13 @@ class FirebaseDatabase {
     // Get all by index
     async getAllByIndex(storeName, indexName, value) {
         try {
+            const storeId = this.getCurrentStoreId();
             const colRef = collection(this.db, storeName);
-            const q = query(colRef, where(indexName, "==", value));
+            const q = query(
+                colRef,
+                where(indexName, "==", value),
+                where('storeId', '==', storeId)
+            );
             const querySnapshot = await getDocs(q);
 
             return querySnapshot.docs.map(doc => ({
@@ -178,12 +244,15 @@ class FirebaseDatabase {
         const users = await this.getAll('users');
         if (users.length === 0) {
             console.log("Initializing default users...");
+            const defaultStoreId = 'default_store';
+
             // Add default admin
             await this.add('users', {
                 username: 'admin',
                 password: await this.hashPassword('admin123'),
                 role: 'admin',
                 name: 'Administrator',
+                storeId: defaultStoreId
             });
 
             // Add default cashier
@@ -192,7 +261,47 @@ class FirebaseDatabase {
                 password: await this.hashPassword('cashier123'),
                 role: 'cashier',
                 name: 'Cashier User',
+                storeId: defaultStoreId
             });
+
+            // Create default store record
+            await this.add('stores', {
+                id: defaultStoreId,
+                name: 'Default Store',
+                createdAt: new Date().toISOString(),
+                status: 'active'
+            });
+        }
+    }
+
+    // Register a new store
+    async registerNewStore(storeName, adminUsername, adminPassword, adminName = 'Store Admin') {
+        try {
+            const storeId = 'store_' + Date.now();
+
+            // Create store record
+            await this.add('stores', {
+                id: storeId,
+                name: storeName,
+                createdAt: new Date().toISOString(),
+                status: 'active',
+                storeId: storeId
+            });
+
+            // Create admin user for this store
+            const userId = await this.add('users', {
+                username: adminUsername,
+                password: await this.hashPassword(adminPassword),
+                role: 'admin',
+                name: adminName,
+                storeId: storeId
+            });
+
+            console.log(`New store registered: ${storeName} (${storeId})`);
+            return { storeId, userId, storeName };
+        } catch (error) {
+            console.error('Error registering new store:', error);
+            throw error;
         }
     }
 

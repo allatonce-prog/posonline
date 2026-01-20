@@ -5,7 +5,7 @@ const DEFAULT_SETTINGS = {
     systemName: 'POS System',
     systemDescription: 'Point of Sale & Inventory Management',
     systemIcon: '🛒',
-    currencySymbol: '₱'
+    lowStockThreshold: 10
 };
 
 // Load settings page
@@ -16,7 +16,7 @@ async function loadSettings() {
     document.getElementById('systemName').value = settings.systemName;
     document.getElementById('systemDescription').value = settings.systemDescription;
     document.getElementById('systemIcon').value = settings.systemIcon;
-    document.getElementById('currencySymbol').value = settings.currencySymbol;
+    document.getElementById('lowStockThreshold').value = settings.lowStockThreshold;
 
     // Setup form submission
     const form = document.getElementById('settingsForm');
@@ -43,11 +43,13 @@ function getSettings() {
 // Save settings
 async function saveSettings() {
     try {
+        const lowStockThreshold = parseInt(document.getElementById('lowStockThreshold').value);
+
         const settings = {
             systemName: document.getElementById('systemName').value.trim() || DEFAULT_SETTINGS.systemName,
             systemDescription: document.getElementById('systemDescription').value.trim() || DEFAULT_SETTINGS.systemDescription,
             systemIcon: document.getElementById('systemIcon').value.trim() || DEFAULT_SETTINGS.systemIcon,
-            currencySymbol: document.getElementById('currencySymbol').value.trim() || DEFAULT_SETTINGS.currencySymbol
+            lowStockThreshold: isNaN(lowStockThreshold) || lowStockThreshold < 0 ? DEFAULT_SETTINGS.lowStockThreshold : lowStockThreshold
         };
 
         // Validate
@@ -56,10 +58,15 @@ async function saveSettings() {
             return;
         }
 
+        if (isNaN(settings.lowStockThreshold) || settings.lowStockThreshold < 0) {
+            showToast('Low stock threshold must be a valid number', 'error');
+            return;
+        }
+
         // Save to localStorage
         localStorage.setItem('posSettings', JSON.stringify(settings));
 
-        showToast('Settings saved successfully! Changes will be visible on the login page.', 'success');
+        showToast('Settings saved successfully!', 'success');
 
         // Update the sidebar logo if needed
         updateSidebarLogo(settings);
@@ -116,8 +123,15 @@ function applyLoginSettings() {
     document.title = `${settings.systemName} - Login`;
 }
 
+// Get low stock threshold
+function getLowStockThreshold() {
+    const settings = getSettings();
+    return settings.lowStockThreshold || DEFAULT_SETTINGS.lowStockThreshold;
+}
+
 // Export for use in other files
 if (typeof window !== 'undefined') {
     window.getSettings = getSettings;
+    window.getLowStockThreshold = getLowStockThreshold;
     window.applyLoginSettings = applyLoginSettings;
 }

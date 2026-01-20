@@ -72,14 +72,14 @@ async function loadReports() {
     products.forEach(p => productMap[p.id] = p);
 
     // Sort by quantity sold
+    const lowStockThreshold = getLowStockThreshold();
     const topProducts = Object.entries(productSales)
         .map(([productId, data]) => ({
             productId: productId,
             ...data,
             category: productMap[productId]?.category || 'Unknown',
             currentStock: productMap[productId]?.stock || 0,
-            price: productMap[productId]?.price || 0,
-            lowStockThreshold: productMap[productId]?.lowStockThreshold || 5
+            price: productMap[productId]?.price || 0
         }))
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 10);
@@ -90,8 +90,8 @@ async function loadReports() {
         tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No sales data yet</td></tr>';
     } else {
         tbody.innerHTML = topProducts.map((product, index) => {
-            const stockStatus = getStockStatus(product.currentStock, product.lowStockThreshold);
-            const stockClass = getStockClass(product.currentStock, product.lowStockThreshold);
+            const stockStatus = getStockStatus(product.currentStock, lowStockThreshold);
+            const stockClass = getStockClass(product.currentStock, lowStockThreshold);
 
             return `
       <tr>
@@ -116,7 +116,8 @@ async function loadReports() {
 async function loadInventoryAnalytics(products, stockMovements) {
     // Calculate inventory value
     const totalInventoryValue = products.reduce((sum, p) => sum + (p.stock * p.price), 0);
-    const lowStockItems = products.filter(p => p.stock <= p.lowStockThreshold).length;
+    const lowStockThreshold = getLowStockThreshold();
+    const lowStockItems = products.filter(p => p.stock <= lowStockThreshold).length;
     const outOfStockItems = products.filter(p => p.stock === 0).length;
     const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
 

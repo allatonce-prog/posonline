@@ -8,9 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
     if (!auth.requireAuth()) return;
 
-    // Display user name
+    // Display user name and store name
     const user = auth.getCurrentUser();
     document.getElementById('cashierName').textContent = user.name || user.username;
+
+    // Display store name if available
+    if (user.storeName) {
+        document.getElementById('cashierStoreName').textContent = `📍 ${user.storeName}`;
+    }
 
     // Initialize database
     showLoading('Loading products...');
@@ -91,12 +96,14 @@ function renderProducts(productsToRender) {
     emptyState.style.display = 'none';
     grid.innerHTML = '';
 
+    const lowStockThreshold = getLowStockThreshold();
+
     productsToRender.forEach(product => {
         const card = document.createElement('div');
         card.className = 'product-card';
         card.onclick = () => addToCart(product);
 
-        const stockClass = product.stock <= product.lowStockThreshold ? 'low' : '';
+        const stockClass = product.stock <= lowStockThreshold ? 'low' : '';
         const stockText = product.stock > 0 ? `${product.stock} in stock` : 'Out of stock';
 
         card.innerHTML = `

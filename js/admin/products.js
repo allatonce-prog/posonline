@@ -1,19 +1,84 @@
 // Products Management
 let editingProductId = null;
 
+// Populate category dropdown with existing categories
+async function populateCategoryList() {
+    try {
+        const products = await db.getAll('products');
+        const categoryList = document.getElementById('categoryList');
+
+        if (!categoryList) return;
+
+        // Extract unique categories and sort by most recent
+        const categoryMap = new Map();
+
+        products.forEach(product => {
+            if (product.category && product.category.trim()) {
+                const category = product.category.trim();
+                // Store the most recent timestamp for each category
+                if (!categoryMap.has(category) ||
+                    new Date(product.createdAt) > new Date(categoryMap.get(category))) {
+                    categoryMap.set(category, product.createdAt);
+                }
+            }
+        });
+
+        // Sort categories by most recently used
+        const sortedCategories = Array.from(categoryMap.entries())
+            .sort((a, b) => new Date(b[1]) - new Date(a[1]))
+            .map(entry => entry[0]);
+
+        // Populate datalist
+        categoryList.innerHTML = sortedCategories
+            .map(category => `<option value="${escapeHtml(category)}">`)
+            .join('');
+
+    } catch (error) {
+        console.error('Error populating category list:', error);
+    }
+}
+
+
 // Load products
 async function loadProducts() {
-    const products = await db.getAll('products');
+    const allProducts = await db.getAll('products');
     const tbody = document.getElementById('productsTable');
 
+    // Populate category filter dropdown
+    populateCategoryFilter(allProducts);
+
+    // Get filter values
+    const searchTerm = document.getElementById('productSearchInput')?.value.toLowerCase() || '';
+    const categoryFilter = document.getElementById('productCategoryFilter')?.value || 'all';
+
+    // Filter products
+    let products = allProducts;
+
+    // Apply search filter
+    if (searchTerm) {
+        products = products.filter(product =>
+            product.name.toLowerCase().includes(searchTerm) ||
+            product.sku.toLowerCase().includes(searchTerm) ||
+            (product.category && product.category.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+        products = products.filter(product => product.category === categoryFilter);
+    }
+
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No products yet. Add your first product!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No products found.</td></tr>';
         return;
     }
 
+    // Get global low stock threshold
+    const lowStockThreshold = getLowStockThreshold();
+
     tbody.innerHTML = products.map(product => {
-        const stockClass = product.stock <= product.lowStockThreshold ? 'low-stock-badge' : '';
-        const stockText = product.stock <= product.lowStockThreshold
+        const stockClass = product.stock <= lowStockThreshold ? 'low-stock-badge' : '';
+        const stockText = product.stock <= lowStockThreshold
             ? `<span class="low-stock-badge">${product.stock}</span>`
             : product.stock;
 
@@ -39,6 +104,31 @@ async function loadProducts() {
     }).join('');
 }
 
+// Populate category filter dropdown
+function populateCategoryFilter(products) {
+    const categoryFilter = document.getElementById('productCategoryFilter');
+    if (!categoryFilter) return;
+
+    // Get unique categories
+    const categories = [...new Set(products
+        .map(p => p.category)
+        .filter(c => c && c.trim())
+    )].sort();
+
+    // Keep the current selection
+    const currentValue = categoryFilter.value;
+
+    // Populate dropdown
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>' +
+        categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+
+    // Restore selection if it still exists
+    if (currentValue && categories.includes(currentValue)) {
+        categoryFilter.value = currentValue;
+    }
+}
+
+
 // Show add product modal
 function showAddProductModal() {
     editingProductId = null;
@@ -46,6 +136,9 @@ function showAddProductModal() {
     document.getElementById('productForm').reset();
     document.getElementById('productId').value = '';
     document.getElementById('productModal').classList.add('active');
+
+    // Populate category dropdown
+    populateCategoryList();
 
     // Auto-focus SKU field for barcode scanner
     setTimeout(() => {
@@ -75,8 +168,10 @@ async function editProduct(id) {
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productCost').value = product.cost;
     document.getElementById('productStock').value = product.stock;
-    document.getElementById('productLowStock').value = product.lowStockThreshold;
     document.getElementById('productDescription').value = product.description || '';
+
+    // Populate category dropdown
+    populateCategoryList();
 
     document.getElementById('productModal').classList.add('active');
 }
@@ -89,16 +184,15 @@ async function saveProduct() {
     const price = parseFloat(document.getElementById('productPrice').value);
     const cost = parseFloat(document.getElementById('productCost').value);
     const stock = parseInt(document.getElementById('productStock').value);
-    const lowStockThreshold = parseInt(document.getElementById('productLowStock').value);
     const description = document.getElementById('productDescription').value.trim();
 
     // Validation
-    if (!sku || !name || !category || isNaN(price) || isNaN(cost) || isNaN(stock) || isNaN(lowStockThreshold)) {
+    if (!sku || !name || !category || isNaN(price) || isNaN(cost) || isNaN(stock)) {
         showToast('Please fill in all required fields', 'warning');
         return;
     }
 
-    if (price < 0 || cost < 0 || stock < 0 || lowStockThreshold < 0) {
+    if (price < 0 || cost < 0 || stock < 0) {
         showToast('Values cannot be negative', 'warning');
         return;
     }
@@ -117,7 +211,6 @@ async function saveProduct() {
             product.price = price;
             product.cost = cost;
             product.stock = stock;
-            product.lowStockThreshold = lowStockThreshold;
             product.description = description;
 
             await db.update('products', product);
@@ -153,7 +246,6 @@ async function saveProduct() {
                 price,
                 cost,
                 stock,
-                lowStockThreshold,
                 description,
                 image: null,
                 createdAt: new Date().toISOString()
@@ -254,6 +346,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         skuField.addEventListener('blur', () => {
             skuField.setAttribute('placeholder', '');
+        });
+    }
+
+    // Product search and filter event listeners
+    const productSearchInput = document.getElementById('productSearchInput');
+    if (productSearchInput) {
+        productSearchInput.addEventListener('input', () => {
+            loadProducts();
+        });
+    }
+
+    const productCategoryFilter = document.getElementById('productCategoryFilter');
+    if (productCategoryFilter) {
+        productCategoryFilter.addEventListener('change', () => {
+            loadProducts();
         });
     }
 });

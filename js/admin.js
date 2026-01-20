@@ -6,9 +6,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication and role
     if (!auth.requireRole('admin')) return;
 
-    // Display user name
+    // Display user name and store name
     const user = auth.getCurrentUser();
     document.getElementById('adminName').textContent = user.name || user.username;
+
+    // Display store name if available
+    if (user.storeName) {
+        document.getElementById('adminStoreName').textContent = `📍 ${user.storeName}`;
+    }
 
     // Apply custom settings
     if (typeof getSettings === 'function') {
@@ -195,7 +200,8 @@ async function loadDashboard() {
     });
 
     const todaySales = todayTransactions.reduce((sum, t) => sum + t.total, 0);
-    const lowStockItems = products.filter(p => p.stock <= p.lowStockThreshold).length;
+    const lowStockThreshold = getLowStockThreshold();
+    const lowStockItems = products.filter(p => p.stock <= lowStockThreshold).length;
 
     // Update stats
     document.getElementById('todaySales').textContent = formatCurrency(todaySales);

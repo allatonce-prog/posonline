@@ -48,12 +48,23 @@ class Auth {
                 throw new Error('Invalid username or password');
             }
 
-            // Create session (exclude password)
+            // Get store name from stores collection
+            let storeName = 'Unknown Store';
+            if (user.storeId) {
+                const store = await db.get('stores', user.storeId);
+                if (store && store.name) {
+                    storeName = store.name;
+                }
+            }
+
+            // Create session (exclude password, include storeId and storeName)
             const sessionUser = {
                 id: user.id,
                 username: user.username,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                storeId: user.storeId,
+                storeName: storeName // ← Add store name
             };
 
             this.saveSession(sessionUser);
