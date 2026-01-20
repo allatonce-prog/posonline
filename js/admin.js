@@ -10,6 +10,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = auth.getCurrentUser();
     document.getElementById('adminName').textContent = user.name || user.username;
 
+    // Apply custom settings
+    if (typeof getSettings === 'function') {
+        const settings = getSettings();
+
+        // Update sidebar logo
+        const logoTitle = document.getElementById('adminLogoTitle');
+        if (logoTitle) {
+            logoTitle.textContent = `${settings.systemIcon} ${settings.systemName}`;
+        }
+
+        // Update page title
+        document.title = `Admin Dashboard - ${settings.systemName}`;
+    }
+
     // Setup mobile menu
     setupMobileMenu();
 
@@ -125,7 +139,8 @@ async function switchTab(tab) {
         inventory: 'Inventory Management',
         sales: 'Sales Records',
         reports: 'Reports & Analytics',
-        users: 'User Management'
+        users: 'User Management',
+        settings: 'System Settings'
     };
     document.getElementById('pageTitle').textContent = titles[tab] || tab;
 
@@ -152,6 +167,9 @@ async function switchTab(tab) {
                 break;
             case 'users':
                 await loadUsers();
+                break;
+            case 'settings':
+                await loadSettings();
                 break;
         }
         hideLoading();
@@ -196,7 +214,7 @@ async function loadDashboard() {
     } else {
         tbody.innerHTML = recentTransactions.map(t => `
       <tr>
-        <td>#${t.id}</td>
+        <td>${formatTransactionId(t.id)}</td>
         <td>${formatDateTime(t.date)}</td>
         <td>${escapeHtml(t.cashier)}</td>
         <td>${t.items.length} items</td>

@@ -106,6 +106,14 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
+// Format transaction ID to compact format
+function formatTransactionId(id) {
+    // Convert to string and pad with zeros to make it 3 digits minimum
+    const paddedId = String(id).padStart(3, '0');
+    return `TXN-${paddedId}`;
+}
+
+
 // Debounce function
 function debounce(func, wait) {
     let timeout;

@@ -46,6 +46,15 @@ function showAddProductModal() {
     document.getElementById('productForm').reset();
     document.getElementById('productId').value = '';
     document.getElementById('productModal').classList.add('active');
+
+    // Auto-focus SKU field for barcode scanner
+    setTimeout(() => {
+        const skuField = document.getElementById('productSku');
+        if (skuField) {
+            skuField.focus();
+            skuField.select();
+        }
+    }, 100);
 }
 
 // Edit product
@@ -214,4 +223,37 @@ document.addEventListener('DOMContentLoaded', () => {
             closeProductModal();
         }
     });
+
+    // Barcode scanner support for SKU field
+    const skuField = document.getElementById('productSku');
+    if (skuField) {
+        skuField.addEventListener('keydown', (e) => {
+            // When Enter is pressed (barcode scanner sends Enter after scanning)
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
+
+                // Move to next field (Product Name)
+                const productNameField = document.getElementById('productName');
+                if (productNameField) {
+                    productNameField.focus();
+                    productNameField.select();
+                }
+
+                // Visual feedback
+                skuField.style.borderColor = '#10b981'; // Green border
+                setTimeout(() => {
+                    skuField.style.borderColor = '';
+                }, 500);
+            }
+        });
+
+        // Add visual indicator when SKU field is focused
+        skuField.addEventListener('focus', () => {
+            skuField.setAttribute('placeholder', '📷 Scan barcode or type SKU...');
+        });
+
+        skuField.addEventListener('blur', () => {
+            skuField.setAttribute('placeholder', '');
+        });
+    }
 });

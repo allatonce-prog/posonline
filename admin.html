@@ -26,7 +26,7 @@
         <aside class="admin-sidebar">
             <div class="admin-logo">
                 <div class="logo-content">
-                    <h1>🛒 POS System</h1>
+                    <h1 id="adminLogoTitle">🛒 POS System</h1>
                     <p>Admin Dashboard</p>
                 </div>
                 <!-- Mobile logout button -->
@@ -59,6 +59,10 @@
                 <div class="nav-item" data-tab="users">
                     <span class="nav-icon">👥</span>
                     <span>Users</span>
+                </div>
+                <div class="nav-item" data-tab="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
                 </div>
             </nav>
 
@@ -408,6 +412,59 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Settings Tab -->
+                <div class="tabs" id="settings-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>System Settings</h3>
+                        </div>
+                        <div class="settings-content">
+                            <form id="settingsForm" class="settings-form">
+                                <!-- General Settings -->
+                                <div class="settings-section">
+                                    <h4>General Settings</h4>
+                                    <div class="form-group">
+                                        <label for="systemName">POS System Name *</label>
+                                        <input type="text" id="systemName" class="form-control"
+                                            placeholder="e.g., My Store POS" required>
+                                        <small class="form-text">This name will appear on the login page</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="systemDescription">System Description</label>
+                                        <input type="text" id="systemDescription" class="form-control"
+                                            placeholder="e.g., Point of Sale & Inventory Management">
+                                        <small class="form-text">Short description shown on login page</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="systemIcon">System Icon (Emoji)</label>
+                                        <input type="text" id="systemIcon" class="form-control" placeholder="🛒"
+                                            maxlength="2">
+                                        <small class="form-text">Emoji icon for the login page</small>
+                                    </div>
+                                </div>
+
+                                <!-- Currency Settings -->
+                                <div class="settings-section">
+                                    <h4>Currency Settings</h4>
+                                    <div class="form-group">
+                                        <label for="currencySymbol">Currency Symbol</label>
+                                        <input type="text" id="currencySymbol" class="form-control" placeholder="₱"
+                                            maxlength="3">
+                                        <small class="form-text">Symbol to display for currency (e.g., ₱, $, €)</small>
+                                    </div>
+                                </div>
+
+                                <!-- Save Button -->
+                                <div class="settings-actions">
+                                    <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄 Reset
+                                        to Default</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -424,8 +481,14 @@
                     <input type="hidden" id="productId">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="productSku">SKU *</label>
-                            <input type="text" id="productSku" class="form-control" required>
+                            <label for="productSku">📷 SKU * <span
+                                    style="font-weight: normal; font-size: 0.85rem; color: var(--gray-600);">(Barcode
+                                    Scanner Ready)</span></label>
+                            <input type="text" id="productSku" class="form-control" required autocomplete="off">
+                            <small class="form-text"
+                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.8rem;">
+                                💡 Scan barcode or type manually. Press Enter to continue.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label for="productName">Product Name *</label>
@@ -592,6 +655,7 @@
     <script src="js/admin/sales.js"></script>
     <script src="js/admin/reports.js"></script>
     <script src="js/admin/users.js"></script>
+    <script src="js/admin/settings.js"></script>
 </body>
 
 </html>

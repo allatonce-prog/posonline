@@ -15,7 +15,7 @@ async function loadSales() {
 
   tbody.innerHTML = sortedTransactions.map(transaction => `
     <tr>
-      <td>#${transaction.id}</td>
+      <td>${formatTransactionId(transaction.id)}</td>
       <td>${formatDateTime(transaction.date)}</td>
       <td>${escapeHtml(transaction.cashier)}</td>
       <td>${escapeHtml(transaction.customerName || 'Walk-in')}</td>
@@ -42,7 +42,7 @@ async function viewTransaction(id) {
 
   const detailsHtml = `
     <div style="margin-bottom: 1.5rem;">
-      <h3 style="margin-bottom: 1rem; color: var(--dark);">Transaction #${transaction.id}</h3>
+      <h3 style="margin-bottom: 1rem; color: var(--dark);">Transaction ${formatTransactionId(transaction.id)}</h3>
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
         <div>
           <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0.25rem;">Date & Time</p>

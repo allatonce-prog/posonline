@@ -385,7 +385,7 @@ async function completeTransaction() {
                 productId: item.id,
                 type: 'out',
                 quantity: item.quantity,
-                reason: `Sale - Transaction #${transactionId}`,
+                reason: `Sale - Transaction ${formatTransactionId(transactionId)}`,
                 date: new Date().toISOString(),
                 user: auth.getCurrentUser().username,
                 stockBefore: stockBefore,
@@ -415,13 +415,16 @@ async function completeTransaction() {
 
 // Print receipt
 function printTransactionReceipt(transaction, transactionId) {
+    // Get custom settings
+    const settings = typeof getSettings === 'function' ? getSettings() : { systemName: 'POS System', systemDescription: 'Point of Sale Receipt' };
+
     const receiptHtml = `
     <div class="receipt-header">
-      <h2>POS System</h2>
-      <p>Point of Sale Receipt</p>
+      <h2>${settings.systemName}</h2>
+      <p>${settings.systemDescription}</p>
     </div>
     <div class="receipt-info">
-      <p><strong>Transaction #:</strong> ${transactionId}</p>
+      <p><strong>Transaction #:</strong> ${formatTransactionId(transactionId)}</p>
       <p><strong>Date:</strong> ${formatDateTime(transaction.date)}</p>
       <p><strong>Cashier:</strong> ${transaction.cashier}</p>
       <p><strong>Customer:</strong> ${transaction.customerName}</p>
@@ -461,12 +464,15 @@ function printTransactionReceipt(transaction, transactionId) {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Search
+    // Real-time search - instant filtering on every keystroke
     const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', debounce((e) => {
+    searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
 
         if (!query) {
+            // Remove searching class
+            searchInput.classList.remove('searching');
+
             // Get current category filter
             const activeFilter = document.querySelector('.filter-btn.active');
             const category = activeFilter ? activeFilter.dataset.category : 'all';
@@ -474,6 +480,10 @@ function setupEventListeners() {
             return;
         }
 
+        // Add searching class for visual feedback
+        searchInput.classList.add('searching');
+
+        // Real-time filtering - matches every letter
         const filtered = products.filter(product =>
             product.name.toLowerCase().includes(query) ||
             product.sku.toLowerCase().includes(query) ||
@@ -481,7 +491,7 @@ function setupEventListeners() {
         );
 
         renderProducts(filtered);
-    }, 300));
+    });
 
     // Payment method change
     document.getElementById('paymentMethod').addEventListener('change', toggleCashPayment);
