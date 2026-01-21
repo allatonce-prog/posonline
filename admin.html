@@ -85,7 +85,20 @@
         <!-- Main Content -->
         <main class="admin-main">
             <div class="admin-header">
-                <h2 id="pageTitle">Dashboard</h2>
+                <div class="header-left">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="currentStoreName" style="font-size: 0.85rem; color: var(--gray-600); margin: 0.25rem 0 0 0;">
+                        📍 Loading store...
+                    </p>
+                </div>
+                <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+                    <!-- Store Switcher (for super admins managing multiple stores) -->
+                    <div id="storeSwitcherContainer" style="display: none;">
+                        <select id="storeSwitcher" class="form-control" style="min-width: 200px;">
+                            <option value="">Loading stores...</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div class="admin-content">
@@ -666,6 +679,7 @@
     <script src="js/admin/reports.js"></script>
     <script src="js/admin/users.js"></script>
     <script src="js/admin/settings.js"></script>
+    <script src="js/admin/store-switcher.js"></script>
 </body>
 
 </html>

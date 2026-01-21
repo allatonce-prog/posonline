@@ -10,7 +10,7 @@ const DEFAULT_SETTINGS = {
 
 // Load settings page
 async function loadSettings() {
-    const settings = getSettings();
+    const settings = await getSettings();
 
     // Populate form with current settings
     document.getElementById('systemName').value = settings.systemName;
@@ -26,9 +26,53 @@ async function loadSettings() {
     };
 }
 
-// Get current settings from localStorage
-function getSettings() {
-    const stored = localStorage.getItem('posSettings');
+// Get current settings from Firebase (with localStorage fallback)
+async function getSettings() {
+    // Get current user's storeId
+    const currentUser = auth?.getCurrentUser?.();
+    const storeId = currentUser?.storeId || 'default_store';
+
+    try {
+        // Try to load from Firebase first
+        if (typeof db !== 'undefined' && db.db) {
+            // Try settings collection first
+            const settingsDoc = await db.get('settings', `settings_${storeId}`);
+            if (settingsDoc && settingsDoc.data) {
+                return { ...DEFAULT_SETTINGS, ...settingsDoc.data };
+            }
+
+            // Try stores collection (settings might be stored there)
+            const storeDoc = await db.get('stores', storeId);
+            if (storeDoc && storeDoc.settings) {
+                return { ...DEFAULT_SETTINGS, ...storeDoc.settings };
+            }
+        }
+    } catch (error) {
+        console.log('Could not load settings from Firebase, using localStorage:', error);
+    }
+
+    // Fallback to localStorage
+    const settingsKey = `posSettings_${storeId}`;
+    const stored = localStorage.getItem(settingsKey);
+
+    if (stored) {
+        try {
+            return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+        } catch (e) {
+            console.error('Error parsing settings:', e);
+            return { ...DEFAULT_SETTINGS };
+        }
+    }
+    return { ...DEFAULT_SETTINGS };
+}
+
+// Synchronous version for immediate use (uses localStorage only)
+function getSettingsSync() {
+    const currentUser = auth?.getCurrentUser?.();
+    const storeId = currentUser?.storeId || 'default_store';
+    const settingsKey = `posSettings_${storeId}`;
+    const stored = localStorage.getItem(settingsKey);
+
     if (stored) {
         try {
             return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
@@ -63,13 +107,54 @@ async function saveSettings() {
             return;
         }
 
-        // Save to localStorage
-        localStorage.setItem('posSettings', JSON.stringify(settings));
+        // Get current user's storeId
+        const currentUser = auth?.getCurrentUser?.();
+        const storeId = currentUser?.storeId || 'default_store';
+
+        // Save to store-specific localStorage key (for offline access)
+        const settingsKey = `posSettings_${storeId}`;
+        localStorage.setItem(settingsKey, JSON.stringify(settings));
+
+        // Save to Firebase (for cross-device sync)
+        try {
+            if (typeof db !== 'undefined' && db.db) {
+                const settingsDocId = `settings_${storeId}`;
+
+                // Update the store name in the stores collection
+                const storeDoc = await db.get('stores', storeId);
+                if (storeDoc) {
+                    await db.update('stores', {
+                        ...storeDoc,
+                        name: settings.systemName,  // ← Update store name
+                        settings: settings,
+                        updatedAt: new Date().toISOString()
+                    });
+                    console.log('Store name and settings updated in Firebase');
+                } else {
+                    console.warn('Store document not found, creating settings document');
+                    // If store doesn't exist, create a settings document directly
+                    await db.add('settings', {
+                        id: settingsDocId,
+                        data: settings,
+                        storeId: storeId,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            }
+        } catch (firebaseError) {
+            console.warn('Could not save to Firebase, saved to localStorage only:', firebaseError);
+        }
 
         showToast('Settings saved successfully!', 'success');
 
         // Update the sidebar logo if needed
         updateSidebarLogo(settings);
+
+        // Update the store name display immediately
+        if (typeof updateCurrentStoreName === 'function') {
+            updateCurrentStoreName(settings.systemName);
+        }
 
     } catch (error) {
         console.error('Error saving settings:', error);
@@ -80,7 +165,14 @@ async function saveSettings() {
 // Reset settings to default
 function resetSettings() {
     if (confirm('Are you sure you want to reset all settings to default values?')) {
-        localStorage.removeItem('posSettings');
+        // Get current user's storeId
+        const currentUser = auth?.getCurrentUser?.();
+        const storeId = currentUser?.storeId || 'default_store';
+
+        // Remove store-specific settings
+        const settingsKey = `posSettings_${storeId}`;
+        localStorage.removeItem(settingsKey);
+
         loadSettings();
         showToast('Settings reset to default values', 'success');
 
@@ -98,40 +190,22 @@ function updateSidebarLogo(settings) {
 }
 
 // Apply settings to login page (called from index.html)
+// Note: Login page uses static text, only update page title
 function applyLoginSettings() {
-    const settings = getSettings();
-
-    // Update logo icon
-    const logoIcon = document.querySelector('.login-logo');
-    if (logoIcon) {
-        logoIcon.textContent = settings.systemIcon;
-    }
-
-    // Update system name
-    const systemNameEl = document.querySelector('.login-header h1');
-    if (systemNameEl) {
-        systemNameEl.textContent = settings.systemName;
-    }
-
-    // Update description
-    const descriptionEl = document.querySelector('.login-header p');
-    if (descriptionEl) {
-        descriptionEl.textContent = settings.systemDescription;
-    }
-
-    // Update page title
-    document.title = `${settings.systemName} - Login`;
+    // Update page title only
+    document.title = 'POS System - Login';
 }
 
 // Get low stock threshold
 function getLowStockThreshold() {
-    const settings = getSettings();
+    const settings = getSettingsSync();
     return settings.lowStockThreshold || DEFAULT_SETTINGS.lowStockThreshold;
 }
 
 // Export for use in other files
 if (typeof window !== 'undefined') {
     window.getSettings = getSettings;
+    window.getSettingsSync = getSettingsSync;
     window.getLowStockThreshold = getLowStockThreshold;
     window.applyLoginSettings = applyLoginSettings;
 }

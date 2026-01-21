@@ -126,11 +126,16 @@ async function saveUser() {
 
             const hashedPassword = await db.hashPassword(password);
 
+            // Get current user's storeId to assign to the new user
+            const currentUser = auth.getCurrentUser();
+            const storeId = currentUser?.storeId || 'default_store';
+
             await db.add('users', {
                 username: username,
                 name: name,
                 role: role,
-                password: hashedPassword
+                password: hashedPassword,
+                storeId: storeId  // ← Add storeId to new user
             });
             showToast('User added successfully', 'success');
         }

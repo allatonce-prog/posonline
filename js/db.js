@@ -159,27 +159,9 @@ class Database {
 
     // Initialize default data
     async initializeDefaults() {
-        // Check if users exist
-        const users = await this.getAll('users');
-        if (users.length === 0) {
-            // Add default admin
-            await this.add('users', {
-                username: 'admin',
-                password: await this.hashPassword('admin123'),
-                role: 'admin',
-                name: 'Administrator',
-                createdAt: new Date().toISOString()
-            });
-
-            // Add default cashier
-            await this.add('users', {
-                username: 'cashier',
-                password: await this.hashPassword('cashier123'),
-                role: 'cashier',
-                name: 'Cashier User',
-                createdAt: new Date().toISOString()
-            });
-        }
+        // No default users - stores must be registered via register-store.html
+        // This prevents credential conflicts when multiple stores are created
+        console.log('Database initialized. Register a new store to create admin account.');
 
         // Check if products exist
         const products = await this.getAll('products');

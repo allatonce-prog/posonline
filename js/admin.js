@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Apply custom settings
-    if (typeof getSettings === 'function') {
-        const settings = getSettings();
+    if (typeof getSettingsSync === 'function') {
+        const settings = getSettingsSync();
 
         // Update sidebar logo
         const logoTitle = document.getElementById('adminLogoTitle');
@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await db.init();
         await loadDashboard();
+
+        // Initialize store switcher
+        if (typeof initStoreSwitcher === 'function') {
+            await initStoreSwitcher();
+        }
+
         hideLoading();
     } catch (error) {
         hideLoading();

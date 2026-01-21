@@ -240,38 +240,9 @@ class FirebaseDatabase {
 
     // Initialize default data
     async initializeDefaults() {
-        // Users check
-        const users = await this.getAll('users');
-        if (users.length === 0) {
-            console.log("Initializing default users...");
-            const defaultStoreId = 'default_store';
-
-            // Add default admin
-            await this.add('users', {
-                username: 'admin',
-                password: await this.hashPassword('admin123'),
-                role: 'admin',
-                name: 'Administrator',
-                storeId: defaultStoreId
-            });
-
-            // Add default cashier
-            await this.add('users', {
-                username: 'cashier',
-                password: await this.hashPassword('cashier123'),
-                role: 'cashier',
-                name: 'Cashier User',
-                storeId: defaultStoreId
-            });
-
-            // Create default store record
-            await this.add('stores', {
-                id: defaultStoreId,
-                name: 'Default Store',
-                createdAt: new Date().toISOString(),
-                status: 'active'
-            });
-        }
+        // No default users - stores must be registered via register-store.html
+        // This prevents credential conflicts when multiple stores are created
+        console.log("Database initialized. Register a new store to create admin account.");
     }
 
     // Register a new store

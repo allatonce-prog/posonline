@@ -126,12 +126,28 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.admin-header .header-left {
+    flex: 1;
+}
+
+.admin-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
 }
 
 .admin-header h2 {
     font-size: 1.75rem;
     font-weight: 700;
     color: var(--dark);
+    margin: 0;
 }
 
 .admin-content {
@@ -1348,3 +1364,4 @@ textarea.form-control {
             box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
         }
     }
+}
