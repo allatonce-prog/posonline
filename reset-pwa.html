@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Reset Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status div {
+            margin: 5px 0;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .info {
+            color: #3b82f6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 PWA Reset Tool</h1>
+        <p class="subtitle">Fix "404 - There isn't github pages here" error</p>
+
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click "Clear All Caches & Service Workers"</li>
+                <li>Wait for confirmation</li>
+                <li>Close this page</li>
+                <li>Go to: <strong>allatonce-prog.github.io/posonline/</strong></li>
+                <li>The app should load correctly now!</li>
+            </ol>
+        </div>
+
+        <div class="status" id="status">
+            <div class="info">Ready to reset PWA...</div>
+        </div>
+
+        <button onclick="clearEverything()" class="btn-danger">
+            🗑️ Clear All Caches & Service Workers
+        </button>
+
+        <button onclick="checkStatus()" class="btn-success">
+            ✅ Check Current Status
+        </button>
+
+        <button onclick="goToApp()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            🚀 Go to POS App
+        </button>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(div);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        async function clearEverything() {
+            statusDiv.innerHTML = '';
+            log('Starting cleanup process...', 'info');
+
+            try {
+                // 1. Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    log('Checking for service workers...', 'info');
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+
+                    if (registrations.length === 0) {
+                        log('No service workers found', 'info');
+                    } else {
+                        log(`Found ${registrations.length} service worker(s)`, 'info');
+                        for (let registration of registrations) {
+                            await registration.unregister();
+                            log('✓ Service worker unregistered', 'success');
+                        }
+                    }
+                }
+
+                // 2. Clear all caches
+                if ('caches' in window) {
+                    log('Checking for caches...', 'info');
+                    const cacheNames = await caches.keys();
+
+                    if (cacheNames.length === 0) {
+                        log('No caches found', 'info');
+                    } else {
+                        log(`Found ${cacheNames.length} cache(s)`, 'info');
+                        for (let cacheName of cacheNames) {
+                            await caches.delete(cacheName);
+                            log(`✓ Deleted cache: ${cacheName}`, 'success');
+                        }
+                    }
+                }
+
+                // 3. Clear localStorage
+                log('Clearing localStorage...', 'info');
+                localStorage.clear();
+                log('✓ localStorage cleared', 'success');
+
+                // 4. Clear sessionStorage
+                log('Clearing sessionStorage...', 'info');
+                sessionStorage.clear();
+                log('✓ sessionStorage cleared', 'success');
+
+                log('', 'info');
+                log('🎉 ALL DONE! Everything has been cleared!', 'success');
+                log('', 'info');
+                log('Next steps:', 'info');
+                log('1. Close this page', 'info');
+                log('2. Visit: allatonce-prog.github.io/posonline/', 'info');
+                log('3. The app should work now!', 'info');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkStatus() {
+            statusDiv.innerHTML = '';
+            log('Checking current status...', 'info');
+
+            try {
+                // Check service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`Service Workers: ${registrations.length}`, registrations.length > 0 ? 'error' : 'success');
+                    registrations.forEach((reg, i) => {
+                        log(`  - SW ${i + 1}: ${reg.active ? 'Active' : 'Inactive'}`, 'info');
+                    });
+                }
+
+                // Check caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    log(`Caches: ${cacheNames.length}`, cacheNames.length > 0 ? 'error' : 'success');
+                    cacheNames.forEach(name => {
+                        log(`  - ${name}`, 'info');
+                    });
+                }
+
+                // Check storage
+                const lsKeys = Object.keys(localStorage).length;
+                const ssKeys = Object.keys(sessionStorage).length;
+                log(`localStorage items: ${lsKeys}`, 'info');
+                log(`sessionStorage items: ${ssKeys}`, 'info');
+
+                if (registrations.length === 0 && cacheNames.length === 0) {
+                    log('', 'info');
+                    log('✅ All clear! Ready to use the app!', 'success');
+                }
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function goToApp() {
+            window.location.href = 'https://allatonce-prog.github.io/posonline/';
+        }
+
+        // Auto-check status on load
+        window.addEventListener('load', () => {
+            setTimeout(checkStatus, 500);
+        });
+    </script>
+</body>
+
+</html>
