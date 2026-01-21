@@ -597,15 +597,58 @@
         successMessage.classList.remove('show');
       }
 
-      // Register service worker
+      // Register service worker with force update
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-          .then(registration => {
-            console.log('Service Worker registered:', registration);
-          })
-          .catch(error => {
-            console.log('Service Worker registration failed:', error);
-          });
+        // First, unregister any old service workers
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (let registration of registrations) {
+            registration.unregister().then(() => {
+              console.log('Old service worker unregistered');
+            });
+          }
+        });
+
+        // Clear all caches
+        caches.keys().then(cacheNames => {
+          return Promise.all(
+            cacheNames.map(cacheName => {
+              if (cacheName.startsWith('pos-system-')) {
+                console.log('Deleting old cache:', cacheName);
+                return caches.delete(cacheName);
+              }
+            })
+          );
+        });
+
+        // Register new service worker
+        setTimeout(() => {
+          navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+              console.log('Service Worker v3 registered:', registration);
+
+              // Force update check
+              registration.update();
+
+              // Listen for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                console.log('New service worker found, installing...');
+
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'activated') {
+                    console.log('New service worker activated!');
+                    // Reload to use new service worker
+                    if (!navigator.serviceWorker.controller) {
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch(error => {
+              console.log('Service Worker registration failed:', error);
+            });
+        }, 1000);
       }
 
       // PWA install prompt

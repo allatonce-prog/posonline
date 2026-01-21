@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v2';
+const CACHE_NAME = 'pos-system-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -20,22 +20,56 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
+  console.log('[ServiceWorker] Installing v3...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('[ServiceWorker] Caching app shell');
         return cache.addAll(urlsToCache);
       })
+      .catch(err => {
+        console.error('[ServiceWorker] Cache failed:', err);
+      })
   );
+  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network first for HTML, cache first for assets
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Network first strategy for HTML files to prevent 404 errors
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Cache the new version
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(event.request)
+            .then(response => {
+              if (response) {
+                return response;
+              }
+              // If no cache, return to index
+              return caches.match('./index.html');
+            });
+        })
+    );
+    return;
+  }
+
+  // Cache first strategy for other resources
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
