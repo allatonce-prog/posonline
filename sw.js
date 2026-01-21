@@ -1,21 +1,21 @@
-const CACHE_NAME = 'pos-system-v1';
+const CACHE_NAME = 'pos-system-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/cashier.html',
-  '/admin.html',
-  '/css/styles.css',
-  '/css/cashier.css',
-  '/css/admin.css',
-  '/js/firebase-db.js',
-  '/js/auth.js',
-  '/js/utils.js',
-  '/js/cashier.js',
-  '/js/admin.js',
-  '/js/admin/products.js',
-  '/js/admin/inventory.js',
-  '/js/admin/sales.js',
-  '/js/admin/reports.js'
+  './',
+  './index.html',
+  './cashier.html',
+  './admin.html',
+  './css/styles.css',
+  './css/cashier.css',
+  './css/admin.css',
+  './js/firebase-db.js',
+  './js/auth.js',
+  './js/utils.js',
+  './js/cashier.js',
+  './js/admin.js',
+  './js/admin/products.js',
+  './js/admin/inventory.js',
+  './js/admin/sales.js',
+  './js/admin/reports.js'
 ];
 
 // Install event - cache resources
