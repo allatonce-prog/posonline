@@ -136,71 +136,61 @@ function escapeHtml(text) {
 
 // Print receipt
 function printReceipt(receiptHtml) {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Receipt</title>
-      <style>
-        body {
-          font-family: 'Courier New', monospace;
-          max-width: 300px;
-          margin: 0 auto;
-          padding: 20px;
+    const printArea = document.getElementById('receipt-printable');
+
+    if (printArea) {
+        // Use in-page printing (Better for mobile/thermal printers)
+
+        // Wrap content in basic styling container similar to previous popup
+        printArea.innerHTML = `
+            <div style="font-family: 'Courier New', monospace; max-width: 300px; margin: 0 auto;">
+                ${receiptHtml}
+            </div>
+        `;
+
+        setTimeout(() => {
+            window.print();
+            // Optional: Clear after print to avoid "ghost" content if styles leak
+            // setTimeout(() => printArea.innerHTML = '', 1000);
+        }, 100);
+
+    } else {
+        // Fallback for pages without the print container
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Please allow popups to print receipt');
+            return;
         }
-        .receipt-header {
-          text-align: center;
-          margin-bottom: 20px;
-        }
-        .receipt-header h2 {
-          margin: 0;
-          font-size: 18px;
-        }
-        .receipt-info {
-          margin-bottom: 15px;
-          font-size: 12px;
-        }
-        .receipt-items {
-          border-top: 1px dashed #000;
-          border-bottom: 1px dashed #000;
-          padding: 10px 0;
-          margin: 15px 0;
-        }
-        .receipt-item {
-          display: flex;
-          justify-content: space-between;
-          margin: 5px 0;
-          font-size: 12px;
-        }
-        .receipt-total {
-          font-weight: bold;
-          font-size: 14px;
-          margin-top: 10px;
-        }
-        .receipt-footer {
-          text-align: center;
-          margin-top: 20px;
-          font-size: 11px;
-        }
-        @media print {
-          body {
-            padding: 0;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      ${receiptHtml}
-    </body>
-    </html>
-  `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+
+        printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            body {
+              font-family: 'Courier New', monospace;
+              max-width: 300px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${receiptHtml}
+        </body>
+        </html>
+      `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    }
 }
 
 // Export to CSV

@@ -49,11 +49,15 @@ class Auth {
             }
 
             // Get store name from stores collection
-            let storeName = 'Unknown Store';
+            let storeName = null;
             if (user.storeId) {
-                const store = await db.get('stores', user.storeId);
-                if (store && store.name) {
-                    storeName = store.name;
+                try {
+                    const store = await db.get('stores', user.storeId);
+                    if (store && store.name) {
+                        storeName = store.name;
+                    }
+                } catch (error) {
+                    console.warn('Could not fetch store name:', error);
                 }
             }
 
@@ -61,11 +65,15 @@ class Auth {
             const sessionUser = {
                 id: user.id,
                 username: user.username,
-                name: user.name,
+                name: user.name || user.username, // Fallback to username if name is not set
                 role: user.role,
-                storeId: user.storeId,
-                storeName: storeName // ← Add store name
+                storeId: user.storeId
             };
+
+            // Only add storeName if it was successfully retrieved
+            if (storeName) {
+                sessionUser.storeName = storeName;
+            }
 
             this.saveSession(sessionUser);
             return sessionUser;

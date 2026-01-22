@@ -12,11 +12,12 @@
 
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 
 <body>
     <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle"><i class="ph ph-list"></i></button>
 
     <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
@@ -37,38 +38,38 @@
 
             <nav class="admin-nav">
                 <div class="nav-item active" data-tab="dashboard">
-                    <span class="nav-icon">📊</span>
+                    <i class="ph ph-squares-four nav-icon"></i>
                     <span>Dashboard</span>
                 </div>
                 <div class="nav-item" data-tab="products">
-                    <span class="nav-icon">📦</span>
+                    <i class="ph ph-package nav-icon"></i>
                     <span>Products</span>
                 </div>
                 <div class="nav-item" data-tab="inventory">
-                    <span class="nav-icon">📋</span>
+                    <i class="ph ph-clipboard-text nav-icon"></i>
                     <span>Inventory</span>
                 </div>
                 <div class="nav-item" data-tab="sales">
-                    <span class="nav-icon">💰</span>
+                    <i class="ph ph-receipt nav-icon"></i>
                     <span>Sales</span>
                 </div>
                 <div class="nav-item" data-tab="reports">
-                    <span class="nav-icon">📈</span>
+                    <i class="ph ph-chart-line-up nav-icon"></i>
                     <span>Reports</span>
                 </div>
                 <div class="nav-item" data-tab="users">
-                    <span class="nav-icon">👥</span>
+                    <i class="ph ph-users nav-icon"></i>
                     <span>Users</span>
                 </div>
                 <div class="nav-item" data-tab="settings">
-                    <span class="nav-icon">⚙️</span>
+                    <i class="ph ph-gear nav-icon"></i>
                     <span>Settings</span>
                 </div>
             </nav>
 
             <div class="admin-user">
                 <div class="user-info">
-                    <div class="user-avatar">👤</div>
+                    <div class="user-avatar"><i class="ph ph-user"></i></div>
                     <div class="user-details">
                         <h3 id="adminName">Administrator</h3>
                         <p>Admin</p>
@@ -106,28 +107,28 @@
                 <div class="tabs active" id="dashboard-tab">
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon primary">💰</div>
+                            <div class="stat-icon primary"><i class="ph ph-currency-dollar"></i></div>
                             <div class="stat-info">
                                 <h3>Today's Sales</h3>
                                 <div class="stat-value" id="todaySales">$0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon success">📦</div>
+                            <div class="stat-icon success"><i class="ph ph-package"></i></div>
                             <div class="stat-info">
                                 <h3>Total Products</h3>
                                 <div class="stat-value" id="totalProducts">0</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon warning">⚠️</div>
+                            <div class="stat-icon warning"><i class="ph ph-warning-circle"></i></div>
                             <div class="stat-info">
                                 <h3>Low Stock Items</h3>
                                 <div class="stat-value" id="lowStockItems">0</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon danger">🛒</div>
+                            <div class="stat-icon danger"><i class="ph ph-shopping-cart"></i></div>
                             <div class="stat-info">
                                 <h3>Total Transactions</h3>
                                 <div class="stat-value" id="totalTransactions">0</div>
@@ -216,21 +217,21 @@
                         </div>
                         <div class="inventory-stats">
                             <div class="stat-card">
-                                <div class="stat-icon success">📦</div>
+                                <div class="stat-icon success"><i class="ph ph-package"></i></div>
                                 <div class="stat-info">
                                     <h3>Total Products</h3>
                                     <div class="stat-value" id="totalProductsInventory">0</div>
                                 </div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon warning">⚠️</div>
+                                <div class="stat-icon warning"><i class="ph ph-warning-circle"></i></div>
                                 <div class="stat-info">
                                     <h3>Low Stock Items</h3>
                                     <div class="stat-value" id="lowStockCount">0</div>
                                 </div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon primary">💰</div>
+                                <div class="stat-icon primary"><i class="ph ph-currency-dollar"></i></div>
                                 <div class="stat-info">
                                     <h3>Total Stock Value</h3>
                                     <div class="stat-value" id="totalStockValue">₱0.00</div>
@@ -321,6 +322,13 @@
                         <div class="table-header">
                             <h3>All Transactions</h3>
                             <div class="table-actions">
+                                <select id="salesFilter" class="form-control"
+                                    style="max-width: 150px; margin-right: 0.5rem;" onchange="loadSales()">
+                                    <option value="recent">Recent</option>
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                </select>
                                 <button class="btn btn-secondary" onclick="exportSales()">
                                     Export CSV
                                 </button>
@@ -352,28 +360,28 @@
                 <div class="tabs" id="reports-tab">
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon primary">📅</div>
+                            <div class="stat-icon primary"><i class="ph ph-calendar-blank"></i></div>
                             <div class="stat-info">
                                 <h3>This Week</h3>
                                 <div class="stat-value" id="weekSales">$0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon success">📆</div>
+                            <div class="stat-icon success"><i class="ph ph-calendar"></i></div>
                             <div class="stat-info">
                                 <h3>This Month</h3>
                                 <div class="stat-value" id="monthSales">$0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon warning">💵</div>
+                            <div class="stat-icon warning"><i class="ph ph-money"></i></div>
                             <div class="stat-info">
                                 <h3>Average Sale</h3>
                                 <div class="stat-value" id="avgSale">$0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon danger">🏆</div>
+                            <div class="stat-icon danger"><i class="ph ph-trophy"></i></div>
                             <div class="stat-info">
                                 <h3>Best Day</h3>
                                 <div class="stat-value" id="bestDay">-</div>
@@ -669,7 +677,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/firebase-db.js"></script>
+    <script type="module" src="js/offline-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/admin.js"></script>

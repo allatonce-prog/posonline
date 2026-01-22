@@ -10,17 +10,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Display user name and store name
     const user = auth.getCurrentUser();
-    document.getElementById('cashierName').textContent = user.name || user.username;
+    const cashierNameElement = document.getElementById('cashierName');
+    const storeNameElement = document.getElementById('cashierStoreName');
 
-    // Display store name if available
-    if (user.storeName) {
-        document.getElementById('cashierStoreName').textContent = `📍 ${user.storeName}`;
+    // Set cashier name with fallback
+    if (cashierNameElement) {
+        cashierNameElement.textContent = user?.name || user?.username || 'Cashier';
     }
 
-    // Initialize database
-    showLoading('Loading products...');
+    // Initialize database first
+    showLoading('Loading...');
     try {
         await db.init();
+
+        // Fetch and display store name from Firebase based on storeId
+        if (storeNameElement && user?.storeId) {
+            try {
+                const store = await db.get('stores', user.storeId);
+                if (store && store.name) {
+                    storeNameElement.textContent = `📍 ${store.name}`;
+                    storeNameElement.style.display = 'block';
+
+                    // Update session with store name for future use
+                    user.storeName = store.name;
+                    auth.saveSession(user);
+                } else {
+                    storeNameElement.style.display = 'none';
+                }
+            } catch (error) {
+                console.warn('Could not fetch store name:', error);
+                storeNameElement.style.display = 'none';
+            }
+        } else {
+            if (storeNameElement) {
+                storeNameElement.style.display = 'none';
+            }
+        }
+
+        // Load products
+        showLoading('Loading products...');
         await loadProducts();
         hideLoading();
     } catch (error) {
@@ -568,3 +596,255 @@ function toggleMobileCart() {
         document.body.style.overflow = '';
     }
 }
+
+// ---------------------------------------------------------
+// Sales History Feature
+// ---------------------------------------------------------
+
+let allSales = [];
+let currentSalesFilter = 'recent';
+
+// Switch View (POS vs Sales)
+window.switchView = async function (view) {
+    // Update Tabs
+    document.querySelectorAll('.view-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Find the tab that matches the view (index 0 for pos, 1 for sales)
+    const tabIndex = view === 'pos' ? 0 : 1;
+    document.querySelectorAll('.view-tab')[tabIndex].classList.add('active');
+
+    // Update Views
+    if (view === 'pos') {
+        document.getElementById('posView').style.display = 'block';
+        document.getElementById('salesView').style.display = 'none';
+
+        // Show Sidebar/Mobile Bar only in POS view
+        document.getElementById('cartSidebar').style.display = 'flex';
+        const mobileBar = document.getElementById('mobileCartBar');
+        if (mobileBar) mobileBar.style.display = 'flex';
+
+    } else if (view === 'sales') {
+        document.getElementById('posView').style.display = 'none';
+        document.getElementById('salesView').style.display = 'block';
+
+        // Hide Sidebar/Mobile Bar in Sales view
+        document.getElementById('cartSidebar').style.display = 'none';
+        const mobileBar = document.getElementById('mobileCartBar');
+        if (mobileBar) mobileBar.style.display = 'none';
+
+        // Load Sales Data
+        await loadSalesHistory();
+    }
+}
+
+// Load Sales History
+async function loadSalesHistory() {
+    const listContainer = document.getElementById('salesList');
+    listContainer.innerHTML = '<div class="loading-spinner">Loading sales history...</div>';
+
+    try {
+        const user = auth.getCurrentUser();
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
+
+        // Fetch sales for this cashier
+        // We use getAllByIndex to filter by 'cashier' == user.username
+        // The DB method also enforces storeId filtering if applicable
+        const sales = await db.getAllByIndex('transactions', 'cashier', user.username);
+
+        // Sort by date descending
+        allSales = sales.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Apply current filter
+        filterSales(currentSalesFilter);
+
+    } catch (error) {
+        console.error('Error loading sales:', error);
+        listContainer.innerHTML = `
+            <div class="no-sales">
+                <div class="no-sales-icon">⚠️</div>
+                <h3>Error Loading Sales</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Filter Sales
+window.filterSales = function (filterType) {
+    currentSalesFilter = filterType;
+
+    // Update buttons
+    document.querySelectorAll('.sales-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase() === filterType) { // text content matches filter name loosely
+            btn.classList.add('active');
+        }
+        // Better matching: check onclick attribute or just index
+    });
+    // Fix: Match button by onclick since textContent might vary slightly or be capitalized
+    const buttons = document.querySelectorAll('.sales-filter-btn');
+    if (filterType === 'recent') buttons[0].classList.add('active');
+    if (filterType === 'today') buttons[1].classList.add('active');
+    if (filterType === 'yesterday') buttons[2].classList.add('active');
+
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let filtered = [];
+
+    if (filterType === 'recent') {
+        // Last 20 transactions
+        filtered = allSales.slice(0, 20);
+    } else if (filterType === 'today') {
+        filtered = allSales.filter(sale => {
+            const saleDate = new Date(sale.date);
+            return saleDate >= today && saleDate < new Date(today.getTime() + 86400000);
+        });
+    } else if (filterType === 'yesterday') {
+        filtered = allSales.filter(sale => {
+            const saleDate = new Date(sale.date);
+            return saleDate >= yesterday && saleDate < today;
+        });
+    }
+
+    renderSalesList(filtered);
+    updateSalesStats(filtered);
+}
+
+// Render Sales List
+function renderSalesList(sales) {
+    const listContainer = document.getElementById('salesList');
+
+    if (sales.length === 0) {
+        listContainer.innerHTML = `
+            <div class="no-sales">
+                <div class="no-sales-icon">📜</div>
+                <h3>No Sales Found</h3>
+                <p>No transactions match your filter.</p>
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = sales.map(sale => {
+        const date = new Date(sale.date);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = date.toLocaleDateString();
+        const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+        const isVoided = sale.status === 'voided';
+
+        return `
+            <div class="sale-card ${isVoided ? 'voided' : ''}" onclick="viewTransactionDetails('${sale.id}')" style="cursor: pointer; ${isVoided ? 'opacity: 0.7; background-color: #f9f9f9; border: 1px solid #ddd;' : ''}">
+                <div class="sale-header">
+                    <div class="sale-time">
+                        ${timeStr}
+                        <span class="sale-date-small">${dateStr}</span>
+                    </div>
+                    ${isVoided
+                ? '<div class="badge badge-danger" style="font-size: 0.75rem; padding: 2px 6px;">VOIDED</div>'
+                : `<div class="sale-amount">${formatCurrency(sale.total)}</div>`
+            }
+                </div>
+                <div class="sale-footer">
+                    <div class="sale-items-count" style="${isVoided ? 'text-decoration: line-through; color: #888;' : ''}">
+                        <span>🛍️</span> ${itemCount} items
+                    </div>
+                    <div class="sale-id" style="${isVoided ? 'text-decoration: line-through; color: #888;' : ''}">#${formatTransactionId(sale.id)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Update Stats
+function updateSalesStats(sales) {
+    // Filter out voided sales for total calculation
+    const validSales = sales.filter(s => s.status !== 'voided');
+
+    const totalAmount = validSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
+    const totalCount = validSales.length;
+
+    document.getElementById('salesTotalAmount').textContent = formatCurrency(totalAmount);
+    // Show total count (maybe show valid count or total count including voids? Usually valid count is more useful for "Sales" stats)
+    document.getElementById('salesTotalCount').textContent = totalCount;
+}
+
+// ---------------------------------------------------------
+// Transaction Details Modal
+// ---------------------------------------------------------
+
+window.viewTransactionDetails = function (transactionId) {
+    const transaction = allSales.find(t => t.id === transactionId);
+    if (!transaction) return;
+
+    const modal = document.getElementById('transactionDetailsModal');
+    const content = document.getElementById('transactionDetailsContent');
+    const reprintBtn = document.getElementById('reprintBtn');
+
+    // Setup content
+    const isVoided = transaction.status === 'voided';
+
+    content.innerHTML = `
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧾</div>
+            <h3 style="margin: 0;">Transaction Details</h3>
+            <p style="color: var(--gray-500); margin: 0.25rem 0;">#${formatTransactionId(transaction.id)}</p>
+            <p style="color: var(--gray-500); margin: 0;">${formatDateTime(transaction.date)}</p>
+            ${isVoided ? '<div class="badge badge-danger" style="display:inline-block; margin-top:0.5rem; font-size:1rem; padding:0.5rem 1rem;">VOIDED</div>' : ''}
+            ${isVoided && transaction.voidReason ? `<p style="color: #dc3545; font-size: 0.9rem; margin-top: 0.25rem;">Reason: ${escapeHtml(transaction.voidReason)}</p>` : ''}
+        </div>
+        
+        <div style="background: var(--light); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            ${transaction.items.map(item => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                    <div>
+                        <div>${item.name}</div>
+                        <div style="color: var(--gray-500); font-size: 0.8rem;">${item.quantity} x ${formatCurrency(item.price)}</div>
+                    </div>
+                    <div style="font-weight: 600;">${formatCurrency(item.subtotal)}</div>
+                </div>
+            `).join('')}
+            
+            <hr style="border: 0; border-top: 1px dashed var(--gray-300); margin: 0.5rem 0;">
+            
+            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-top: 0.5rem;">
+                <span>Total</span>
+                <span>${formatCurrency(transaction.total)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--gray-600); font-size: 0.9rem; margin-top: 0.25rem;">
+                <span>Payment (${transaction.paymentMethod})</span>
+                <span>${formatCurrency(transaction.total)}</span>
+            </div>
+             ${transaction.customerName ? `
+            <div style="display: flex; justify-content: space-between; color: var(--gray-600); font-size: 0.9rem; margin-top: 0.25rem;">
+                <span>Customer</span>
+                <span>${transaction.customerName}</span>
+            </div>` : ''}
+        </div>
+    `;
+
+    // Setup Actions
+    reprintBtn.onclick = () => printTransactionReceipt(transaction, transaction.id);
+
+    // Show modal
+    modal.classList.add('active');
+}
+
+window.closeTransactionModal = function () {
+    const modal = document.getElementById('transactionDetailsModal');
+    modal.classList.remove('active');
+}
+
+// Add event listener for outside click to close
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('transactionDetailsModal');
+    if (e.target === modal) {
+        closeTransactionModal();
+    }
+});

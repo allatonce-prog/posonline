@@ -615,3 +615,83 @@ body {
 .gap-3 {
   gap: var(--spacing-lg);
 }
+
+/* Print Styles */
+@media print {
+  body>* {
+    display: none !important;
+  }
+
+  #receipt-printable {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 15px;
+    background: white;
+  }
+
+  #receipt-printable * {
+    visibility: visible;
+  }
+
+  /* Reset background colors for printing */
+  body {
+    background: white;
+  }
+
+  @page {
+    margin: 0;
+    size: auto;
+  }
+}
+
+/* Receipt Styles (Used in printing and modals) */
+.receipt-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.receipt-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #000;
+}
+
+.receipt-info {
+  margin-bottom: 15px;
+  font-size: 12px;
+  color: #000;
+}
+
+.receipt-items {
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  padding: 10px 0;
+  margin: 15px 0;
+  color: #000;
+}
+
+.receipt-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 12px;
+  color: #000;
+}
+
+.receipt-total {
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 10px;
+  color: #000;
+}
+
+.receipt-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 11px;
+  color: #000;
+}

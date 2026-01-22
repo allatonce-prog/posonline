@@ -27,34 +27,73 @@
         </div>
     </header>
 
+    <!-- Navigation Tabs -->
+    <div class="view-tabs">
+        <button class="view-tab active" onclick="switchView('pos')">
+            <span>🛒</span> New Sale
+        </button>
+        <button class="view-tab" onclick="switchView('sales')">
+            <span>📜</span> My Sales
+        </button>
+    </div>
+
     <div class="cashier-layout">
         <!-- Main Content -->
         <main class="cashier-main">
-            <!-- Controls -->
-            <div class="cashier-controls">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="searchInput" placeholder="Search products by name or SKU...">
+
+            <!-- POS View -->
+            <div id="posView">
+                <!-- Controls -->
+                <div class="cashier-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search products by name or SKU...">
+                    </div>
+                    <div class="category-filter" id="categoryFilter">
+                        <button class="filter-btn active" data-category="all">All</button>
+                    </div>
                 </div>
-                <div class="category-filter" id="categoryFilter">
-                    <button class="filter-btn active" data-category="all">All</button>
+
+                <!-- Products Grid -->
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">📦</div>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your search or filter</p>
                 </div>
             </div>
 
-            <!-- Products Grid -->
-            <div class="products-grid" id="productsGrid">
-                <!-- Products will be loaded here -->
-            </div>
+            <!-- Sales View -->
+            <div id="salesView" style="display: none;">
+                <div class="sales-filters">
+                    <button class="sales-filter-btn active" onclick="filterSales('recent')">Recent</button>
+                    <button class="sales-filter-btn" onclick="filterSales('today')">Today</button>
+                    <button class="sales-filter-btn" onclick="filterSales('yesterday')">Yesterday</button>
+                </div>
 
-            <!-- Empty State -->
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-state-icon">📦</div>
-                <h3>No products found</h3>
-                <p>Try adjusting your search or filter</p>
+                <div class="sales-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sales</div>
+                        <div class="stat-value" id="salesTotalAmount">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Transactions</div>
+                        <div class="stat-value" id="salesTotalCount">0</div>
+                    </div>
+                </div>
+
+                <div class="sales-list" id="salesList">
+                    <!-- Sales will be loaded here -->
+                    <div class="loading-spinner">Loading...</div>
+                </div>
             </div>
         </main>
 
-        <!-- Cart Sidebar -->
+        <!-- Cart Sidebar (Only visible in POS View) -->
         <aside class="cart-sidebar" id="cartSidebar">
             <div class="cart-header">
                 <h2>Cart</h2>
@@ -95,7 +134,7 @@
             </div>
         </aside>
 
-        <!-- Mobile Cart Floating Bar -->
+        <!-- Mobile Cart Floating Bar (Only visible in POS View) -->
         <div class="mobile-cart-bar" id="mobileCartBar">
             <div class="d-flex align-items-center gap-3">
                 <div class="mobile-cart-icon-wrapper">
@@ -157,7 +196,28 @@
         </div>
     </div>
 
-    <script type="module" src="js/firebase-db.js"></script>
+    <div class="modal" id="transactionDetailsModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Transaction Details</h2>
+                <button class="modal-close" onclick="closeTransactionModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="transactionDetailsContent" class="receipt-preview">
+                    <!-- Details will be injected here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTransactionModal()">Close</button>
+                <button class="btn btn-primary" id="reprintBtn">🖨️ Reprint</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Area (Hidden by default, shown while printing) -->
+    <div id="receipt-printable" style="display: none;"></div>
+
+    <script type="module" src="js/offline-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/admin/settings.js"></script>
@@ -166,17 +226,22 @@
         // Apply custom settings to cashier page
         document.addEventListener('DOMContentLoaded', () => {
             // Apply settings from localStorage
-            if (typeof getSettings === 'function') {
-                const settings = getSettings();
+            // getSettings() is async, so we use getSettingsSync() for immediate display
+            if (typeof getSettingsSync === 'function') {
+                const settings = getSettingsSync();
 
                 // Update header title
                 const headerTitle = document.getElementById('cashierHeaderTitle');
                 if (headerTitle) {
-                    headerTitle.textContent = `${settings.systemIcon} ${settings.systemName}`;
+                    const icon = settings.systemIcon || '🛒';
+                    const name = settings.systemName || 'POS System';
+                    headerTitle.textContent = `${icon} ${name}`;
                 }
 
                 // Update page title
-                document.title = `Cashier - ${settings.systemName}`;
+                if (settings.systemName) {
+                    document.title = `Cashier - ${settings.systemName}`;
+                }
             }
         });
     </script>

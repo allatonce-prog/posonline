@@ -671,3 +671,208 @@
         height: 50px;
     }
 }
+
+/* Navigation Tabs */
+.view-tabs {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.view-tab {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.view-tab.active {
+    background: rgba(99, 102, 241, 0.1);
+    /* Low opacity primary */
+    color: var(--primary);
+}
+
+.view-tab:hover:not(.active) {
+    background: var(--gray-100);
+    color: var(--dark);
+}
+
+/* Sales View Styles */
+#salesView {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 2rem;
+}
+
+.sales-filters {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.sales-filter-btn {
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.sales-filter-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.sales-filter-btn.active {
+    background: var(--dark);
+    color: var(--white);
+    border-color: var(--dark);
+}
+
+.sales-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    background: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.sales-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.sale-card {
+    background: var(--white);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    border-left: 4px solid var(--primary);
+    transition: var(--transition);
+}
+
+.sale-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.sale-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sale-time {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--dark);
+}
+
+.sale-date-small {
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    margin-left: 8px;
+    font-weight: 400;
+}
+
+.sale-amount {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--success);
+}
+
+.sale-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    margin-top: 4px;
+}
+
+.sale-id {
+    font-family: monospace;
+    background: var(--gray-100);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.sale-items-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.no-sales {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-400);
+}
+
+.no-sales-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* Responsive adjustments for tabs */
+@media (max-width: 600px) {
+    .view-tabs {
+        padding: var(--spacing-sm);
+    }
+
+    .view-tab {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+}
