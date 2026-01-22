@@ -61,6 +61,12 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Base Styles */
