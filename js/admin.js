@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('adminStoreName').textContent = `📍 ${user.storeName}`;
     }
 
+    // Identify user to Tawk.to Support
+    if (typeof identifyTawkUser === 'function') {
+        identifyTawkUser(user);
+    }
+
     // Apply custom settings
     if (typeof getSettingsSync === 'function') {
         const settings = getSettingsSync();
