@@ -196,9 +196,15 @@ async function switchTab(tab) {
 }
 
 // Load dashboard
+// Load dashboard
 async function loadDashboard() {
     const products = await db.getAll('products');
     const transactions = await db.getAll('transactions');
+    const users = await db.getAll('users');
+    const userMap = {};
+    users.forEach(u => {
+        userMap[u.username] = u.name || u.username;
+    });
 
     // Calculate stats
     const today = new Date();
@@ -229,15 +235,20 @@ async function loadDashboard() {
     if (recentTransactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No transactions yet</td></tr>';
     } else {
-        tbody.innerHTML = recentTransactions.map(t => `
+        tbody.innerHTML = recentTransactions.map(t => {
+            // Determine cashier display name
+            const cashierDisplay = t.cashierName || userMap[t.cashier] || t.cashier;
+
+            return `
       <tr>
         <td>${formatTransactionId(t.id)}</td>
         <td>${formatDateTime(t.date)}</td>
-        <td>${escapeHtml(t.cashier)}</td>
+        <td>${escapeHtml(cashierDisplay)}</td>
         <td>${t.items.length} items</td>
         <td>${formatCurrency(t.total)}</td>
         <td><span class="badge badge-primary">${escapeHtml(t.paymentMethod)}</span></td>
       </tr>
-    `).join('');
+    `;
+        }).join('');
     }
 }

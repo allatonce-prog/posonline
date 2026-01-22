@@ -3,6 +3,12 @@
 // Load sales
 async function loadSales() {
   const transactions = await db.getAll('transactions');
+  const users = await db.getAll('users');
+  const userMap = {};
+  users.forEach(u => {
+    userMap[u.username] = u.name || u.username;
+  });
+
   const tbody = document.getElementById('salesTable');
   const filter = document.getElementById('salesFilter').value;
 
@@ -50,6 +56,12 @@ async function loadSales() {
     const rowStyle = isVoided ? 'opacity: 0.6; background-color: #f9fafb;' : '';
     const textStyle = isVoided ? 'text-decoration: line-through; color: #6b7280;' : '';
 
+    // Determine cashier display name
+    // 1. Use saved name in transaction (for new transactions)
+    // 2. Lookup user by username (for old transactions)
+    // 3. Fallback to username
+    const cashierDisplay = transaction.cashierName || userMap[transaction.cashier] || transaction.cashier;
+
     return `
     <tr style="${rowStyle}">
       <td>
@@ -57,7 +69,7 @@ async function loadSales() {
         ${isVoided ? '<span class="badge badge-danger" style="margin-left: 0.5rem; font-size: 0.7rem;">VOIDED</span>' : ''}
       </td>
       <td style="${textStyle}">${formatDateTime(transaction.date)}</td>
-      <td style="${textStyle}">${escapeHtml(transaction.cashier)}</td>
+      <td style="${textStyle}">${escapeHtml(cashierDisplay)}</td>
       <td style="${textStyle}">${escapeHtml(transaction.customerName || 'Walk-in')}</td>
       <td style="${textStyle}">${transaction.items.length} items</td>
       <td style="${textStyle}">${formatCurrency(transaction.total)}</td>

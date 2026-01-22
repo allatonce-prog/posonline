@@ -390,6 +390,7 @@ async function completeTransaction() {
         const transaction = {
             date: new Date().toISOString(),
             cashier: auth.getCurrentUser().username,
+            cashierName: auth.getCurrentUser().name || auth.getCurrentUser().username,
             items: cart.map(item => ({
                 productId: item.id,
                 name: item.name,
