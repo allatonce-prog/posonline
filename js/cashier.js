@@ -60,8 +60,115 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // Setup mobile cart toggle
+    // Setup mobile cart toggle
     setupMobileCart();
+
+    // Initialize held orders counter
+    updateHeldOrdersCount();
 });
+
+// ---------------------------------------------------------
+// Hold / Park Order Functionality
+// ---------------------------------------------------------
+let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
+
+function holdOrder() {
+    if (cart.length === 0) {
+        showToast('Cart is empty', 'warning');
+        return;
+    }
+
+    const orderName = prompt('Enter a name/reference for this held order:', 'Customer ' + (heldOrders.length + 1));
+    if (orderName === null) return; // Cancelled
+
+    const order = {
+        id: Date.now().toString(),
+        name: orderName || 'Unnamed Order',
+        items: [...cart],
+        date: new Date().toISOString(),
+        total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    };
+
+    heldOrders.push(order);
+    localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
+
+    cart = [];
+    updateCart();
+    updateHeldOrdersCount();
+    showToast('Order held successfully', 'success');
+}
+
+function updateHeldOrdersCount() {
+    const countSpan = document.getElementById('heldOrdersCount');
+    if (!countSpan) return;
+
+    const count = heldOrders.length;
+    countSpan.textContent = count;
+    countSpan.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+window.showHeldOrders = function () {
+    const modal = document.getElementById('heldOrdersModal');
+    const list = document.getElementById('heldOrdersList');
+
+    if (heldOrders.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div style="font-size: 2rem;">📂</div>
+                <p>No held orders</p>
+            </div>`;
+    } else {
+        list.innerHTML = heldOrders.map(order => `
+            <div class="held-order-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>${escapeHtml(order.name)}</strong>
+                    <div style="font-size: 0.85rem; color: #666;">
+                        ${new Date(order.date).toLocaleTimeString()} • ${order.items.length} items • ${formatCurrency(order.total)}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteHeldOrder('${order.id}')">🗑️</button>
+                    <button class="btn btn-sm btn-primary" onclick="restoreHeldOrder('${order.id}')">Restore</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    modal.classList.add('active');
+}
+
+window.closeHeldOrdersModal = function () {
+    document.getElementById('heldOrdersModal').classList.remove('active');
+}
+
+window.restoreHeldOrder = function (id) {
+    const index = heldOrders.findIndex(o => o.id === id);
+    if (index === -1) return;
+
+    if (cart.length > 0) {
+        if (!confirm('Current cart is not empty. Overwrite it with held order?')) return;
+    }
+
+    cart = [...heldOrders[index].items];
+    heldOrders.splice(index, 1);
+    localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
+
+    updateCart();
+    updateHeldOrdersCount();
+    closeHeldOrdersModal();
+    showToast('Order restored', 'success');
+}
+
+window.deleteHeldOrder = function (id) {
+    if (!confirm('Delete this held order permanently?')) return;
+
+    heldOrders = heldOrders.filter(o => o.id !== id);
+    localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
+
+    showHeldOrders(); // Refresh list
+    updateHeldOrdersCount();
+    showToast('Held order deleted', 'info');
+}
 
 // Load products
 async function loadProducts() {
