@@ -251,4 +251,9 @@ async function loadDashboard() {
     `;
         }).join('');
     }
+
+    // Initialize Charts
+    if (typeof updateDashboardCharts === 'function') {
+        updateDashboardCharts(transactions, products);
+    }
 }

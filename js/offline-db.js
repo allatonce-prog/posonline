@@ -28,7 +28,7 @@ const firebaseConfig = {
 // Local IndexedDB Wrapper
 // ---------------------------------------------------------
 const DB_NAME = 'POSDatabase_v3'; // Bump version for safety
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 
 class LocalDB {
     constructor() {

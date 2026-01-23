@@ -1,0 +1,84 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // MULTI-STORE RULES
+    // Since the app uses custom client-side auth (auth.js), request.auth is null.
+    // We implement store isolation by checking storeId in the data itself.
+    
+    // Helper function to check if storeId matches
+    function isValidStoreAccess(storeId) {
+      // In production, you should validate this server-side
+      // For now, we trust the client to send correct storeId
+      return storeId != null && storeId != '';
+    }
+
+    // Stores collection - read-only for all, write only for initial setup
+    match /stores/{storeId} {
+      allow read: if true;
+      allow create: if true; // Allow store creation
+      allow update, delete: if false; // Prevent modification
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if true; // Allow reading to check credentials
+      allow create: if true; // Allow user creation during registration
+      allow update: if true; // Allow password changes, etc.
+      allow delete: if false; // Prevent user deletion
+    }
+
+    // Settings collection - must have storeId
+    match /settings/{settingId} {
+      allow read: if true; // Allow reading settings
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId
+                    && isValidStoreAccess(resource.data.storeId);
+      allow delete: if resource.data.storeId != null;
+    }
+
+    // Products - must have storeId
+    match /products/{productId} {
+      allow read: if resource.data.storeId != null;
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId
+                    && isValidStoreAccess(resource.data.storeId);
+      allow delete: if resource.data.storeId != null;
+    }
+
+    // Transactions - must have storeId
+    match /transactions/{transactionId} {
+      allow read: if resource.data.storeId != null;
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId;
+      allow delete: if resource.data.storeId != null;
+    }
+
+    // Expenses - NEW RULE FOR EXPENSES
+    match /expenses/{expenseId} {
+      allow read: if resource.data.storeId != null;
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId;
+      allow delete: if resource.data.storeId != null;
+    }
+
+    // Stock Movements - must have storeId
+    match /stockMovements/{movementId} {
+      allow read: if resource.data.storeId != null;
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId;
+      allow delete: if resource.data.storeId != null;
+    }
+
+    // Catch-all for any other collections
+    match /{document=**} {
+      allow read, write: if false; // Deny by default
+    }
+  }
+}
