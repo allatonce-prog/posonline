@@ -253,106 +253,122 @@ class OfflineDB {
     }
 
     async get(collectionName, id) {
-        // Read Local First
-        const localDoc = await this.local.get(collectionName, id);
-        if (localDoc) return localDoc;
-
-        // Fallback to Cloud if not found locally and online
+        // 1. Try Cloud First (if online)
         if (this.isOnline) {
             try {
-                const docRef = doc(this.firestore, collectionName, id);
+                const docRef = doc(this.firestore, collectionName, String(id));
                 const snap = await getDoc(docRef);
                 if (snap.exists()) {
                     const data = { id: snap.id, ...snap.data(), syncStatus: 'synced' };
-                    // Cache it locally for next time
+                    // Update Local Cache
                     await this.local.put(collectionName, data);
                     return data;
                 }
             } catch (e) {
-                console.warn("Cloud fetch failed:", e);
+                console.warn("Cloud fetch failed, falling back to local:", e);
             }
         }
-        return null;
+
+        // 2. Fallback to Local
+        return await this.local.get(collectionName, id);
     }
 
     async getAll(collectionName, forceCloud = false) {
-        // 1. If forced and online, refresh first
-        if (forceCloud && this.isOnline) {
-            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
+        // 1. Try Cloud First (if online)
+        if (this.isOnline) {
+            try {
+                const storeId = this.getCurrentStoreId();
+                const colRef = collection(this.firestore, collectionName);
+                let q = query(colRef, where('storeId', '==', storeId));
+
+                if (!storeId && collectionName === 'stores') {
+                    q = query(colRef);
+                }
+
+                const snap = await getDocs(q);
+                const cloudItems = snap.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
+
+                // Batch update local cache
+                for (const item of cloudItems) {
+                    await this.local.put(collectionName, item);
+                }
+
+                // If we fetched everything, we should ideally clear local items that are no longer in cloud 
+                // but for an offline-enabled POS, we keep them or mark them. 
+                // For now, we just return the fresh cloud data.
+                return cloudItems;
+            } catch (e) {
+                console.warn(`Cloud getAll failed for ${collectionName}, falling back to local:`, e);
+            }
         }
 
-        // 2. Try Local
-        let localData = await this.local.getAll(collectionName);
-
-        // 3. If empty and online (and not already forced), fetch from Cloud
-        if (localData.length === 0 && this.isOnline && !forceCloud) {
-            console.log(`Initial cloud fetch for ${collectionName}...`);
-            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
-            localData = await this.local.getAll(collectionName);
-        }
-        else if (this.isOnline && !forceCloud) {
-            // Background update if we already have data and not forced
-            this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
-        }
-
-        // Filter by storeId if needed
+        // 2. Fallback to Local
+        const localData = await this.local.getAll(collectionName);
         const storeId = this.getCurrentStoreId();
-        const filtered = localData.filter(item => !item.storeId || item.storeId === storeId);
-
-        return filtered;
+        return localData.filter(item => !item.storeId || item.storeId === storeId);
     }
 
     async getByIndex(collectionName, indexName, value) {
-        // 1. Try Local
-        const localItems = await this.local.getAll(collectionName);
-        const localMatch = localItems.find(item => item[indexName] === value);
-
-        if (localMatch) return localMatch;
-
-        // 2. If not found locally and online, try Cloud
+        // 1. Try Cloud First (if online)
         if (this.isOnline) {
-            const colRef = collection(this.firestore, collectionName);
-            let q;
+            try {
+                const colRef = collection(this.firestore, collectionName);
+                let q;
 
-            // Special case for users (no storeId filter during login if unknown)
-            if (collectionName === 'users') {
-                q = query(colRef, where(indexName, "==", value));
-            } else {
-                const storeId = this.getCurrentStoreId();
-                q = query(colRef, where(indexName, "==", value), where('storeId', '==', storeId));
-            }
+                if (collectionName === 'users') {
+                    q = query(colRef, where(indexName, "==", value));
+                } else {
+                    const storeId = this.getCurrentStoreId();
+                    q = query(colRef, where(indexName, "==", value), where('storeId', '==', storeId));
+                }
 
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                const docSnap = snap.docs[0];
-                const validMatch = { id: docSnap.id, ...docSnap.data(), syncStatus: 'synced' };
-
-                // Save to local for future offline use
-                await this.local.put(collectionName, validMatch);
-                return validMatch;
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const docSnap = snap.docs[0];
+                    const validMatch = { id: docSnap.id, ...docSnap.data(), syncStatus: 'synced' };
+                    // Update Local
+                    await this.local.put(collectionName, validMatch);
+                    return validMatch;
+                }
+            } catch (e) {
+                console.warn("Cloud getByIndex failed, falling back to local:", e);
             }
         }
 
-        return null;
+        // 2. Fallback to Local
+        const localItems = await this.local.getAll(collectionName);
+        return localItems.find(item => item[indexName] === value);
     }
 
     async getAllByIndex(collectionName, indexName, value, forceCloud = false) {
-        // 1. If forced and online, refresh first
-        if (forceCloud && this.isOnline) {
-            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
+        // 1. Try Cloud First (if online)
+        if (this.isOnline) {
+            try {
+                const storeId = this.getCurrentStoreId();
+                const colRef = collection(this.firestore, collectionName);
+                const q = query(
+                    colRef,
+                    where(indexName, "==", value),
+                    where('storeId', '==', storeId)
+                );
+
+                const snap = await getDocs(q);
+                const cloudItems = snap.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
+
+                // Update local cache with matches
+                for (const item of cloudItems) {
+                    await this.local.put(collectionName, item);
+                }
+
+                return cloudItems;
+            } catch (e) {
+                console.warn(`Cloud getAllByIndex failed for ${collectionName}, falling back to local:`, e);
+            }
         }
 
-        // 2. Try Local
-        let all = await this.local.getAll(collectionName);
-
-        // 3. If empty and online (and not already forced), trigger cloud fetch
-        if (all.length === 0 && this.isOnline && !forceCloud) {
-            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
-            all = await this.local.getAll(collectionName);
-        }
-
+        // 2. Fallback to Local
+        const all = await this.local.getAll(collectionName);
         const storeId = this.getCurrentStoreId();
-
         return all.filter(item =>
             item[indexName] === value &&
             (!item.storeId || item.storeId === storeId)
