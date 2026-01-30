@@ -548,6 +548,9 @@ class OfflineDB {
     }
 
     injectStatusIndicator() {
+        // Skip for cashier role (to keep UI clean as requested)
+        if (window.location.pathname.includes('cashier.html')) return;
+
         const el = document.createElement('div');
         el.id = 'connection-status';
         // Premium Styles for the Status Indicator
