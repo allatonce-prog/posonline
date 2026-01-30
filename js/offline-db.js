@@ -11,7 +11,11 @@ import {
     deleteDoc,
     query,
     where,
-    setDoc
+    setDoc,
+    onSnapshot,
+    orderBy,
+    limit,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Firebase Config
@@ -28,7 +32,7 @@ const firebaseConfig = {
 // Local IndexedDB Wrapper
 // ---------------------------------------------------------
 const DB_NAME = 'POSDatabase_v3'; // Bump version for safety
-const DB_VERSION = 4; // Incremented to add expenses and collectibles stores
+const DB_VERSION = 5; // Incremented for notifications
 
 class LocalDB {
     constructor() {
@@ -108,6 +112,14 @@ class LocalDB {
                 if (!db.objectStoreNames.contains('syncQueue')) {
                     const store = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
                     store.createIndex('status', 'status', { unique: false }); // pending, retry
+                }
+
+                // Notifications
+                if (!db.objectStoreNames.contains('notifications')) {
+                    const store = db.createObjectStore('notifications', { keyPath: 'id' });
+                    store.createIndex('storeId', 'storeId', { unique: false });
+                    store.createIndex('createdAt', 'createdAt', { unique: false });
+                    store.createIndex('status', 'status', { unique: false }); // unread, read
                 }
             };
         });
@@ -618,6 +630,63 @@ class OfflineDB {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
+    // Real-time notifications listener
+    async subscribeToNotifications(callback) {
+        if (!this.isOnline) return null;
+
+        const storeId = this.getCurrentStoreId();
+        const q = query(
+            collection(this.firestore, 'notifications'),
+            where('storeId', '==', storeId),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+        );
+
+        return onSnapshot(q, (snapshot) => {
+            const notifications = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Sync to local
+            notifications.forEach(async (n) => {
+                await this.local.put('notifications', n);
+            });
+
+            callback(notifications);
+        }, (error) => {
+            console.error("Notification listener error:", error);
+        });
+    }
+
+    // Helper to send a notification
+    async notify(type, title, message, metadata = {}) {
+        const storeId = this.getCurrentStoreId();
+        const notification = {
+            storeId: storeId,
+            type: type, // 'sale', 'stock_in', 'stock_out', 'low_stock'
+            title: title,
+            message: message,
+            metadata: metadata,
+            status: 'unread',
+            createdAt: new Date().toISOString(),
+            _serverTime: serverTimestamp()
+        };
+
+        try {
+            // Priority 1: Cloud if online
+            if (this.isOnline) {
+                await addDoc(collection(this.firestore, 'notifications'), notification);
+            } else {
+                // Priority 2: Local if offline (will need sync later if we implement notification queue)
+                notification.id = 'notif_' + Date.now();
+                await this.local.put('notifications', notification);
+            }
+        } catch (e) {
+            console.error("Failed to create notification:", e);
+        }
+    }
+
     // Backward compatibility generic method if needed
     async initializeDefaults() { }
 }

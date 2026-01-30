@@ -553,6 +553,28 @@ async function completeTransaction() {
         updateCart();
         await loadProducts();
 
+        // Send notification to Admin
+        db.notify(
+            'sale',
+            'New Sale Completed',
+            `${transaction.cashierName} completed a sale of ${formatCurrency(transaction.total)}`,
+            { transactionId: transactionId, total: transaction.total }
+        );
+
+        // Check for low stock and notify
+        for (const item of cart) {
+            const product = await db.get('products', item.id);
+            const settings = typeof getSettings === 'function' ? getSettings() : { lowStockThreshold: 10 };
+            if (product.stock <= (settings.lowStockThreshold || 10)) {
+                db.notify(
+                    'low_stock',
+                    'Low Stock Alert',
+                    `${product.name} is running low on stock (${product.stock} left)`,
+                    { productId: product.id, currentStock: product.stock }
+                );
+            }
+        }
+
         showToast('Transaction completed successfully!', 'success');
 
     } catch (error) {

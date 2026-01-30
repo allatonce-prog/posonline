@@ -218,6 +218,27 @@ async function processStockOperation(productId, quantity, type, reason) {
         hideLoading();
         showToast(`${type === 'in' ? 'Added' : 'Removed'} ${quantity} units to ${product.name}`, 'success');
 
+        // Send notification to Admin
+        db.notify(
+            type === 'in' ? 'stock_in' : 'stock_out',
+            type === 'in' ? 'Manual Stock In' : 'Manual Stock Out',
+            `${auth.getCurrentUser().name || auth.getCurrentUser().username} ${type === 'in' ? 'added' : 'removed'} ${quantity} units for ${product.name}. New total: ${product.stock}`,
+            { productId: productId, quantity: quantity, type: type }
+        );
+
+        // Check for low stock after removal
+        if (type === 'out') {
+            const settings = typeof getSettings === 'function' ? getSettings() : { lowStockThreshold: 10 };
+            if (product.stock <= (settings.lowStockThreshold || 10)) {
+                db.notify(
+                    'low_stock',
+                    'Low Stock Alert',
+                    `${product.name} is running low on stock after removal (${product.stock} left)`,
+                    { productId: product.id, currentStock: product.stock }
+                );
+            }
+        }
+
         // Refresh inventory
         await loadInventory();
 
