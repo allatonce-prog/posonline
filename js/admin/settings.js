@@ -120,18 +120,17 @@ async function saveSettings() {
 
         // Save to Firebase (for cross-device sync)
         try {
-            if (typeof db !== 'undefined' && db.db) {
+            if (typeof db !== 'undefined') {
                 const settingsDocId = `settings_${storeId}`;
 
                 // 1. Update/Create the document in the 'settings' collection (Primary Source)
-                // We use set with merge: true if possible, or just overwrite since we have full settings
                 await db.set('settings', settingsDocId, {
-                    data: settings, // Structure expected by getSettings
+                    data: settings,
                     storeId: storeId,
                     updatedAt: new Date().toISOString()
                 });
 
-                // 2. Update the store name in the stores collection (Secondary/Legacy)
+                // 2. Update the store name in the stores collection
                 const storeDoc = await db.get('stores', storeId);
                 if (storeDoc) {
                     await db.update('stores', {
@@ -142,7 +141,16 @@ async function saveSettings() {
                     });
                 }
 
-                console.log('Settings saved to Firebase (settings & stores collections)');
+                // 3. Update the admin email in the users collection (The Admin Account)
+                if (currentUser && currentUser.id) {
+                    await db.update('users', {
+                        id: currentUser.id,
+                        email: settings.adminEmail,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+
+                console.log('Settings saved to Firebase (settings, stores, & users collections)');
             }
         } catch (firebaseError) {
             console.warn('Could not save to Firebase, saved to localStorage only:', firebaseError);

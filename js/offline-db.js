@@ -275,19 +275,23 @@ class OfflineDB {
         return null;
     }
 
-    async getAll(collectionName) {
-        // 1. Try Local
+    async getAll(collectionName, forceCloud = false) {
+        // 1. If forced and online, refresh first
+        if (forceCloud && this.isOnline) {
+            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
+        }
+
+        // 2. Try Local
         let localData = await this.local.getAll(collectionName);
 
-        // 2. If empty and online, fetch from Cloud
-        if (localData.length === 0 && this.isOnline) {
+        // 3. If empty and online (and not already forced), fetch from Cloud
+        if (localData.length === 0 && this.isOnline && !forceCloud) {
             console.log(`Initial cloud fetch for ${collectionName}...`);
             await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
-            // Re-read local
             localData = await this.local.getAll(collectionName);
         }
-        else if (this.isOnline) {
-            // Background update if we already have data
+        else if (this.isOnline && !forceCloud) {
+            // Background update if we already have data and not forced
             this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
         }
 
@@ -332,14 +336,17 @@ class OfflineDB {
         return null;
     }
 
-    async getAllByIndex(collectionName, indexName, value) {
-        // 1. Try Local
+    async getAllByIndex(collectionName, indexName, value, forceCloud = false) {
+        // 1. If forced and online, refresh first
+        if (forceCloud && this.isOnline) {
+            await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
+        }
+
+        // 2. Try Local
         let all = await this.local.getAll(collectionName);
 
-        // 2. If empty and online, trigger cloud fetch
-        if (all.length === 0 && this.isOnline) {
-            // Background fetch specific to this index query is better than dumping whole collection?
-            // But for simplicity/robustness, refresh whole collection works
+        // 3. If empty and online (and not already forced), trigger cloud fetch
+        if (all.length === 0 && this.isOnline && !forceCloud) {
             await this.refreshCollectionFromCloud(collectionName, this.getCurrentStoreId());
             all = await this.local.getAll(collectionName);
         }
@@ -387,6 +394,34 @@ class OfflineDB {
         return data.id;
     }
 
+    // Generic set method (for compatibility)
+    async set(collectionName, id, data) {
+        const record = {
+            ...data,
+            id: id,
+            syncStatus: this.isOnline ? 'synced' : 'pending',
+            _updatedAt: new Date().toISOString()
+        };
+
+        // 1. Save Local
+        await this.local.put(collectionName, record);
+
+        // 2. Save Cloud
+        if (this.isOnline) {
+            try {
+                const docRef = doc(this.firestore, collectionName, id);
+                const cloudData = { ...record };
+                delete cloudData.syncStatus;
+                await setDoc(docRef, cloudData, { merge: true });
+            } catch (e) {
+                console.warn("Cloud set failed:", e);
+                record.syncStatus = 'pending';
+                await this.local.put(collectionName, record);
+            }
+        }
+        return id;
+    }
+
     async remove(collectionName, id) {
         // 1. Delete Local
         await this.local.delete(collectionName, id);
@@ -394,15 +429,14 @@ class OfflineDB {
         // 2. Delete Cloud
         if (this.isOnline) {
             try {
-                const docRef = doc(this.firestore, collectionName, id);
+                // Ensure ID is a string for Firebase doc reference
+                const docRef = doc(this.firestore, collectionName, String(id));
                 await deleteDoc(docRef);
+                console.log(`Deleted ${collectionName}/${id} from cloud`);
             } catch (e) {
                 console.warn("Cloud delete failed:", e);
-                // Queue a delete sync? 
-                // Currently sync logic assumes everything is 'put'. 
-                // Deletions in offline mode are hard without a 'deleted' flag (Soft Delete).
-                // For now, we just warn. To support offline delete properly, we'd need soft deletes.
-                // But user just asked to make it delete in firebase.
+                // In a production app, we would queue this deletion for sync
+                // For now, we rely on the user being online or sync logic.
             }
         }
     }

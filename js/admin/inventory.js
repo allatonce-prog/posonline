@@ -627,9 +627,11 @@ async function deleteProduct(productId) {
         );
 
         if (hasSales) {
-            hideLoading();
-            showToast('Cannot delete product with sales history. Consider making it inactive instead.', 'error');
-            return;
+            const forceDelete = confirm('This product has sales history. Deleting it will not remove past transactions, but it may cause issues in historical reports. \n\nDo you still want to PERMANENTLY delete it from Firebase and local storage?');
+            if (!forceDelete) {
+                hideLoading();
+                return;
+            }
         }
 
         // Delete the product

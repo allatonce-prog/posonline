@@ -800,12 +800,11 @@ async function loadSalesHistory() {
         // Fetch sales for this cashier
         // We use getAllByIndex to filter by 'cashier' == user.username
         // The DB method also enforces storeId filtering if applicable
-        const sales = await db.getAllByIndex('transactions', 'cashier', user.username);
+        // Fetch sales for this cashier (FORCE cloud read for live data)
+        const sales = await db.getAllByIndex('transactions', 'cashier', user.username, true);
 
-        // Fetch expenses for this cashier
-        // Filter manually since we might not have a perfect index for (cashier + date) easily available
-        // But let's assume we get all expenses and filter
-        const expenses = await db.getAll('expenses');
+        // Fetch expenses for this cashier (FORCE cloud read for live data)
+        const expenses = await db.getAll('expenses', true);
         allExpenses = expenses.filter(exp => exp.storeId === user.storeId && exp.cashier === user.username);
 
         // Sort by date descending
