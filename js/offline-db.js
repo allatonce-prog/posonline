@@ -546,20 +546,55 @@ class OfflineDB {
     injectStatusIndicator() {
         const el = document.createElement('div');
         el.id = 'connection-status';
-        // Basic Styles injected directly
+        // Premium Styles for the Status Indicator
         el.style.cssText = `
             position: fixed;
-            bottom: 10px;
-            right: 10px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-size: 13px;
             font-weight: 600;
-            z-index: 9999;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            z-index: 10000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 200px;
         `;
         document.body.appendChild(el);
+
+        // Add hover functionality to re-expand
+        el.onmouseenter = () => {
+            if (this.isOnline) {
+                el.style.maxWidth = '200px';
+                el.style.padding = '8px 15px';
+                const text = el.querySelector('.status-text');
+                if (text) text.style.opacity = '1';
+            }
+        };
+        el.onmouseleave = () => {
+            if (this.isOnline) {
+                this.scheduleStatusCollapse();
+            }
+        };
+    }
+
+    scheduleStatusCollapse() {
+        if (this._statusTimeout) clearTimeout(this._statusTimeout);
+        this._statusTimeout = setTimeout(() => {
+            const el = document.getElementById('connection-status');
+            if (el && this.isOnline) {
+                el.style.maxWidth = '38px'; // Enough for just the dot
+                el.style.padding = '8px 12px';
+                const text = el.querySelector('.status-text');
+                if (text) text.style.opacity = '0';
+            }
+        }, 3000);
     }
 
     updateOnlineStatus(isOnline) {
@@ -568,25 +603,46 @@ class OfflineDB {
         if (!el) return;
 
         if (isOnline) {
-            el.innerHTML = '🟢 Online';
-            el.style.background = '#d1fae5';
+            el.innerHTML = `
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; flex-shrink: 0;"></div>
+                <span class="status-text" style="transition: opacity 0.3s ease;">Online</span>
+            `;
+            el.style.background = 'rgba(209, 250, 229, 0.9)';
             el.style.color = '#065f46';
-            el.style.border = '1px solid #10b981';
+            el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            el.style.backdropFilter = 'blur(8px)';
 
-            // Auto hide after 3s if online
-            setTimeout(() => {
-                el.style.opacity = '0.5';
-                el.style.transform = 'translateY(5px)';
-            }, 3000);
-            el.onmouseenter = () => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }
+            // Expand first when status changes
+            el.style.maxWidth = '200px';
+            el.style.padding = '8px 15px';
 
+            this.scheduleStatusCollapse();
         } else {
-            el.innerHTML = '🔴 Offline';
-            el.style.background = '#fee2e2';
+            if (this._statusTimeout) clearTimeout(this._statusTimeout);
+            el.innerHTML = `
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px #ef4444; flex-shrink: 0; animation: statusPulse 2s infinite;"></div>
+                <span class="status-text">Offline</span>
+            `;
+            el.style.background = 'rgba(254, 226, 226, 0.9)';
             el.style.color = '#991b1b';
-            el.style.border = '1px solid #ef4444';
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
+            el.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            el.style.backdropFilter = 'blur(8px)';
+            el.style.maxWidth = '200px';
+            el.style.padding = '8px 15px';
+
+            // Ensure pulse animation exists
+            if (!document.getElementById('status-anim-style')) {
+                const style = document.createElement('style');
+                style.id = 'status-anim-style';
+                style.innerHTML = `
+                    @keyframes statusPulse {
+                        0% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.5; transform: scale(1.2); }
+                        100% { opacity: 1; transform: scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         }
     }
 
