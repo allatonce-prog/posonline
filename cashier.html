@@ -251,14 +251,15 @@
         <!-- Cart Sidebar (Only visible in POS View) -->
         <aside class="cart-sidebar" id="cartSidebar">
             <div class="cart-header">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <h2>Cart</h2>
                     <div class="cart-count" id="cartCount">0</div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showHeldOrders()" title="Recall Held Orders"
+                        style="border: none; padding: 4px 8px; font-size: 1.2rem;">
+                        📂 <span id="heldOrdersCount" class="badge badge-sm badge-danger"
+                            style="display:none; margin-left:2px;">0</span>
+                    </button>
                 </div>
-                <button class="btn btn-sm btn-outline-primary" onclick="showHeldOrders()" title="Recall Held Orders">
-                    📂 <span id="heldOrdersCount" class="badge badge-sm badge-danger"
-                        style="display:none; margin-left:2px;">0</span>
-                </button>
             </div>
 
             <div class="cart-items" id="cartItems">
