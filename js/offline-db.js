@@ -699,7 +699,7 @@ class OfflineDB {
             collection(this.firestore, 'notifications'),
             where('storeId', '==', storeId),
             orderBy('createdAt', 'desc'),
-            limit(20)
+            limit(5) // Only show latest 5
         );
 
         return onSnapshot(q, (snapshot) => {
@@ -737,6 +737,8 @@ class OfflineDB {
             // Priority 1: Cloud if online
             if (this.isOnline) {
                 await addDoc(collection(this.firestore, 'notifications'), notification);
+                // Auto prune after adding new one
+                this.pruneOldNotifications();
             } else {
                 // Priority 2: Local if offline (will need sync later if we implement notification queue)
                 notification.id = 'notif_' + Date.now();
@@ -744,6 +746,35 @@ class OfflineDB {
             }
         } catch (e) {
             console.error("Failed to create notification:", e);
+        }
+    }
+
+    // Automatically delete notifications exceeding 5
+    async pruneOldNotifications() {
+        if (!this.isOnline) return;
+
+        const storeId = this.getCurrentStoreId();
+        try {
+            const q = query(
+                collection(this.firestore, 'notifications'),
+                where('storeId', '==', storeId),
+                orderBy('createdAt', 'desc')
+            );
+
+            const snap = await getDocs(q);
+            if (snap.size > 5) {
+                const batch = writeBatch(this.firestore);
+                // Keep the first 5, delete the rest
+                const toDelete = snap.docs.slice(5);
+                toDelete.forEach(d => {
+                    batch.delete(d.ref);
+                    this.local.delete('notifications', d.id); // Also clear local
+                });
+                await batch.commit();
+                console.log(`Pruned ${toDelete.length} old notifications`);
+            }
+        } catch (e) {
+            console.warn("Failed to prune notifications:", e);
         }
     }
 
