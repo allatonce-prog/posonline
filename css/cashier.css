@@ -5,7 +5,8 @@
     height: 100vh;
     background: var(--light);
     overflow: hidden;
-    /* Prevent horizontal scroll */
+    /* Prevent horizontal scroll and zooming */
+    touch-action: pan-x pan-y;
 }
 
 /* Header */

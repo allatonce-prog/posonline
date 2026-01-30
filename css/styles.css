@@ -63,10 +63,19 @@
   box-sizing: border-box;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  /* Prevent text selection specifically in POS cashier view */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+}
+
+input,
+textarea {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
 }
 
 /* Base Styles */
@@ -329,6 +338,15 @@ body {
 
 .modal.active {
   display: flex;
+}
+
+.modal.cashier-layout {
+  display: flex;
+  height: 100vh;
+  background: var(--light);
+  overflow: hidden;
+  /* Prevent horizontal scroll and zooming */
+  touch-action: pan-x pan-y;
 }
 
 .modal-content {
