@@ -28,16 +28,50 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initNotifications() {
         if (typeof db === 'undefined') return;
 
+        // Request Browser Notification Permission
+        if ("Notification" in window) {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    console.log("Notification permission granted.");
+                }
+            }
+        }
+
         // Wait for DB to be initialized
         const checkDB = setInterval(async () => {
             if (db.isOnline !== undefined) {
                 clearInterval(checkDB);
 
                 unsubscribe = await db.subscribeToNotifications((notifications) => {
+                    const latest = notifications[0];
+                    // If there's a new unread notification, show system alert
+                    if (latest && latest.status === 'unread') {
+                        // Avoid double-notifying (simple check based on timestamp/ID)
+                        const lastNotifId = localStorage.getItem('last_received_notif');
+                        if (latest.id !== lastNotifId) {
+                            showSystemNotification(latest);
+                            localStorage.setItem('last_received_notif', latest.id);
+                        }
+                    }
                     renderNotifications(notifications);
                 });
             }
         }, 500);
+    }
+
+    function showSystemNotification(n) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+        const options = {
+            body: n.message,
+            icon: 'icons/icon-192x192.png',
+            tag: n.type,
+            badge: 'icons/icon-72x72.png',
+            vibrate: [200, 100, 200]
+        };
+
+        new Notification(n.title, options);
     }
 
     function renderNotifications(notifications) {
