@@ -106,6 +106,16 @@
     font-weight: 600;
 }
 
+.sidebar-item.logout-item {
+    color: #ef4444 !important;
+    font-weight: 600;
+}
+
+.sidebar-item.logout-item:hover {
+    background: rgba(239, 68, 68, 0.05);
+    border-left-color: #ef4444;
+}
+
 .sidebar-overlay {
     position: fixed;
     top: 0;

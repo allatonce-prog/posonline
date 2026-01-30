@@ -34,7 +34,6 @@
         </div>
         <div class="cashier-user">
             <span id="cashierName">Cashier</span>
-            <button class="btn btn-sm btn-danger" onclick="auth.logout()">Logout</button>
         </div>
     </header>
 
@@ -71,13 +70,20 @@
                 style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin: 1rem 0;">
             </div>
 
-            <a href="#" class="sidebar-item" onclick="resetAppCache(); toggleCashierSidebar();"
-                style="color: #fbbf24; margin-top: auto;">
+            <a href="#" class="sidebar-item" onclick="resetAppCache(); toggleCashierSidebar();" style="color: #fbbf24;">
                 <i class="ph ph-wrench"></i>
                 <div style="display: flex; flex-direction: column; line-height: 1.2;">
                     <span>System Maintenance</span>
                     <small style="font-size: 0.7rem; opacity: 0.8;">Clear Cache & Update App</small>
                 </div>
+            </a>
+
+            <div style="margin-top: auto; border-top: 1px solid rgba(0,0,0,0.05); padding: 0.5rem 0;"></div>
+
+            <a href="#" class="sidebar-item logout-item" onclick="auth.logout()"
+                style="color: #ef4444; margin-top: auto; border-bottom: none;">
+                <i class="ph ph-sign-out"></i>
+                <span>Logout</span>
             </a>
         </nav>
     </div>
