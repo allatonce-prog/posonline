@@ -94,6 +94,7 @@ async function loadStockMovements() {
     products.forEach(p => productMap[p.id] = p);
 
     const tbody = document.getElementById('stockMovementsTable');
+    if (!tbody) return;
 
     if (movements.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No stock movements yet</td></tr>';
@@ -103,19 +104,21 @@ async function loadStockMovements() {
     // Sort by date (newest first)
     const sortedMovements = movements.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    tbody.innerHTML = sortedMovements.map(movement => {
-        const product = productMap[movement.productId];
-        const productName = product ? product.name : 'Unknown Product';
-        const typeClass = movement.type === 'in' ? 'movement-type in' : 'movement-type out';
-        const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
+    tbody.innerHTML = sortedMovements.map(movement => renderStockMovementRow(movement, productMap)).join('');
+}
 
-        // Calculate stock after movement
-        let stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
-        if (!movement.stockAfter && product) {
-            stockAfter = 'N/A';
-        }
+// Helper function to render a single stock movement row
+function renderStockMovementRow(movement, productMap) {
+    const product = productMap[movement.productId];
+    const productName = product ? product.name : 'Unknown Product';
+    const typeClass = movement.type === 'in' ? 'movement-type in' : 'movement-type out';
+    const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
 
-        return `
+    // Calculate stock after movement
+    let stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
+
+
+    return `
       <tr class="clickable-row" onclick="viewStockMovementDetails('${movement.id}')">
         <td data-label="Date">${formatDateTime(movement.date)}</td>
         <td data-label="Product" style="font-weight: 600; color: var(--dark);">${escapeHtml(productName)}</td>
@@ -126,7 +129,6 @@ async function loadStockMovements() {
         <td data-label="Stock After">${stockAfter}</td>
       </tr>
     `;
-    }).join('');
 }
 
 // Quick stock in
@@ -240,6 +242,7 @@ function setupInventoryFilters() {
     const stockSearchInput = document.getElementById('stockSearchInput');
     const stockFilterSelect = document.getElementById('stockFilterSelect');
     const movementFilterSelect = document.getElementById('movementFilterSelect');
+    const movementTimeFilter = document.getElementById('movementTimeFilter');
     const movementDateFilter = document.getElementById('movementDateFilter');
 
     if (stockSearchInput) {
@@ -258,13 +261,25 @@ function setupInventoryFilters() {
 
     if (movementFilterSelect) {
         movementFilterSelect.addEventListener('change', async () => {
-            await filterStockMovements(movementFilterSelect.value, movementDateFilter.value);
+            await filterStockMovements(movementFilterSelect.value, movementDateFilter.value, movementTimeFilter.value);
+        });
+    }
+
+    if (movementTimeFilter) {
+        movementTimeFilter.addEventListener('change', async () => {
+            if (movementTimeFilter.value !== 'all') {
+                movementDateFilter.value = ''; // Clear specific date if quick filter used
+            }
+            await filterStockMovements(movementFilterSelect.value, movementDateFilter.value, movementTimeFilter.value);
         });
     }
 
     if (movementDateFilter) {
         movementDateFilter.addEventListener('change', async () => {
-            await filterStockMovements(movementFilterSelect.value, movementDateFilter.value);
+            if (movementDateFilter.value) {
+                movementTimeFilter.value = 'all'; // Clear quick filter if specific date used
+            }
+            await filterStockMovements(movementFilterSelect.value, movementDateFilter.value, movementTimeFilter.value);
         });
     }
 }
@@ -341,10 +356,11 @@ async function filterInventoryProducts(query, filter) {
 }
 
 // Filter stock movements
-async function filterStockMovements(filter, dateFilter) {
+async function filterStockMovements(filter, dateFilter, timeFilter) {
     const movements = await db.getAll('stockMovements');
     const products = await db.getAll('products');
     const tbody = document.getElementById('stockMovementsTable');
+    if (!tbody) return;
 
     // Create product lookup
     const productMap = {};
@@ -357,12 +373,31 @@ async function filterStockMovements(filter, dateFilter) {
         filteredMovements = filteredMovements.filter(m => m.type === filter);
     }
 
-    // Apply date filter
+    // Apply time range filter (Today / Yesterday)
+    if (timeFilter && timeFilter !== 'all') {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        if (timeFilter === 'today') {
+            filteredMovements = filteredMovements.filter(m => {
+                const mDate = new Date(m.date);
+                return mDate >= today;
+            });
+        } else if (timeFilter === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            filteredMovements = filteredMovements.filter(m => {
+                const mDate = new Date(m.date);
+                return mDate >= yesterday && mDate < today;
+            });
+        }
+    }
+
+    // Apply specific date filter
     if (dateFilter) {
-        const filterDate = new Date(dateFilter);
+        const filterDateString = new Date(dateFilter).toDateString();
         filteredMovements = filteredMovements.filter(m => {
-            const movementDate = new Date(m.date);
-            return movementDate.toDateString() === filterDate.toDateString();
+            return new Date(m.date).toDateString() === filterDateString;
         });
     }
 
@@ -374,38 +409,88 @@ async function filterStockMovements(filter, dateFilter) {
     // Sort by date (newest first)
     const sortedMovements = filteredMovements.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    tbody.innerHTML = sortedMovements.map(movement => {
-        const product = productMap[movement.productId];
-        const productName = product ? product.name : 'Unknown Product';
-        const typeClass = movement.type === 'in' ? 'movement-type in' : 'movement-type out';
-        const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
-
-        let stockAfter = movement.stockAfter || 'N/A';
-        if (!movement.stockAfter && product) {
-            stockAfter = 'N/A';
-        }
-
-        return `
-      <tr>
-        <td>${formatDateTime(movement.date)}</td>
-        <td>${escapeHtml(productName)}</td>
-        <td><span class="${typeClass}">${typeText}</span></td>
-        <td>${movement.quantity}</td>
-        <td>${escapeHtml(movement.reason)}</td>
-        <td>${escapeHtml(movement.user)}</td>
-        <td>${stockAfter}</td>
-      </tr>
-    `;
-    }).join('');
+    tbody.innerHTML = sortedMovements.map(movement => renderStockMovementRow(movement, productMap)).join('');
 }
+
+let _stockModalProducts = [];
+
+// Helper to render searchable select options
+function renderSearchableOptions(containerId, products) {
+    const optionsContainer = document.querySelector(`#${containerId} .select-options`);
+    if (!optionsContainer) return;
+
+    if (products.length === 0) {
+        optionsContainer.innerHTML = '<div class="select-no-results">No products found</div>';
+        return;
+    }
+
+    optionsContainer.innerHTML = products.map(p => `
+        <div class="select-option" onclick="selectSearchableOption('${containerId}', '${p.id}', '${escapeHtml(p.name)} (${escapeHtml(p.sku)})', ${p.stock})">
+            <span class="option-title">${escapeHtml(p.name)}</span>
+            <span class="option-meta">SKU: ${escapeHtml(p.sku)} | Stock: ${p.stock}</span>
+        </div>
+    `).join('');
+}
+
+window.toggleSearchableSelect = function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const wasActive = el.classList.contains('active');
+
+    // Close all other searchable selects
+    document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('active'));
+
+    if (!wasActive) {
+        el.classList.add('active');
+        const input = el.querySelector('.select-search-input');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    }
+};
+
+window.selectSearchableOption = function (containerId, value, label, stock) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenInput = container.querySelector('input[type="hidden"]');
+    const searchInput = container.querySelector('.select-search-input');
+
+    if (hiddenInput) hiddenInput.value = value;
+    if (searchInput) searchInput.value = label;
+
+    // Show current stock info if applicable
+    const infoDivId = containerId === 'stockInSelect' ? 'stockInCurrentInfo' :
+        containerId === 'stockOutSelect' ? 'stockOutCurrentInfo' : null;
+
+    if (infoDivId) {
+        const infoDiv = document.getElementById(infoDivId);
+        if (infoDiv) {
+            infoDiv.innerHTML = `Current Stock: <span style="font-size: 1.1rem;">${stock}</span>`;
+            infoDiv.style.display = 'block';
+        }
+    }
+
+    container.classList.remove('active');
+};
 
 // Show stock in modal
 async function showStockInModal() {
-    const products = await db.getAll('products');
-    const select = document.getElementById('stockInProduct');
+    _stockModalProducts = await db.getAll('products');
 
-    select.innerHTML = '<option value="">Select Product</option>' +
-        products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.sku)}) - Stock: ${p.stock}</option>`).join('');
+    const searchInput = document.getElementById('stockInSearch');
+    const hiddenInput = document.getElementById('stockInProduct');
+
+    if (searchInput) searchInput.value = '';
+    if (hiddenInput) hiddenInput.value = '';
+
+    renderSearchableOptions('stockInSelect', _stockModalProducts);
+
+    // Hide stock info
+    const infoDiv = document.getElementById('stockInCurrentInfo');
+    if (infoDiv) infoDiv.style.display = 'none';
 
     document.getElementById('stockInQuantity').value = '';
     document.getElementById('stockInReason').value = '';
@@ -434,11 +519,19 @@ async function processStockIn() {
 
 // Show stock out modal
 async function showStockOutModal() {
-    const products = await db.getAll('products');
-    const select = document.getElementById('stockOutProduct');
+    _stockModalProducts = await db.getAll('products');
 
-    select.innerHTML = '<option value="">Select Product</option>' +
-        products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.sku)}) - Stock: ${p.stock}</option>`).join('');
+    const searchInput = document.getElementById('stockOutSearch');
+    const hiddenInput = document.getElementById('stockOutProduct');
+
+    if (searchInput) searchInput.value = '';
+    if (hiddenInput) hiddenInput.value = '';
+
+    renderSearchableOptions('stockOutSelect', _stockModalProducts);
+
+    // Hide stock info
+    const infoDiv = document.getElementById('stockOutCurrentInfo');
+    if (infoDiv) infoDiv.style.display = 'none';
 
     document.getElementById('stockOutQuantity').value = '';
     document.getElementById('stockOutReason').value = '';
@@ -481,6 +574,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup inventory filters
     setupInventoryFilters();
+
+    // Add search listeners for modals
+    document.getElementById('stockInSearch')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = _stockModalProducts.filter(p =>
+            p.name.toLowerCase().includes(query) ||
+            p.sku.toLowerCase().includes(query)
+        );
+        renderSearchableOptions('stockInSelect', filtered);
+    });
+
+    document.getElementById('stockOutSearch')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = _stockModalProducts.filter(p =>
+            p.name.toLowerCase().includes(query) ||
+            p.sku.toLowerCase().includes(query)
+        );
+        renderSearchableOptions('stockOutSelect', filtered);
+    });
+
+    // Close searchable selects on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.searchable-select')) {
+            document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('active'));
+        }
+    });
 });
 
 // Delete product

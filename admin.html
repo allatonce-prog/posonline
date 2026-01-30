@@ -343,13 +343,18 @@
                         <div class="table-header">
                             <h3>Stock Movement History</h3>
                             <div class="filter-controls">
-                                <select id="movementFilterSelect" class="form-control" style="max-width: 200px;">
+                                <select id="movementFilterSelect" class="form-control" style="max-width: 150px;">
                                     <option value="all">All Movements</option>
                                     <option value="in">Stock In Only</option>
                                     <option value="out">Stock Out Only</option>
                                 </select>
+                                <select id="movementTimeFilter" class="form-control" style="max-width: 150px;">
+                                    <option value="all">All Time</option>
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                </select>
                                 <input type="date" id="movementDateFilter" class="form-control"
-                                    style="max-width: 200px;">
+                                    style="max-width: 150px;">
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -779,8 +784,17 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="stockInProduct">Product *</label>
-                    <select id="stockInProduct" class="form-control" required></select>
+                    <label>Product *</label>
+                    <div class="searchable-select" id="stockInSelect">
+                        <div class="select-header" onclick="toggleSearchableSelect('stockInSelect')">
+                            <input type="text" class="select-search-input" id="stockInSearch"
+                                placeholder="Select Product..." autocomplete="off">
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                        <div class="select-options" id="stockInOptions"></div>
+                        <input type="hidden" id="stockInProduct" required>
+                    </div>
+                    <div id="stockInCurrentInfo" class="stock-info-text"></div>
                 </div>
                 <div class="form-group">
                     <label for="stockInQuantity">Quantity *</label>
@@ -808,8 +822,17 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="stockOutProduct">Product *</label>
-                    <select id="stockOutProduct" class="form-control" required></select>
+                    <label>Product *</label>
+                    <div class="searchable-select" id="stockOutSelect">
+                        <div class="select-header" onclick="toggleSearchableSelect('stockOutSelect')">
+                            <input type="text" class="select-search-input" id="stockOutSearch"
+                                placeholder="Select Product..." autocomplete="off">
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                        <div class="select-options" id="stockOutOptions"></div>
+                        <input type="hidden" id="stockOutProduct" required>
+                    </div>
+                    <div id="stockOutCurrentInfo" class="stock-info-text"></div>
                 </div>
                 <div class="form-group">
                     <label for="stockOutQuantity">Quantity *</label>
