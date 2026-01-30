@@ -8,6 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let unsubscribe = null;
 
+    // Sound Logic (Short pleasant chime)
+    const notificationSound = new Audio('data:audio/mp3;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEgAAAGNvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRFTkMAAAALAAADY2Fzc2FuZHJhAFRTU0UAAAAVAAADTGF2ZjYwLjMuMTAwIChtcDRhKQC/+7BkAA/+7BkAA//7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQAD/7smQADX7smQAAD8AAAAA');
+
+    function playNotificationSound() {
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch(e => console.log('Sound interaction required:', e));
+    }
+
     // Toggle panel
     notificationBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -16,6 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mark all as read when opening panel (optional, simple approach)
         if (notificationsPanel.classList.contains('active')) {
             // markAllAsRead();
+        }
+    });
+
+    // Clear All
+    clearAllBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm('Are you sure you want to clear all notifications?')) {
+            try {
+                await db.clearNotifications();
+                renderNotifications([]);
+            } catch (err) {
+                console.error("Failed to clear notifications:", err);
+            }
         }
     });
 
@@ -40,17 +61,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Wait for DB to be initialized
         const checkDB = setInterval(async () => {
-            if (db.isOnline !== undefined) {
+            if (db && db.isInitialized) {
                 clearInterval(checkDB);
 
                 unsubscribe = await db.subscribeToNotifications((notifications) => {
                     const latest = notifications[0];
-                    // If there's a new unread notification, show system alert
+                    // If there's a new unread notification, show system alert + sound
                     if (latest && latest.status === 'unread') {
                         // Avoid double-notifying (simple check based on timestamp/ID)
                         const lastNotifId = localStorage.getItem('last_received_notif');
                         if (latest.id !== lastNotifId) {
                             showSystemNotification(latest);
+                            playNotificationSound();
                             localStorage.setItem('last_received_notif', latest.id);
                         }
                     }

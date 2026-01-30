@@ -15,7 +15,8 @@ import {
     onSnapshot,
     orderBy,
     limit,
-    serverTimestamp
+    serverTimestamp,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Firebase Config
@@ -187,6 +188,7 @@ class OfflineDB {
         this.firebaseApp = null;
         this.firestore = null;
         this.isOnline = navigator.onLine;
+        this.isInitialized = false;
 
         // Listen for online/offline events
         window.addEventListener('online', () => {
@@ -222,6 +224,8 @@ class OfflineDB {
         if (this.isOnline) {
             this.syncPendingData();
         }
+
+        this.isInitialized = true;
     }
 
     // -----------------------------------------------------
@@ -740,6 +744,34 @@ class OfflineDB {
             }
         } catch (e) {
             console.error("Failed to create notification:", e);
+        }
+    }
+
+    async clearNotifications() {
+        const storeId = this.getCurrentStoreId();
+
+        // 1. Clear Local
+        const localItems = await this.local.getAll('notifications');
+        for (const item of localItems) {
+            if (item.storeId === storeId) {
+                await this.local.delete('notifications', item.id);
+            }
+        }
+
+        // 2. Clear Cloud
+        if (this.isOnline) {
+            try {
+                const q = query(collection(this.firestore, 'notifications'), where('storeId', '==', storeId));
+                const snap = await getDocs(q);
+
+                if (!snap.empty) {
+                    const batch = writeBatch(this.firestore);
+                    snap.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                }
+            } catch (e) {
+                console.error("Cloud clear notifications failed:", e);
+            }
         }
     }
 
