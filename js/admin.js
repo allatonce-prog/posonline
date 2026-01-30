@@ -133,20 +133,55 @@ function setupNavigation() {
     });
 }
 
-// Switch tab
+// Switch tab (optimized for mobile stability)
 async function switchTab(tab) {
     if (currentTab === tab) return;
+
+    // Cleanup before switching (prevent memory leaks)
+    if (window.mobileStability) {
+        window.mobileStability.cleanupForTabSwitch();
+    }
+
+    // Clear any active charts/intervals from previous tab
+    if (window.activeChartInstances) {
+        window.activeChartInstances.forEach(chart => {
+            try {
+                chart.destroy();
+            } catch (e) {
+                console.warn('Error destroying chart:', e);
+            }
+        });
+        window.activeChartInstances = [];
+    }
 
     // Update navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.tab === tab);
     });
 
-    // Update tabs
-    document.querySelectorAll('.tabs').forEach(tabContent => {
+    // Update tabs with smooth transition
+    const allTabs = document.querySelectorAll('.tabs');
+    allTabs.forEach(tabContent => {
         tabContent.classList.remove('active');
+        // Clear innerHTML of hidden tabs to save memory
+        if (tabContent.id !== `${tab}-tab`) {
+            // Store scroll position before clearing
+            const scrollTop = tabContent.scrollTop;
+            if (scrollTop > 0) {
+                tabContent.dataset.scrollTop = scrollTop;
+            }
+        }
     });
-    document.getElementById(`${tab}-tab`).classList.add('active');
+
+    const selectedTab = document.getElementById(`${tab}-tab`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+        // Restore scroll position if exists
+        const savedScroll = selectedTab.dataset.scrollTop;
+        if (savedScroll) {
+            selectedTab.scrollTop = parseInt(savedScroll);
+        }
+    }
 
     // Update page title
     const titles = {
@@ -165,49 +200,75 @@ async function switchTab(tab) {
 
     currentTab = tab;
 
-    // Load tab data
+    // Load tab data with error recovery
     showLoading('Loading...');
-    try {
-        switch (tab) {
-            case 'dashboard':
-                await loadDashboard();
-                break;
-            case 'products':
-                await loadProducts();
-                break;
-            case 'inventory':
-                await loadInventory();
-                break;
-            case 'history':
-                if (typeof loadStockMovements === 'function') {
-                    await loadStockMovements();
-                } else {
-                    console.warn('loadStockMovements not found');
-                }
-                break;
-            case 'sales':
-                await loadSales();
-                break;
-            case 'expenses':
-                await loadExpenses();
-                break;
-            case 'collectibles':
-                await loadCollectibles();
-                break;
-            case 'reports':
-                await loadReports();
-                break;
-            case 'users':
-                await loadUsers();
-                break;
-            case 'settings':
-                await loadSettings();
-                break;
+
+    // Use requestIdleCallback for non-critical tabs (better mobile performance)
+    const loadFunction = async () => {
+        try {
+            switch (tab) {
+                case 'dashboard':
+                    await loadDashboard();
+                    break;
+                case 'products':
+                    await loadProducts();
+                    break;
+                case 'inventory':
+                    await loadInventory();
+                    break;
+                case 'history':
+                    if (typeof loadStockMovements === 'function') {
+                        await loadStockMovements();
+                    } else {
+                        console.warn('loadStockMovements not found');
+                    }
+                    break;
+                case 'sales':
+                    await loadSales();
+                    break;
+                case 'expenses':
+                    await loadExpenses();
+                    break;
+                case 'collectibles':
+                    await loadCollectibles();
+                    break;
+                case 'reports':
+                    await loadReports();
+                    break;
+                case 'users':
+                    await loadUsers();
+                    break;
+                case 'settings':
+                    await loadSettings();
+                    break;
+            }
+            hideLoading();
+        } catch (error) {
+            hideLoading();
+            console.error('Tab loading error:', error);
+            showToast('Error loading data. Please try again.', 'error');
+
+            // Fallback: show error state instead of blank screen
+            if (selectedTab) {
+                selectedTab.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; color: var(--gray-600);">
+                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                        <h3>Failed to Load</h3>
+                        <p style="margin-bottom: 1rem;">An error occurred while loading this page.</p>
+                        <button class="btn btn-primary" onclick="switchTab('${tab}')">Try Again</button>
+                    </div>
+                `;
+            }
         }
-        hideLoading();
-    } catch (error) {
-        hideLoading();
-        showToast('Error loading data: ' + error.message, 'error');
+    };
+
+    // Execute load function
+    if (window.requestIdleCallback && tab !== 'dashboard') {
+        // Use idle callback for non-critical tabs
+        requestIdleCallback(() => loadFunction(), { timeout: 2000 });
+    } else {
+        // Load immediately for dashboard
+        await loadFunction();
     }
 }
 

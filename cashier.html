@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Cashier - POS System</title>
 
     <link rel="manifest" href="manifest.json">
@@ -519,6 +522,7 @@
     <script type="module" src="js/offline-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/mobile-stability.js"></script>
     <script src="js/admin/settings.js"></script>
     <script src="js/collectibles-payment.js"></script>
     <script src="js/cashier.js"></script>
@@ -1195,8 +1199,22 @@
             };
 
             // View switching function
+            // Switch View Function (optimized for mobile stability)
             window.switchView = function (view) {
-                // Page title mapping
+                console.log('Switching to view:', view);
+
+                // Cleanup before switching (prevent memory leaks)
+                if (window.mobileStability) {
+                    window.mobileStability.cleanupForTabSwitch();
+                }
+
+                // Clear any active intervals/timeouts
+                if (window.activeViewIntervals) {
+                    window.activeViewIntervals.forEach(id => clearInterval(id));
+                    window.activeViewIntervals = [];
+                }
+
+                // Define page titles
                 const pageTitles = {
                     'pos': 'New Sale',
                     'sales': 'My Sales',
@@ -1204,57 +1222,123 @@
                     'collectibles': 'Collectibles'
                 };
 
-                // Hide all views
-                const views = ['posView', 'salesView', 'expensesView', 'collectiblesView'];
-                views.forEach(v => {
-                    const element = document.getElementById(v);
-                    if (element) element.style.display = 'none';
-                });
+                try {
+                    // Hide all views
+                    const views = ['posView', 'salesView', 'expensesView', 'collectiblesView'];
+                    views.forEach(v => {
+                        const element = document.getElementById(v);
+                        if (element) {
+                            element.style.display = 'none';
+                            // Clear scroll position for hidden views to save memory
+                            if (v !== view + 'View') {
+                                const scrollTop = element.scrollTop;
+                                if (scrollTop > 0) {
+                                    element.dataset.scrollTop = scrollTop;
+                                }
+                            }
+                        }
+                    });
 
-                // Show selected view
-                const selectedView = document.getElementById(view + 'View');
-                if (selectedView) {
-                    selectedView.style.display = 'block';
-                }
-
-                // Update page title in header
-                const pageTitleElement = document.getElementById('currentPageTitle');
-                if (pageTitleElement && pageTitles[view]) {
-                    pageTitleElement.textContent = pageTitles[view];
-                }
-
-                // Update sidebar active states
-                const sidebarItems = document.querySelectorAll('.sidebar-item');
-                sidebarItems.forEach(item => {
-                    item.classList.remove('active');
-                    if (item.getAttribute('data-view') === view) {
-                        item.classList.add('active');
+                    // Show selected view
+                    const selectedView = document.getElementById(view + 'View');
+                    if (selectedView) {
+                        selectedView.style.display = 'block';
+                        // Restore scroll position if exists
+                        const savedScroll = selectedView.dataset.scrollTop;
+                        if (savedScroll) {
+                            requestAnimationFrame(() => {
+                                selectedView.scrollTop = parseInt(savedScroll);
+                            });
+                        }
+                    } else {
+                        console.error('View not found:', view + 'View');
+                        showToast('View not available', 'error');
+                        return;
                     }
-                });
 
-                // Handle cart sidebar visibility (only show in POS view)
-                const cartSidebar = document.getElementById('cartSidebar');
-                const mobileCartBar = document.getElementById('mobileCartBar');
+                    // Update page title in header
+                    const pageTitleElement = document.getElementById('currentPageTitle');
+                    if (pageTitleElement && pageTitles[view]) {
+                        pageTitleElement.textContent = pageTitles[view];
+                    }
 
-                if (view === 'pos') {
-                    if (cartSidebar) cartSidebar.style.display = 'flex';
-                    if (mobileCartBar) mobileCartBar.style.display = 'flex';
-                } else {
-                    if (cartSidebar) cartSidebar.style.display = 'none';
-                    if (mobileCartBar) mobileCartBar.style.display = 'none';
-                }
+                    // Update sidebar active states
+                    const sidebarItems = document.querySelectorAll('.sidebar-item');
+                    sidebarItems.forEach(item => {
+                        item.classList.remove('active');
+                        if (item.getAttribute('data-view') === view) {
+                            item.classList.add('active');
+                        }
+                    });
 
-                // Load data for specific views
-                console.log('Loading data for view:', view);
-                if (view === 'sales' && typeof loadSales === 'function') {
-                    console.log('Calling loadSales...');
-                    loadSales();
-                } else if (view === 'sales') {
-                    console.error('loadSales function not found!');
-                } else if (view === 'expenses' && typeof loadExpenses === 'function') {
-                    loadExpenses('today');
-                } else if (view === 'collectibles' && typeof loadCollectibles === 'function') {
-                    loadCollectibles();
+                    // Handle cart sidebar visibility (only show in POS view)
+                    const cartSidebar = document.getElementById('cartSidebar');
+                    const mobileCartBar = document.getElementById('mobileCartBar');
+
+                    if (view === 'pos') {
+                        if (cartSidebar) cartSidebar.style.display = 'flex';
+                        if (mobileCartBar) mobileCartBar.style.display = 'flex';
+                    } else {
+                        if (cartSidebar) cartSidebar.style.display = 'none';
+                        if (mobileCartBar) mobileCartBar.style.display = 'none';
+                    }
+
+                    // Load data for specific views with error handling
+                    console.log('Loading data for view:', view);
+
+                    const loadViewData = () => {
+                        try {
+                            if (view === 'sales' && typeof loadSales === 'function') {
+                                console.log('Calling loadSales...');
+                                loadSales();
+                            } else if (view === 'sales') {
+                                console.error('loadSales function not found!');
+                                selectedView.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 2rem;">
+                                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                                        <h3>Error Loading Sales</h3>
+                                        <p>The sales module failed to load.</p>
+                                        <button class="btn btn-primary" onclick="window.location.reload()">Reload Page</button>
+                                    </div>
+                                `;
+                            } else if (view === 'expenses' && typeof loadExpenses === 'function') {
+                                loadExpenses('today');
+                            } else if (view === 'collectibles' && typeof loadCollectibles === 'function') {
+                                loadCollectibles();
+                            }
+                        } catch (error) {
+                            console.error('Error loading view data:', error);
+                            showToast('Error loading view. Please try again.', 'error');
+
+                            // Show error state
+                            if (selectedView) {
+                                selectedView.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 2rem;">
+                                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                                        <h3>Failed to Load</h3>
+                                        <p style="margin-bottom: 1rem;">An error occurred: ${error.message}</p>
+                                        <button class="btn btn-primary" onclick="switchView('${view}')">Try Again</button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    };
+
+                    // Use requestIdleCallback for better mobile performance
+                    if (window.requestIdleCallback && view !== 'pos') {
+                        requestIdleCallback(loadViewData, { timeout: 1000 });
+                    } else {
+                        loadViewData();
+                    }
+
+                } catch (error) {
+                    console.error('Critical error in switchView:', error);
+                    showToast('Error switching view. Reloading...', 'error');
+
+                    // Critical error - reload page after short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 }
             };
         });
