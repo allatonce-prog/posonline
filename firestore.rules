@@ -76,6 +76,15 @@ service cloud.firestore {
       allow delete: if resource.data.storeId != null;
     }
 
+    // Collectibles - must have storeId
+    match /collectibles/{collectibleId} {
+      allow read: if resource.data.storeId != null;
+      allow create: if request.resource.data.storeId != null 
+                    && isValidStoreAccess(request.resource.data.storeId);
+      allow update: if resource.data.storeId == request.resource.data.storeId;
+      allow delete: if resource.data.storeId != null;
+    }
+
     // Catch-all for any other collections
     match /{document=**} {
       allow read, write: if false; // Deny by default

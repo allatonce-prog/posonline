@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS = {
     systemName: 'POS System',
     systemDescription: 'Point of Sale & Inventory Management',
     systemIcon: '🛒',
+    adminEmail: '',
     lowStockThreshold: 10
 };
 
@@ -16,6 +17,7 @@ async function loadSettings() {
     document.getElementById('systemName').value = settings.systemName;
     document.getElementById('systemDescription').value = settings.systemDescription;
     document.getElementById('systemIcon').value = settings.systemIcon;
+    document.getElementById('adminEmail').value = settings.adminEmail || '';
     document.getElementById('lowStockThreshold').value = settings.lowStockThreshold;
 
     // Setup form submission
@@ -93,6 +95,7 @@ async function saveSettings() {
             systemName: document.getElementById('systemName').value.trim() || DEFAULT_SETTINGS.systemName,
             systemDescription: document.getElementById('systemDescription').value.trim() || DEFAULT_SETTINGS.systemDescription,
             systemIcon: document.getElementById('systemIcon').value.trim() || DEFAULT_SETTINGS.systemIcon,
+            adminEmail: document.getElementById('adminEmail').value.trim(),
             lowStockThreshold: isNaN(lowStockThreshold) || lowStockThreshold < 0 ? DEFAULT_SETTINGS.lowStockThreshold : lowStockThreshold
         };
 
@@ -120,33 +123,32 @@ async function saveSettings() {
             if (typeof db !== 'undefined' && db.db) {
                 const settingsDocId = `settings_${storeId}`;
 
-                // Update the store name in the stores collection
+                // 1. Update/Create the document in the 'settings' collection (Primary Source)
+                // We use set with merge: true if possible, or just overwrite since we have full settings
+                await db.set('settings', settingsDocId, {
+                    data: settings, // Structure expected by getSettings
+                    storeId: storeId,
+                    updatedAt: new Date().toISOString()
+                });
+
+                // 2. Update the store name in the stores collection (Secondary/Legacy)
                 const storeDoc = await db.get('stores', storeId);
                 if (storeDoc) {
                     await db.update('stores', {
                         ...storeDoc,
-                        name: settings.systemName,  // ← Update store name
+                        name: settings.systemName,
                         settings: settings,
                         updatedAt: new Date().toISOString()
                     });
-                    console.log('Store name and settings updated in Firebase');
-                } else {
-                    console.warn('Store document not found, creating settings document');
-                    // If store doesn't exist, create a settings document directly
-                    await db.add('settings', {
-                        id: settingsDocId,
-                        data: settings,
-                        storeId: storeId,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
                 }
+
+                console.log('Settings saved to Firebase (settings & stores collections)');
             }
         } catch (firebaseError) {
             console.warn('Could not save to Firebase, saved to localStorage only:', firebaseError);
         }
 
-        showToast('Settings saved successfully!', 'success');
+        showToast(`Settings Saved! Email: ${settings.adminEmail || '(none)'}`, 'success');
 
         // Update the sidebar logo if needed
         updateSidebarLogo(settings);

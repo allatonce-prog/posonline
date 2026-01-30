@@ -50,9 +50,22 @@
                     <i class="ph ph-clipboard-text nav-icon"></i>
                     <span>Inventory</span>
                 </div>
+                <div class="nav-item" data-tab="history">
+                    <i class="ph ph-clock-counter-clockwise nav-icon"></i>
+                    <span>History</span>
+                </div>
                 <div class="nav-item" data-tab="sales">
                     <i class="ph ph-receipt nav-icon"></i>
                     <span>Sales</span>
+                </div>
+                <!-- Collectibles Tab -->
+                <div class="nav-item" data-tab="collectibles">
+                    <i class="ph ph-coins nav-icon"></i>
+                    <span>Collectibles</span>
+                </div>
+                <div class="nav-item" data-tab="expenses">
+                    <i class="ph ph-money nav-icon"></i>
+                    <span>Expenses</span>
                 </div>
                 <div class="nav-item" data-tab="reports">
                     <i class="ph ph-chart-line-up nav-icon"></i>
@@ -111,7 +124,21 @@
                             <div class="stat-icon primary"><i class="ph ph-currency-dollar"></i></div>
                             <div class="stat-info">
                                 <h3>Today's Sales</h3>
-                                <div class="stat-value" id="todaySales">$0.00</div>
+                                <div class="stat-value" id="todaySales">₱0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon warning"><i class="ph ph-money"></i></div>
+                            <div class="stat-info">
+                                <h3>Today's Expenses</h3>
+                                <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon success" id="netProfitIcon"><i class="ph ph-trend-up"></i></div>
+                            <div class="stat-info">
+                                <h3>Net Profit (Today)</h3>
+                                <div class="stat-value" id="todayNetProfit">₱0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -308,7 +335,10 @@
                         </div>
                     </div>
 
-                    <!-- Stock Movement History -->
+                </div>
+
+                <!-- History Tab -->
+                <div class="tabs" id="history-tab">
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Stock Movement History</h3>
@@ -385,8 +415,103 @@
                     </div>
                 </div>
 
+                <!-- Collectibles Tab -->
+                <div class="tabs" id="collectibles-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Collectibles Monitoring</h3>
+
+                            <div class="table-actions">
+                                <div class="search-box">
+                                    <input type="text" id="collectiblesSearch" placeholder="Search customer..."
+                                        class="form-control" style="width: 200px;">
+                                </div>
+                                <select id="collectiblesFilter" class="form-control" style="width: 150px;">
+                                    <option value="all">All Time</option>
+                                    <option value="recent">Recent</option>
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                    <option value="thisMonth">This Month</option>
+                                </select>
+                            </div>
+
+                            <div class="stats-grid" style="grid-template-columns: 1fr; margin-bottom: 20px;">
+                                <div class="stat-card">
+                                    <div class="stat-icon danger"><i class="ph ph-warning-circle"></i></div>
+                                    <div class="stat-info">
+                                        <h3>Outstanding Balance</h3>
+                                        <div class="stat-value" id="totalOutstandingAmount">₱0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="collectiblesList" class="collectibles-grid">
+                                <div class="table-empty">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expenses Tab -->
+                <div class="tabs" id="expenses-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Expenses</h3>
+                            <div class="table-actions">
+                                <select id="expensesFilter" class="form-control"
+                                    style="max-width: 150px; margin-right: 0.5rem;" onchange="loadExpenses()">
+                                    <option value="today" selected>Today</option>
+                                    <option value="recent">Recent</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                    <option value="thisMonth">This Month</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon warning"><i class="ph ph-money"></i></div>
+                                <div class="stat-info">
+                                    <h3>Total Expenses (Filtered)</h3>
+                                    <div class="stat-value" id="totalExpensesAmount">₱0.00</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon primary"><i class="ph ph-receipt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Count</h3>
+                                    <div class="stat-value" id="totalExpensesCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Cashier</th>
+                                    <th>Reason</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTable">
+                                <tr>
+                                    <td colspan="4" class="table-empty">Loading expenses...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Reports Tab -->
                 <div class="tabs" id="reports-tab">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Reports Overview</h3>
+                        <button class="btn btn-primary" onclick="sendEndOfDayReport()">
+                            <i class="ph ph-envelope-simple"></i> Email End of Day Report
+                        </button>
+                    </div>
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon primary"><i class="ph ph-calendar-blank"></i></div>
@@ -495,6 +620,18 @@
                                         <small class="form-text">Short description shown on login page</small>
                                     </div>
                                     <div class="form-group">
+                                        <label for="adminEmail">Admin Email for Reports</label>
+                                        <input type="email" id="adminEmail" class="form-control"
+                                            placeholder="admin@example.com">
+                                        <small class="form-text"> Daily sales reports will be sent to this email.
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                style="margin-top: 5px; padding: 2px 8px; font-size: 0.75rem;"
+                                                onclick="sendManualYesterdayReport()">
+                                                <i class="ph ph-paper-plane-right"></i> Send Yesterday's Report Now
+                                            </button>
+                                        </small>
+                                    </div>
+                                    <div class="form-group">
                                         <label for="systemIcon">System Icon (Emoji)</label>
                                         <input type="text" id="systemIcon" class="form-control" placeholder="🛒"
                                             maxlength="2">
@@ -518,8 +655,22 @@
                                 <!-- Save Button -->
                                 <div class="settings-actions">
                                     <button type="submit" class="btn btn-primary">💾 Save Settings</button>
-                                    <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄 Reset
+                                    <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄
+                                        Reset
                                         to Default</button>
+                                </div>
+                                <!-- App Maintenance -->
+                                <div class="settings-section">
+                                    <h4>App Maintenance</h4>
+                                    <div class="form-group">
+                                        <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
+                                            Use this if you are experiencing issues or not seeing the latest
+                                            updates.
+                                        </p>
+                                        <button type="button" class="btn btn-warning" onclick="resetAppCache()">
+                                            <i class="ph ph-arrow-clockwise"></i> Reset App / Clear Cache
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -565,8 +716,33 @@
                             </datalist>
                         </div>
                         <div class="form-group">
-                            <label for="productPrice">Price *</label>
+                            <label for="productPrice">Price * (Default)</label>
                             <input type="number" id="productPrice" class="form-control" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-bottom: 1rem; border: 1px solid var(--gray-200); padding: 1rem; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--gray-700);">
+                            Alternative Prices (Discounts/Wholesale)</h4>
+
+                        <div id="alternativePricesList" style="margin-bottom: 0.5rem;">
+                            <!-- Dynamic price fields will appear here -->
+                        </div>
+
+                        <div class="form-row" style="margin-bottom: 0; align-items: flex-end;">
+                            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem;">Label</label>
+                                <input type="text" id="newPriceLabel" class="form-control form-control-sm"
+                                    placeholder="e.g. Wholesale">
+                            </div>
+                            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem;">Price</label>
+                                <input type="number" id="newPriceValue" class="form-control form-control-sm"
+                                    placeholder="0.00">
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addAlternativePrice()"
+                                style="height: 38px;">Add Price</button>
                         </div>
                     </div>
                     <div class="form-row">
@@ -586,6 +762,8 @@
                 </form>
             </div>
             <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteProduct" onclick="deleteCurrentProduct()"
+                    style="display: none; margin-right: auto;">Delete</button>
                 <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
             </div>
@@ -706,6 +884,8 @@
         </div>
     </div>
 
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="js/email-service.js"></script>
     <script type="module" src="js/offline-db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
@@ -714,8 +894,10 @@
     <script src="js/admin/products.js"></script>
     <script src="js/admin/inventory.js"></script>
     <script src="js/admin/sales.js"></script>
+    <script src="js/admin/expenses.js"></script>
     <script src="js/admin/reports.js"></script>
     <script src="js/admin/users.js"></script>
+    <script src="js/admin/collectibles.js"></script>
     <script src="js/admin/settings.js"></script>
     <script src="js/admin/store-switcher.js"></script>
     <script src="js/tawk-to.js"></script>

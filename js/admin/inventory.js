@@ -3,7 +3,7 @@
 // Load inventory
 async function loadInventory() {
     await loadInventoryProducts();
-    await loadStockMovements();
+    // Stock movements now on separate tab
     await updateInventoryStats();
 }
 
@@ -26,29 +26,29 @@ async function loadInventoryProducts() {
 
         return `
       <tr>
-        <td class="product-image-cell">
+        <td class="product-image-cell" data-label="Image">
           <div class="product-image-small">${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}">` : '📦'}</div>
         </td>
-        <td>
+        <td data-label="Product">
           <div style="font-weight: 600;">${escapeHtml(product.name)}</div>
           <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(product.description || '')}</div>
         </td>
-        <td>${escapeHtml(product.sku)}</td>
-        <td>${escapeHtml(product.category)}</td>
-        <td>
+        <td data-label="SKU">${escapeHtml(product.sku)}</td>
+        <td data-label="Category">${escapeHtml(product.category)}</td>
+        <td data-label="Current Stock">
           <span class="stock-quantity ${stockClass}">${product.stock}</span>
         </td>
-        <td>${formatCurrency(product.price)}</td>
-        <td>${formatCurrency(totalValue)}</td>
-        <td>
+        <td data-label="Unit Price">${formatCurrency(product.price)}</td>
+        <td data-label="Total Value">${formatCurrency(totalValue)}</td>
+        <td data-label="Status">
           <span class="stock-status ${stockStatus}">${stockStatus.toUpperCase()}</span>
         </td>
-        <td>
+        <td data-label="Actions" class="action-cell-visible">
           <div class="inventory-actions">
-            <button class="btn btn-success btn-sm" onclick="quickStockIn('${product.id}')">+</button>
-            <button class="btn btn-warning btn-sm" onclick="quickStockOut('${product.id}')">-</button>
-            <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')">🗑️</button>
+            <button class="btn btn-success btn-sm" onclick="quickStockIn('${product.id}')" title="Stock In"><i class="ph ph-plus"></i></button>
+            <button class="btn btn-warning btn-sm" onclick="quickStockOut('${product.id}')" title="Stock Out"><i class="ph ph-minus"></i></button>
+            <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')" title="Edit"><i class="ph ph-pencil"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')" title="Delete"><i class="ph ph-trash"></i></button>
           </div>
         </td>
       </tr>
@@ -110,21 +110,20 @@ async function loadStockMovements() {
         const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
 
         // Calculate stock after movement
-        let stockAfter = movement.stockAfter || 'N/A';
+        let stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
         if (!movement.stockAfter && product) {
-            // For older records without stockAfter, we can't determine it accurately
             stockAfter = 'N/A';
         }
 
         return `
-      <tr>
-        <td>${formatDateTime(movement.date)}</td>
-        <td>${escapeHtml(productName)}</td>
-        <td><span class="${typeClass}">${typeText}</span></td>
-        <td>${movement.quantity}</td>
-        <td>${escapeHtml(movement.reason)}</td>
-        <td>${escapeHtml(movement.user)}</td>
-        <td>${stockAfter}</td>
+      <tr class="clickable-row" onclick="viewStockMovementDetails('${movement.id}')">
+        <td data-label="Date">${formatDateTime(movement.date)}</td>
+        <td data-label="Product" style="font-weight: 600; color: var(--dark);">${escapeHtml(productName)}</td>
+        <td data-label="Type"><span class="${typeClass}">${typeText}</span></td>
+        <td data-label="Quantity" style="font-weight: bold;">${movement.quantity}</td>
+        <td data-label="Reason">${escapeHtml(movement.reason)}</td>
+        <td data-label="User">${escapeHtml(movement.user)}</td>
+        <td data-label="Stock After">${stockAfter}</td>
       </tr>
     `;
     }).join('');
@@ -515,14 +514,14 @@ async function deleteProduct(productId) {
         }
 
         // Delete the product
-        await db.delete('products', productId);
+        await db.remove('products', productId);
 
         // Delete related stock movements
         const stockMovements = await db.getAll('stockMovements');
         const productMovements = stockMovements.filter(m => m.productId === productId);
 
         for (const movement of productMovements) {
-            await db.delete('stockMovements', movement.id);
+            await db.remove('stockMovements', movement.id);
         }
 
         hideLoading();
@@ -539,5 +538,86 @@ async function deleteProduct(productId) {
     } catch (error) {
         hideLoading();
         showToast('Error deleting product: ' + error.message, 'error');
+    }
+}
+
+// View stock movement details
+async function viewStockMovementDetails(id) {
+    showLoading('Loading details...');
+    try {
+        const movement = await db.get('stockMovements', id);
+        if (!movement) throw new Error('Movement record not found');
+
+        const product = await db.get('products', movement.productId);
+        const productName = product ? product.name : 'Unknown Product (Deleted)';
+        const productSku = product ? product.sku : 'N/A';
+        const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
+        const typeColor = movement.type === 'in' ? 'var(--success)' : 'var(--warning)';
+
+        const detailsHtml = `
+            <div class="transaction-header">
+                <div class="transaction-title">
+                    <h3>Movement Details</h3>
+                    <span style="font-family: monospace; font-size: 0.85rem; color: var(--gray-500);">${id}</span>
+                </div>
+            </div>
+
+            <div class="detail-grid" style="grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+                 <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Date</p>
+                    <p>${formatDateTime(movement.date)}</p>
+                </div>
+                <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Type</p>
+                    <p style="color: ${typeColor}; font-weight: bold;">${typeText}</p>
+                </div>
+                <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Product</p>
+                    <p>${escapeHtml(productName)}</p>
+                </div>
+                 <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">SKU</p>
+                    <p>${escapeHtml(productSku)}</p>
+                </div>
+                <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Quantity</p>
+                    <p style="font-size: 1.25rem; font-weight: bold;">${movement.quantity}</p>
+                </div>
+                <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">User</p>
+                    <p>${escapeHtml(movement.user)}</p>
+                </div>
+                 <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Stock Before</p>
+                    <p>${movement.stockBefore !== undefined ? movement.stockBefore : 'N/A'}</p>
+                </div>
+                 <div class="detail-item">
+                    <p style="font-weight: 800; color: var(--dark);">Stock After</p>
+                    <p>${movement.stockAfter !== undefined ? movement.stockAfter : 'N/A'}</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
+                <p style="font-weight: 800; color: var(--dark); margin-bottom: 0.5rem;">Reason</p>
+                <p>${escapeHtml(movement.reason)}</p>
+            </div>
+        `;
+
+        // Reuse transaction modal for simplicity
+        const modalBody = document.getElementById('transactionDetails');
+        if (modalBody) {
+            modalBody.innerHTML = detailsHtml;
+            document.getElementById('transactionModal').classList.add('active');
+
+            // Update modal title temporarily
+            const modalTitle = document.querySelector('#transactionModal h2');
+            if (modalTitle) modalTitle.textContent = 'Stock Movement';
+        }
+
+        hideLoading();
+
+    } catch (error) {
+        hideLoading();
+        showToast('Error loading details: ' + error.message, 'error');
     }
 }

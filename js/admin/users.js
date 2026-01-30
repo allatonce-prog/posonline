@@ -65,8 +65,8 @@ async function editUser(id) {
     document.getElementById('userModalTitle').textContent = 'Edit User';
     document.getElementById('userId').value = user.id;
     document.getElementById('userUsername').value = user.username;
-    // Don't allow changing username to avoid breaking references, optionally enable if logic permits
-    document.getElementById('userUsername').disabled = true;
+    // Allow changing username
+    document.getElementById('userUsername').disabled = false;
     document.getElementById('userFullName').value = user.name || '';
     document.getElementById('userRole').value = user.role;
 
@@ -103,6 +103,17 @@ async function saveUser() {
             // Update existing user
             const user = await db.get('users', id);
 
+            // Check username uniqueness if changed
+            if (username !== user.username) {
+                const existing = await db.getByIndex('users', 'username', username);
+                if (existing && existing.id !== id) {
+                    hideLoading();
+                    showToast('Username already exists', 'error');
+                    return;
+                }
+                user.username = username;
+            }
+
             // Only update password if provided
             if (password) {
                 user.password = await db.hashPassword(password);
@@ -112,6 +123,23 @@ async function saveUser() {
             user.role = role;
 
             await db.update('users', user);
+
+            // Update session if editing self
+            const currentUser = auth.getCurrentUser();
+            if (currentUser && currentUser.id === id) {
+                const sessionUpdate = {
+                    ...currentUser,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role
+                };
+                auth.saveSession(sessionUpdate);
+
+                // Update UI name
+                const adminNameEl = document.getElementById('adminName');
+                if (adminNameEl) adminNameEl.textContent = user.name || user.username;
+            }
+
             showToast('User updated successfully', 'success');
         } else {
             // Create new user
@@ -155,7 +183,7 @@ async function deleteUser(id) {
 
     showLoading('Deleting user...');
     try {
-        await db.delete('users', id);
+        await db.remove('users', id);
         showToast('User deleted successfully', 'success');
         await loadUsers();
         hideLoading();

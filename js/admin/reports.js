@@ -25,15 +25,16 @@ async function loadReports() {
     const monthTransactions = transactions.filter(t => new Date(t.date) >= monthAgo);
 
     // Calculate sales
-    const weekSales = weekTransactions.reduce((sum, t) => sum + t.total, 0);
-    const monthSales = monthTransactions.reduce((sum, t) => sum + t.total, 0);
-    const avgSale = transactions.reduce((sum, t) => sum + t.total, 0) / transactions.length;
+    const weekSales = weekTransactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
+    const monthSales = monthTransactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
+    const avgSale = transactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0) / (transactions.length || 1);
 
     // Find best day
     const salesByDay = {};
     transactions.forEach(t => {
         const date = new Date(t.date).toDateString();
-        salesByDay[date] = (salesByDay[date] || 0) + t.total;
+        const amount = Number(t.total) || Number(t.amount) || 0;
+        salesByDay[date] = (salesByDay[date] || 0) + amount;
     });
 
     let bestDay = '-';
@@ -301,12 +302,12 @@ async function updateStockMovementTable(stockMovements) {
 
             return `
         <tr>
-            <td>${period}</td>
-            <td class="text-success">${data.stockIn}</td>
-            <td class="text-danger">${data.stockOut}</td>
-            <td class="${netChange >= 0 ? 'text-success' : 'text-danger'}">${netChange > 0 ? '+' : ''}${netChange}</td>
-            <td>${formatCurrency(data.valueIn)}</td>
-            <td>${formatCurrency(data.valueOut)}</td>
+            <td data-label="Period" style="font-weight: 600;">${period}</td>
+            <td data-label="Stock In" class="text-success">${data.stockIn}</td>
+            <td data-label="Stock Out" class="text-danger">${data.stockOut}</td>
+            <td data-label="Net Change" class="${netChange >= 0 ? 'text-success' : 'text-danger'}" style="font-weight: bold;">${netChange > 0 ? '+' : ''}${netChange}</td>
+            <td data-label="Value In">${formatCurrency(data.valueIn)}</td>
+            <td data-label="Value Out">${formatCurrency(data.valueOut)}</td>
         </tr>
     `;
         }).join('');

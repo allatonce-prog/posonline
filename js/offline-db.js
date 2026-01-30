@@ -28,7 +28,7 @@ const firebaseConfig = {
 // Local IndexedDB Wrapper
 // ---------------------------------------------------------
 const DB_NAME = 'POSDatabase_v3'; // Bump version for safety
-const DB_VERSION = 3;
+const DB_VERSION = 4; // Incremented to add expenses and collectibles stores
 
 class LocalDB {
     constructor() {
@@ -87,6 +87,23 @@ class LocalDB {
                     const store = db.createObjectStore('settings', { keyPath: 'id' });
                 }
 
+                // Expenses
+                if (!db.objectStoreNames.contains('expenses')) {
+                    const store = db.createObjectStore('expenses', { keyPath: 'id' });
+                    store.createIndex('date', 'date', { unique: false });
+                    store.createIndex('cashier', 'cashier', { unique: false });
+                    store.createIndex('syncStatus', 'syncStatus', { unique: false });
+                }
+
+                // Collectibles
+                if (!db.objectStoreNames.contains('collectibles')) {
+                    const store = db.createObjectStore('collectibles', { keyPath: 'id' });
+                    store.createIndex('customerName', 'customerName', { unique: false });
+                    store.createIndex('status', 'status', { unique: false });
+                    store.createIndex('createdAt', 'createdAt', { unique: false });
+                    store.createIndex('syncStatus', 'syncStatus', { unique: false });
+                }
+
                 // Sync Queue (for operations that need replay)
                 if (!db.objectStoreNames.contains('syncQueue')) {
                     const store = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
@@ -102,6 +119,16 @@ class LocalDB {
             const tx = this.db.transaction([storeName], 'readwrite');
             const store = tx.objectStore(storeName);
             const request = store.put(data);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async delete(storeName, id) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([storeName], 'readwrite');
+            const store = tx.objectStore(storeName);
+            const request = store.delete(id);
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -358,6 +385,31 @@ class OfflineDB {
             }
         }
         return data.id;
+    }
+
+    async remove(collectionName, id) {
+        // 1. Delete Local
+        await this.local.delete(collectionName, id);
+
+        // 2. Delete Cloud
+        if (this.isOnline) {
+            try {
+                const docRef = doc(this.firestore, collectionName, id);
+                await deleteDoc(docRef);
+            } catch (e) {
+                console.warn("Cloud delete failed:", e);
+                // Queue a delete sync? 
+                // Currently sync logic assumes everything is 'put'. 
+                // Deletions in offline mode are hard without a 'deleted' flag (Soft Delete).
+                // For now, we just warn. To support offline delete properly, we'd need soft deletes.
+                // But user just asked to make it delete in firebase.
+            }
+        }
+    }
+
+    // Alias for compatibility
+    async delete(collectionName, id) {
+        return this.remove(collectionName, id);
     }
 
     // -----------------------------------------------------

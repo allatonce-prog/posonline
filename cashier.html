@@ -12,14 +12,25 @@
 
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/cashier.css">
+    <link rel="stylesheet" href="css/cashier-sidebar.css">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
 <body>
     <!-- Header -->
     <header class="cashier-header">
-        <div>
-            <h1 id="cashierHeaderTitle">🛒 POS System</h1>
-            <p id="cashierStoreName" style="font-size: 0.85rem; color: var(--gray-300); margin: 0;">📍 Store Name</p>
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleCashierSidebar()">
+            <i class="ph ph-list"></i>
+        </button>
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h1 id="cashierHeaderTitle" style="margin: 0; font-size: 1.25rem;">🛒 POS System</h1>
+                <span style="color: rgba(255,255,255,0.5); font-size: 1rem;">•</span>
+                <span id="currentPageTitle" style="font-size: 1rem; color: rgba(255,255,255,0.9); font-weight: 500;">New
+                    Sale</span>
+            </div>
+            <p id="cashierStoreName" style="font-size: 0.85rem; color: var(--gray-300); margin: 0.25rem 0 0 0;">📍 Store
+                Name</p>
         </div>
         <div class="cashier-user">
             <span id="cashierName">Cashier</span>
@@ -27,15 +38,48 @@
         </div>
     </header>
 
-    <!-- Navigation Tabs -->
-    <div class="view-tabs">
-        <button class="view-tab active" onclick="switchView('pos')">
-            <span>🛒</span> New Sale
-        </button>
-        <button class="view-tab" onclick="switchView('sales')">
-            <span>📜</span> My Sales
-        </button>
+    <!-- Sidebar Navigation -->
+    <div class="cashier-sidebar" id="cashierSidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <button class="sidebar-close" onclick="toggleCashierSidebar()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-item active" data-view="pos"
+                onclick="switchView('pos'); toggleCashierSidebar();">
+                <i class="ph ph-shopping-cart"></i>
+                <span>New Sale</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="sales" onclick="switchView('sales'); toggleCashierSidebar();">
+                <i class="ph ph-receipt"></i>
+                <span>My Sales</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="expenses"
+                onclick="switchView('expenses'); toggleCashierSidebar();">
+                <i class="ph ph-wallet"></i>
+                <span>Expenses</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="collectibles"
+                onclick="switchView('collectibles'); toggleCashierSidebar();">
+                <i class="ph ph-coins"></i>
+                <span>Collectibles</span>
+            </a>
+
+            <div
+                style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin: 1rem 0;">
+            </div>
+
+            <a href="#" class="sidebar-item" onclick="resetAppCache(); toggleCashierSidebar();" style="color: #fbbf24;">
+                <i class="ph ph-arrow-clockwise"></i>
+                <span>Reset App</span>
+            </a>
+        </nav>
     </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleCashierSidebar()"></div>
 
     <div class="cashier-layout">
         <!-- Main Content -->
@@ -70,25 +114,132 @@
             <!-- Sales View -->
             <div id="salesView" style="display: none;">
                 <div class="sales-filters">
-                    <button class="sales-filter-btn active" onclick="filterSales('recent')">Recent</button>
-                    <button class="sales-filter-btn" onclick="filterSales('today')">Today</button>
+                    <button class="sales-filter-btn" onclick="filterSales('recent')">Recent</button>
+                    <button class="sales-filter-btn active" onclick="filterSales('today')">Today</button>
                     <button class="sales-filter-btn" onclick="filterSales('yesterday')">Yesterday</button>
                 </div>
 
                 <div class="sales-stats">
                     <div class="stat-card">
                         <div class="stat-label">Total Sales</div>
-                        <div class="stat-value" id="salesTotalAmount">$0.00</div>
+                        <div class="stat-value" id="salesTotalAmount">₱0.00</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Transactions</div>
                         <div class="stat-value" id="salesTotalCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Net Profit</div>
+                        <div class="stat-value" id="salesNetProfit">₱0.00</div>
                     </div>
                 </div>
 
                 <div class="sales-list" id="salesList">
                     <!-- Sales will be loaded here -->
                     <div class="loading-spinner">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Expenses View -->
+            <div id="expensesView" style="display: none;">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h2>Record Expense</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-2">
+                            <label for="expenseAmount">Amount</label>
+                            <input type="number" id="expenseAmount" class="form-control" placeholder="0.00" min="0"
+                                step="0.01">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="expenseReason">Reason / Description</label>
+                            <input type="text" id="expenseReason" class="form-control"
+                                placeholder="e.g. Lunch, Transportation, Supplies">
+                        </div>
+                        <button class="btn btn-primary btn-block" onclick="submitExpense()">Submit Expense</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h2 id="expensesTitle">Today's Expenses</h2>
+                            <span class="badge badge-warning" id="todayExpensesTotal"
+                                style="font-size: 1rem;">₱0.00</span>
+                        </div>
+                        <div class="sales-filters" style="margin-bottom: 0;">
+                            <button class="sales-filter-btn active" onclick="loadExpenses('today')">Today</button>
+                            <button class="sales-filter-btn" onclick="loadExpenses('yesterday')">Yesterday</button>
+                            <button class="sales-filter-btn" onclick="loadExpenses('history')">History</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="expensesList" class="sales-list" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Expenses list -->
+                            <div class="loading-spinner">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collectibles View -->
+            <div id="collectiblesView" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Collectibles</h2>
+                        <p style="color: var(--gray-500); margin: 0.5rem 0 0 0; font-size: 0.9rem;">Track customer
+                            payments and receivables</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="collectibles-summary"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                            <div
+                                style="background: white; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <div
+                                    style="color: var(--gray-600); font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                                    Total Collectibles</div>
+                                <div style="font-size: 1.75rem; font-weight: 700; color: var(--dark);"
+                                    id="totalCollectibles">₱0.00</div>
+                            </div>
+                            <div
+                                style="background: white; border: 1px solid var(--gray-300); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <div
+                                    style="color: var(--gray-600); font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                                    Pending</div>
+                                <div style="font-size: 1.75rem; font-weight: 700; color: var(--dark);"
+                                    id="pendingCollectibles">0</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+                            <button class="btn btn-primary" onclick="showAddCollectibleModal()">
+                                <i class="ph ph-plus"></i> Add Collectible
+                            </button>
+
+                            <!-- Tab buttons -->
+                            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                                <button class="btn collectibles-tab-btn active"
+                                    onclick="switchCollectiblesTab('active')" data-tab="active">
+                                    Active
+                                </button>
+                                <button class="btn collectibles-tab-btn" onclick="switchCollectiblesTab('archives')"
+                                    data-tab="archives">
+                                    Archives
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Active Collectibles -->
+                        <div id="activeCollectiblesList" class="collectibles-list">
+                            <div class="loading-spinner">Loading collectibles...</div>
+                        </div>
+
+                        <!-- Archives -->
+                        <div id="archivesCollectiblesList" class="collectibles-list" style="display: none;">
+                            <div class="loading-spinner">Loading archives...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -240,6 +391,117 @@
         </div>
     </div>
 
+    <!-- Add Collectible Modal -->
+    <div class="modal" id="addCollectibleModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Add Collectible</h2>
+                <button class="modal-close" onclick="closeAddCollectibleModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="collectibleCustomer">Customer Name *</label>
+                    <input type="text" id="collectibleCustomer" placeholder="Enter customer name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Products *</label>
+                    <div style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); overflow: hidden;">
+                        <!-- Search box -->
+                        <div
+                            style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); background: var(--light);">
+                            <input type="text" id="collectibleProductSearch" placeholder="Search products..."
+                                style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-size: 0.9rem;">
+                        </div>
+
+                        <!-- Product list with checkboxes -->
+                        <div id="collectibleProductList" style="background: white;">
+                            <!-- Products will be loaded here -->
+                        </div>
+
+                        <!-- Show More/Less button -->
+                        <div id="collectibleShowMoreContainer"
+                            style="padding: 0.5rem; border-top: 1px solid var(--gray-200); background: white; text-align: center; display: none;">
+                            <button type="button" onclick="toggleCollectibleProductList()"
+                                style="background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; padding: 0.5rem; font-size: 0.9rem;">
+                                <span id="collectibleShowMoreText">Show More</span> <i class="ph ph-caret-down"
+                                    id="collectibleShowMoreIcon"></i>
+                            </button>
+                        </div>
+
+                        <!-- Add button -->
+                        <div style="padding: 0.75rem; border-top: 1px solid var(--gray-200); background: var(--light);">
+                            <button type="button" class="btn btn-primary" onclick="addCheckedProductsToCollectible()"
+                                style="width: 100%;">
+                                <i class="ph ph-plus"></i> Add Selected Products
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Selected Items</label>
+                    <div id="collectibleSelectedItems"
+                        style="min-height: 100px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 1rem;">
+                        <p style="text-align: center; color: var(--gray-500);">No items selected</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="collectibleNotes">Notes (Optional)</label>
+                    <textarea id="collectibleNotes" rows="3" placeholder="Add any notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddCollectibleModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCollectible()">Save Collectible</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collect Payment Modal -->
+    <div class="modal" id="collectPaymentModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Collect Payment</h2>
+                <button class="modal-close" onclick="closeCollectPaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background: var(--light); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                    <div style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">Customer</div>
+                    <div style="font-weight: 600; font-size: 1.1rem;" id="paymentCustomerName"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600);">Total Amount</div>
+                        <div style="font-weight: 700; font-size: 1.25rem;" id="paymentTotalAmount">₱0.00</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600);">Balance</div>
+                        <div style="font-weight: 700; font-size: 1.25rem; color: var(--danger);" id="paymentBalance">
+                            ₱0.00</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentAmount">Payment Amount *</label>
+                    <input type="number" id="paymentAmount" placeholder="Enter amount" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentNotes">Notes (Optional)</label>
+                    <textarea id="paymentNotes" rows="2" placeholder="Add payment notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCollectPaymentModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="savePayment()">Collect Payment</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Printable Area (Hidden by default, shown while printing) -->
     <div id="receipt-printable" style="display: none;"></div>
 
@@ -247,6 +509,7 @@
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/admin/settings.js"></script>
+    <script src="js/collectibles-payment.js"></script>
     <script src="js/cashier.js"></script>
     <script>
         // Apply custom settings to cashier page
@@ -269,6 +532,720 @@
                     document.title = `Cashier - ${settings.systemName}`;
                 }
             }
+
+            // Sidebar toggle function
+            window.toggleCashierSidebar = function () {
+                const sidebar = document.getElementById('cashierSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            };
+
+            // Collectibles functionality
+            let collectibleSelectedItems = [];
+            let collectibleProducts = [];
+
+            window.showAddCollectibleModal = async function () {
+                const modal = document.getElementById('addCollectibleModal');
+                modal.style.display = 'flex';
+
+                // Reset form
+                document.getElementById('collectibleCustomer').value = '';
+                document.getElementById('collectibleNotes').value = '';
+                document.getElementById('collectibleProductSearch').value = '';
+                collectibleSelectedItems = [];
+                isCollectibleListExpanded = false; // Reset to collapsed state
+
+                // Load products
+                await loadCollectibleProducts();
+                updateCollectibleSelectedItems();
+
+                // Uncheck all checkboxes
+                document.querySelectorAll('.collectible-product-checkbox').forEach(cb => cb.checked = false);
+            };
+
+            window.closeAddCollectibleModal = function () {
+                const modal = document.getElementById('addCollectibleModal');
+                modal.style.display = 'none';
+            };
+
+            async function loadCollectibleProducts() {
+                const user = auth.getCurrentUser();
+                if (!user) return;
+
+                const allProducts = await db.getAll('products');
+                collectibleProducts = allProducts.filter(p =>
+                    p.storeId === user.storeId &&
+                    p.stock > 0 &&
+                    !p.isIngredient
+                );
+
+                renderCollectibleProductsCheckboxes(collectibleProducts);
+            }
+
+            let isCollectibleListExpanded = false;
+            let currentCollectibleProducts = [];
+
+            function renderCollectibleProductsCheckboxes(productsToShow = collectibleProducts) {
+                const list = document.getElementById('collectibleProductList');
+                const showMoreContainer = document.getElementById('collectibleShowMoreContainer');
+
+                if (!list) return;
+
+                // Store current products for toggle
+                currentCollectibleProducts = productsToShow;
+
+                if (productsToShow.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: var(--gray-500); padding: 1.5rem;">No products available</p>';
+                    if (showMoreContainer) showMoreContainer.style.display = 'none';
+                    return;
+                }
+
+                // Determine how many to show
+                const limit = isCollectibleListExpanded ? productsToShow.length : 3;
+                const productsToRender = productsToShow.slice(0, limit);
+
+                list.innerHTML = productsToRender.map(product => `
+                    <label style="display: flex; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.2s;"
+                           onmouseover="this.style.background='var(--light)'"
+                           onmouseout="this.style.background='white'">
+                        <input type="checkbox"
+                               class="collectible-product-checkbox"
+                               data-product-id="${product.id}"
+                               style="width: 18px; height: 18px; margin-right: 0.75rem; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--dark);">${escapeHtml(product.name)}</div>
+                            <div style="font-size: 0.85rem; color: var(--gray-500);">
+                                ${formatCurrency(product.price)} • Stock: ${product.stock}
+                            </div>
+                        </div>
+                    </label>
+                `).join('');
+
+                // Show/hide "Show More" button
+                if (showMoreContainer) {
+                    if (productsToShow.length > 3) {
+                        showMoreContainer.style.display = 'block';
+                        updateShowMoreButton();
+                    } else {
+                        showMoreContainer.style.display = 'none';
+                    }
+                }
+            }
+
+            function updateShowMoreButton() {
+                const textEl = document.getElementById('collectibleShowMoreText');
+                const iconEl = document.getElementById('collectibleShowMoreIcon');
+
+                if (isCollectibleListExpanded) {
+                    if (textEl) textEl.textContent = 'Show Less';
+                    if (iconEl) iconEl.className = 'ph ph-caret-up';
+                } else {
+                    if (textEl) textEl.textContent = 'Show More';
+                    if (iconEl) iconEl.className = 'ph ph-caret-down';
+                }
+            }
+
+            window.toggleCollectibleProductList = function () {
+                isCollectibleListExpanded = !isCollectibleListExpanded;
+                renderCollectibleProductsCheckboxes(currentCollectibleProducts);
+            };
+
+            // Search products
+            document.addEventListener('DOMContentLoaded', () => {
+                const searchInput = document.getElementById('collectibleProductSearch');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        const query = e.target.value.toLowerCase();
+                        const filtered = collectibleProducts.filter(p =>
+                            p.name.toLowerCase().includes(query) ||
+                            (p.sku && p.sku.toLowerCase().includes(query))
+                        );
+                        renderCollectibleProductsCheckboxes(filtered);
+                    });
+                }
+            });
+
+            window.addCheckedProductsToCollectible = function () {
+                const checkboxes = document.querySelectorAll('.collectible-product-checkbox:checked');
+
+                if (checkboxes.length === 0) {
+                    showToast('Please select at least one product', 'warning');
+                    return;
+                }
+
+                let addedCount = 0;
+                checkboxes.forEach(checkbox => {
+                    const productId = checkbox.getAttribute('data-product-id');
+                    const product = collectibleProducts.find(p => p.id === productId);
+
+                    if (product) {
+                        const existing = collectibleSelectedItems.find(item => item.productId === productId);
+                        if (!existing) {
+                            collectibleSelectedItems.push({
+                                productId: product.id,
+                                name: product.name,
+                                price: product.price,
+                                quantity: 1,
+                                total: product.price,
+                                maxStock: product.stock
+                            });
+                            addedCount++;
+                        }
+                    }
+
+                    // Uncheck the checkbox
+                    checkbox.checked = false;
+                });
+
+                if (addedCount > 0) {
+                    showToast(`Added ${addedCount} product${addedCount > 1 ? 's' : ''}`, 'success');
+                    updateCollectibleSelectedItems();
+                }
+            };
+
+            window.addToCollectible = function (productId) {
+                console.log('addToCollectible called with productId:', productId);
+                console.log('collectibleProducts:', collectibleProducts);
+
+                const product = collectibleProducts.find(p => p.id === productId);
+                console.log('Found product:', product);
+
+                if (!product) {
+                    console.error('Product not found!');
+                    showToast('Product not found', 'error');
+                    return;
+                }
+
+                const existing = collectibleSelectedItems.find(item => item.productId === productId);
+                if (existing) {
+                    if (existing.quantity < product.stock) {
+                        existing.quantity++;
+                        existing.total = existing.quantity * existing.price;
+                    } else {
+                        showToast('Not enough stock', 'warning');
+                        return;
+                    }
+                } else {
+                    collectibleSelectedItems.push({
+                        productId: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        total: product.price,
+                        maxStock: product.stock
+                    });
+                }
+
+                console.log('collectibleSelectedItems after add:', collectibleSelectedItems);
+                updateCollectibleSelectedItems();
+            };
+
+            window.removeFromCollectible = function (productId) {
+                collectibleSelectedItems = collectibleSelectedItems.filter(item => item.productId !== productId);
+                updateCollectibleSelectedItems();
+            };
+
+            window.updateCollectibleQuantity = function (productId, change) {
+                const item = collectibleSelectedItems.find(i => i.productId === productId);
+                if (!item) return;
+
+                const newQty = item.quantity + change;
+                if (newQty <= 0) {
+                    removeFromCollectible(productId);
+                    return;
+                }
+
+                if (newQty > item.maxStock) {
+                    showToast('Not enough stock', 'warning');
+                    return;
+                }
+
+                item.quantity = newQty;
+                item.total = item.quantity * item.price;
+                updateCollectibleSelectedItems();
+            };
+
+            function updateCollectibleSelectedItems() {
+                console.log('updateCollectibleSelectedItems called');
+                console.log('Current items:', collectibleSelectedItems);
+
+                const container = document.getElementById('collectibleSelectedItems');
+                console.log('Container element:', container);
+
+                if (collectibleSelectedItems.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--gray-500);">No items selected</p>';
+                    return;
+                }
+
+                const totalAmount = collectibleSelectedItems.reduce((sum, item) => sum + item.total, 0);
+
+                container.innerHTML = `
+                    ${collectibleSelectedItems.map(item => `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--gray-200);">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
+                                <div style="font-size: 0.85rem; color: var(--gray-500);">${formatCurrency(item.price)} each</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="updateCollectibleQuantity('${item.productId}', -1)" style="width: 30px; height: 30px; padding: 0;">-</button>
+                                <span style="min-width: 30px; text-align: center; font-weight: 600;">${item.quantity}</span>
+                                <button class="btn btn-sm" onclick="updateCollectibleQuantity('${item.productId}', 1)" style="width: 30px; height: 30px; padding: 0;">+</button>
+                                <span style="min-width: 80px; text-align: right; font-weight: 600;">${formatCurrency(item.total)}</span>
+                                <button class="btn btn-sm btn-danger" onclick="removeFromCollectible('${item.productId}')" style="width: 30px; height: 30px; padding: 0;">×</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--gray-300); display: flex; justify-content: space-between; align-items: center;">
+                        <strong>Total Amount:</strong>
+                        <strong style="font-size: 1.25rem; color: var(--primary);">${formatCurrency(totalAmount)}</strong>
+                    </div>
+                `;
+            }
+
+            window.saveCollectible = async function () {
+                const customerName = document.getElementById('collectibleCustomer').value.trim();
+                const notes = document.getElementById('collectibleNotes').value.trim();
+
+                if (!customerName) {
+                    showToast('Please enter customer name', 'warning');
+                    return;
+                }
+
+                if (collectibleSelectedItems.length === 0) {
+                    showToast('Please select at least one product', 'warning');
+                    return;
+                }
+
+                showLoading('Saving collectible...');
+
+                try {
+                    const user = auth.getCurrentUser();
+                    const totalAmount = collectibleSelectedItems.reduce((sum, item) => sum + item.total, 0);
+
+                    const collectible = {
+                        customerName: customerName,
+                        items: collectibleSelectedItems,
+                        totalAmount: totalAmount,
+                        paidAmount: 0,
+                        status: 'pending',
+                        notes: notes,
+                        cashier: user.username,
+                        cashierName: user.name || user.username,
+                        storeId: user.storeId,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    await db.add('collectibles', collectible);
+
+                    for (const item of collectibleSelectedItems) {
+                        const product = await db.get('products', item.productId);
+                        if (product) {
+                            product.stock -= item.quantity;
+                            await db.update('products', {
+                                id: item.productId,
+                                stock: product.stock
+                            });
+
+                            await db.add('stockMovements', {
+                                productId: item.productId,
+                                productName: item.name,
+                                type: 'out',
+                                quantity: item.quantity,
+                                reason: `Collectible - ${customerName}`,
+                                date: new Date().toISOString(),
+                                user: user.username,
+                                storeId: user.storeId
+                            });
+                        }
+                    }
+
+                    hideLoading();
+                    showToast('Collectible saved successfully', 'success');
+                    closeAddCollectibleModal();
+                    loadCollectibles();
+
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error saving collectible:', error);
+                    showToast('Error saving collectible: ' + error.message, 'error');
+                }
+            };
+
+
+            let currentArchivesPage = 1;
+            const ARCHIVES_ITEMS_PER_PAGE = 2;
+
+            window.changeArchivesPage = function (page) {
+                currentArchivesPage = page;
+                loadCollectibles();
+            };
+
+            window.loadCollectibles = async function () {
+                const activeList = document.getElementById('activeCollectiblesList');
+                const archivesList = document.getElementById('archivesCollectiblesList');
+
+                if (!activeList || !archivesList) return;
+
+                const targetList = currentCollectiblesTab === 'active' ? activeList : archivesList;
+                targetList.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+                try {
+                    const user = auth.getCurrentUser();
+                    if (!user) return;
+
+                    const allCollectibles = await db.getAll('collectibles');
+                    const storeCollectibles = allCollectibles.filter(c => c.storeId === user.storeId);
+
+                    // Separate active (unpaid) and archives (paid)
+                    const activeCollectibles = storeCollectibles
+                        .filter(c => c.status !== 'paid')
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                    const archivedCollectibles = storeCollectibles
+                        .filter(c => c.status === 'paid')
+                        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+
+                    // Update summary stats (only for active)
+                    const totalAmount = activeCollectibles.reduce((sum, c) => sum + (c.totalAmount - (c.paidAmount || 0)), 0);
+                    const unpaidCount = activeCollectibles.filter(c => c.paidAmount === 0 || !c.paidAmount).length;
+
+                    const totalEl = document.getElementById('totalCollectibles');
+                    const pendingEl = document.getElementById('pendingCollectibles');
+
+                    if (totalEl) totalEl.textContent = formatCurrency(totalAmount);
+                    if (pendingEl) pendingEl.textContent = unpaidCount;
+
+                    // Handle Pagination for Archives
+                    let collectibles = [];
+                    let paginationHtml = '';
+
+                    if (currentCollectiblesTab === 'active') {
+                        collectibles = activeCollectibles;
+                    } else {
+                        // Archives - apply pagination
+                        const totalPages = Math.ceil(archivedCollectibles.length / ARCHIVES_ITEMS_PER_PAGE);
+
+                        // Ensure current page is valid
+                        if (currentArchivesPage < 1) currentArchivesPage = 1;
+                        if (currentArchivesPage > totalPages && totalPages > 0) currentArchivesPage = totalPages;
+
+                        const start = (currentArchivesPage - 1) * ARCHIVES_ITEMS_PER_PAGE;
+                        collectibles = archivedCollectibles.slice(start, start + ARCHIVES_ITEMS_PER_PAGE);
+
+                        if (totalPages > 1) {
+                            paginationHtml = `
+                                <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="changeArchivesPage(${currentArchivesPage - 1})" 
+                                            ${currentArchivesPage === 1 ? 'disabled' : ''}>
+                                        <i class="ph ph-caret-left"></i> Previous
+                                    </button>
+                                    <span style="font-size: 0.9rem; color: var(--gray-600); font-weight: 500;">
+                                        Page ${currentArchivesPage} of ${totalPages}
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="changeArchivesPage(${currentArchivesPage + 1})" 
+                                            ${currentArchivesPage === totalPages ? 'disabled' : ''}>
+                                        Next <i class="ph ph-caret-right"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    if (collectibles.length === 0) {
+                        targetList.innerHTML = `
+                            <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                                <p>No ${currentCollectiblesTab === 'active' ? 'active collectibles' : 'archives'} yet</p>
+                                <p style="font-size: 0.9rem;">${currentCollectiblesTab === 'active' ? 'Add your first collectible to get started' : 'Paid collectibles will appear here'}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    targetList.innerHTML = collectibles.map(c => {
+                        const balance = c.totalAmount - (c.paidAmount || 0);
+                        const statusClass = c.status === 'paid' ? 'paid' : (c.paidAmount > 0 ? 'partial' : 'pending');
+                        const statusText = c.status === 'paid' ? 'Paid' : (c.paidAmount > 0 ? 'Partial' : 'Unpaid');
+
+                        return `
+                            <div class="collectible-card">
+                                <div class="collectible-header">
+                                    <div>
+                                        <div class="collectible-customer">${escapeHtml(c.customerName)}</div>
+                                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                            ${new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </div>
+                                    </div>
+                                    <div class="collectible-amount">${formatCurrency(balance)}</div>
+                                </div>
+                                <div class="collectible-details">
+                                    <div><strong>${c.items.length}</strong> item${c.items.length !== 1 ? 's' : ''}</div>
+                                    <div>Total: <strong>${formatCurrency(c.totalAmount)}</strong></div>
+                                    ${c.paidAmount > 0 ? `<div>Paid: <strong>${formatCurrency(c.paidAmount)}</strong></div>` : ''}
+                                </div>
+                                ${c.notes ? `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--light); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--gray-700);">${escapeHtml(c.notes)}</div>` : ''}
+                                <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="collectible-status ${statusClass}">${statusText}</span>
+                                    ${c.status !== 'paid' ? `
+                                        <button class="btn btn-primary btn-sm" onclick="showCollectPaymentModal('${c.id}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            <i class="ph ph-currency-circle-dollar"></i> Collect
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('') + paginationHtml;
+
+                } catch (error) {
+                    console.error('Error loading collectibles:', error);
+                    targetList.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--danger);">
+                            <p>Error loading collectibles</p>
+                            <p style="font-size: 0.9rem;">${error.message}</p>
+                        </div>
+                    `;
+                }
+            };
+
+            // Sales View Functions
+            let currentSalesFilter = 'today';
+
+            window.loadSales = async function () {
+                console.log('loadSales called');
+                await filterSales(currentSalesFilter);
+            };
+
+            window.filterSales = async function (filter) {
+                console.log('filterSales called with filter:', filter);
+                currentSalesFilter = filter;
+
+                const filterBtns = document.querySelectorAll('.sales-filter-btn');
+                filterBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.textContent.toLowerCase().includes(filter)) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                const salesList = document.getElementById('salesList');
+                if (!salesList) {
+                    console.error('salesList element not found');
+                    return;
+                }
+
+                salesList.innerHTML = '<div class="loading-spinner">Loading sales...</div>';
+
+                try {
+                    const user = auth.getCurrentUser();
+                    console.log('Current user:', user);
+
+                    if (!user) {
+                        salesList.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">⚠️</div>
+                                <h3>Not logged in</h3>
+                                <p>Please log in to view sales</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    console.log('Fetching transactions...');
+                    const allTransactions = await db.getAll('transactions');
+                    console.log('All transactions:', allTransactions.length);
+
+                    let transactions = allTransactions.filter(t =>
+                        t.cashier === user.username &&
+                        t.storeId === user.storeId &&
+                        !t.voided
+                    );
+                    console.log('Filtered transactions for cashier:', transactions.length);
+
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+
+                    if (filter === 'today') {
+                        transactions = transactions.filter(t => new Date(t.date) >= today);
+                    } else if (filter === 'yesterday') {
+                        transactions = transactions.filter(t => {
+                            const txDate = new Date(t.date);
+                            return txDate >= yesterday && txDate < today;
+                        });
+                    } else if (filter === 'recent') {
+                        transactions = transactions.slice(0, 20);
+                    }
+
+                    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    console.log('Final transactions after filter:', transactions.length);
+
+                    // Robust total calculation handling NaN or missing fields
+                    const totalAmount = transactions.reduce((sum, t) => {
+                        const val = Number(t.total) || Number(t.amount) || 0;
+                        return sum + val;
+                    }, 0);
+
+                    const totalCount = transactions.length;
+
+                    // Calculate net profit as Total Sales - Expenses for the same period
+                    const allExpenses = await db.getAll('expenses');
+
+                    // Filter expenses by same date range and cashier
+                    let expenses = allExpenses.filter(e =>
+                        e.cashier === user.username &&
+                        e.storeId === user.storeId
+                    );
+
+                    // Apply same date filter to expenses
+                    if (filter === 'today') {
+                        expenses = expenses.filter(e => new Date(e.date) >= today);
+                    } else if (filter === 'yesterday') {
+                        expenses = expenses.filter(e => {
+                            const expDate = new Date(e.date);
+                            return expDate >= yesterday && expDate < today;
+                        });
+                    } else if (filter === 'recent') {
+                        // For recent, use same date range as the oldest transaction
+                        if (transactions.length > 0) {
+                            const oldestTxDate = new Date(transactions[transactions.length - 1].date);
+                            expenses = expenses.filter(e => new Date(e.date) >= oldestTxDate);
+                        }
+                    }
+
+                    const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                    const netProfit = totalAmount - totalExpenses;
+
+                    console.log('Total Sales:', totalAmount, 'Total Expenses:', totalExpenses, 'Net Profit:', netProfit);
+
+                    const totalAmountEl = document.getElementById('salesTotalAmount');
+                    const totalCountEl = document.getElementById('salesTotalCount');
+                    const netProfitEl = document.getElementById('salesNetProfit');
+
+                    if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalAmount);
+                    if (totalCountEl) totalCountEl.textContent = totalCount;
+                    if (netProfitEl) netProfitEl.textContent = formatCurrency(netProfit);
+
+                    if (transactions.length === 0) {
+                        salesList.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <h3>No sales found</h3>
+                                <p>No transactions for this period</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    salesList.innerHTML = transactions.map(transaction => {
+                        const date = new Date(transaction.date);
+                        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        const txId = transaction.id ? 'TXN-' + transaction.id.slice(-8).toUpperCase() : 'N/A';
+
+                        // Handle potential NaN in display
+                        const displayTotal = Number(transaction.total) || Number(transaction.amount) || 0;
+
+                        return `
+                            <div class="sale-card" onclick="viewTransactionDetails('${transaction.id}')">
+                                <div class="sale-header">
+                                    <div>
+                                        <div class="sale-id">${txId}</div>
+                                        <div class="sale-date">${dateStr} at ${timeStr}</div>
+                                    </div>
+                                    <div class="sale-amount">${formatCurrency(displayTotal)}</div>
+                                </div>
+                                <div class="sale-details">
+                                    <span>${transaction.items ? transaction.items.length : 0} item${(transaction.items && transaction.items.length !== 1) ? 's' : ''}</span>
+                                    <span>•</span>
+                                    <span>${transaction.paymentMethod || 'Cash'}</span>
+                                    ${transaction.customerName ? `<span>•</span><span>${escapeHtml(transaction.customerName)}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    console.log('Sales loaded successfully');
+
+                } catch (error) {
+                    console.error('Error loading sales:', error);
+                    salesList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⚠️</div>
+                            <h3>Error loading sales</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            };
+
+            // View switching function
+            window.switchView = function (view) {
+                // Page title mapping
+                const pageTitles = {
+                    'pos': 'New Sale',
+                    'sales': 'My Sales',
+                    'expenses': 'Expenses',
+                    'collectibles': 'Collectibles'
+                };
+
+                // Hide all views
+                const views = ['posView', 'salesView', 'expensesView', 'collectiblesView'];
+                views.forEach(v => {
+                    const element = document.getElementById(v);
+                    if (element) element.style.display = 'none';
+                });
+
+                // Show selected view
+                const selectedView = document.getElementById(view + 'View');
+                if (selectedView) {
+                    selectedView.style.display = 'block';
+                }
+
+                // Update page title in header
+                const pageTitleElement = document.getElementById('currentPageTitle');
+                if (pageTitleElement && pageTitles[view]) {
+                    pageTitleElement.textContent = pageTitles[view];
+                }
+
+                // Update sidebar active states
+                const sidebarItems = document.querySelectorAll('.sidebar-item');
+                sidebarItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-view') === view) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Handle cart sidebar visibility (only show in POS view)
+                const cartSidebar = document.getElementById('cartSidebar');
+                const mobileCartBar = document.getElementById('mobileCartBar');
+
+                if (view === 'pos') {
+                    if (cartSidebar) cartSidebar.style.display = 'flex';
+                    if (mobileCartBar) mobileCartBar.style.display = 'flex';
+                } else {
+                    if (cartSidebar) cartSidebar.style.display = 'none';
+                    if (mobileCartBar) mobileCartBar.style.display = 'none';
+                }
+
+                // Load data for specific views
+                console.log('Loading data for view:', view);
+                if (view === 'sales' && typeof loadSales === 'function') {
+                    console.log('Calling loadSales...');
+                    loadSales();
+                } else if (view === 'sales') {
+                    console.error('loadSales function not found!');
+                } else if (view === 'expenses' && typeof loadExpenses === 'function') {
+                    loadExpenses('today');
+                } else if (view === 'collectibles' && typeof loadCollectibles === 'function') {
+                    loadCollectibles();
+                }
+            };
         });
     </script>
 </body>

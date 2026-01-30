@@ -77,20 +77,24 @@ async function loadProducts() {
     const lowStockThreshold = getLowStockThreshold();
 
     tbody.innerHTML = products.map(product => {
-        const stockClass = product.stock <= lowStockThreshold ? 'low-stock-badge' : '';
-        const stockText = product.stock <= lowStockThreshold
-            ? `<span class="low-stock-badge">${product.stock}</span>`
-            : product.stock;
+        const isLowStock = product.stock <= lowStockThreshold;
+        // Use inline styles or utility classes if available
+        const stockStyle = isLowStock
+            ? 'background-color: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;'
+            : 'background-color: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;';
+
+        const stockText = `<span style="${stockStyle}">${product.stock}</span>`;
 
         return `
-      <tr>
-        <td>${escapeHtml(product.sku)}</td>
-        <td>${escapeHtml(product.name)}</td>
-        <td>${escapeHtml(product.category || '-')}</td>
-        <td>${formatCurrency(product.price)}</td>
-        <td>${stockText}</td>
-        <td>
-          <div class="action-btns">
+      <tr onclick="editProduct('${product.id}')" style="cursor: pointer;">
+        <td data-label="SKU">${escapeHtml(product.sku)}</td>
+        <td data-label="Name" style="font-weight: 600; color: var(--dark);">${escapeHtml(product.name)}</td>
+        <td data-label="Category">${escapeHtml(product.category || '-')}</td>
+        <td data-label="Price" style="color: var(--success); font-weight: bold; font-size: 1.1rem;">${formatCurrency(product.price)}</td>
+        <td data-label="Stock" style="text-align: right;">${stockText}</td>
+        <td class="action-cell text-right" onclick="event.stopPropagation()">
+            <!-- Actions visible mainly on desktop or as needed -->
+          <div class="action-btns justify-content-end">
             <button class="btn btn-sm btn-secondary btn-icon" onclick="editProduct('${product.id}')" title="Edit">
               ✏️
             </button>
@@ -135,6 +139,15 @@ function showAddProductModal() {
     document.getElementById('productModalTitle').textContent = 'Add Product';
     document.getElementById('productForm').reset();
     document.getElementById('productId').value = '';
+
+    // Reset alternative prices
+    currentAlternativePrices = [];
+    renderAlternativePrices();
+
+    // Hide delete button for new products
+    const deleteBtn = document.getElementById('btnDeleteProduct');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
     document.getElementById('productModal').classList.add('active');
 
     // Populate category dropdown
@@ -170,10 +183,52 @@ async function editProduct(id) {
     document.getElementById('productStock').value = product.stock;
     document.getElementById('productDescription').value = product.description || '';
 
+    // Load alternative prices
+    currentAlternativePrices = product.alternativePrices || [];
+    renderAlternativePrices();
+
+    // Show delete button for existing products
+    const deleteBtn = document.getElementById('btnDeleteProduct');
+    if (deleteBtn) deleteBtn.style.display = 'block';
+
     // Populate category dropdown
     populateCategoryList();
 
     document.getElementById('productModal').classList.add('active');
+}
+
+// Delete current product from modal
+async function deleteCurrentProduct() {
+    if (editingProductId) {
+        // Close modal first or after? Interactive confirm is in deleteProduct
+        // We'll call deleteProduct. If it succeeds, we close the modal.
+        // But deleteProduct asks for confirmation.
+
+        // Let's use deleteProduct logic directly but handle the modal part
+        if (!confirmDialog('Are you sure you want to delete this product? This action cannot be undone.')) {
+            return;
+        }
+
+        showLoading('Deleting product...');
+
+        try {
+            await db.remove('products', editingProductId);
+
+            // Also delete related stock movements
+            const movements = await db.getAllByIndex('stockMovements', 'productId', editingProductId);
+            for (const movement of movements) {
+                await db.remove('stockMovements', movement.id);
+            }
+
+            hideLoading();
+            showToast('Product deleted successfully', 'success');
+            closeProductModal();
+            await loadProducts();
+        } catch (error) {
+            hideLoading();
+            showToast('Error deleting product: ' + error.message, 'error');
+        }
+    }
 }
 
 // Save product
@@ -212,6 +267,7 @@ async function saveProduct() {
             product.cost = cost;
             product.stock = stock;
             product.description = description;
+            product.alternativePrices = currentAlternativePrices;
 
             await db.update('products', product);
 
@@ -247,6 +303,7 @@ async function saveProduct() {
                 cost,
                 stock,
                 description,
+                alternativePrices: currentAlternativePrices,
                 image: null,
                 createdAt: new Date().toISOString()
             });
@@ -285,12 +342,12 @@ async function deleteProduct(id) {
     showLoading('Deleting product...');
 
     try {
-        await db.delete('products', id);
+        await db.remove('products', id);
 
         // Also delete related stock movements
         const movements = await db.getAllByIndex('stockMovements', 'productId', id);
         for (const movement of movements) {
-            await db.delete('stockMovements', movement.id);
+            await db.remove('stockMovements', movement.id);
         }
 
         hideLoading();
@@ -364,3 +421,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Alternative Prices Logic
+let currentAlternativePrices = [];
+
+function renderAlternativePrices() {
+    const list = document.getElementById('alternativePricesList');
+    if (!list) return;
+
+    list.innerHTML = currentAlternativePrices.map((p, index) => `
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; background: var(--light); padding: 0.5rem; border-radius: var(--radius-sm);">
+            <div style="flex: 1; font-weight: 500;">${escapeHtml(p.name)}</div>
+            <div style="flex: 1;">${formatCurrency(p.price)}</div>
+            <button type="button" class="btn btn-sm btn-danger btn-icon" onclick="removeAlternativePrice(${index})" style="width: 24px; height: 24px; padding: 0;">×</button>
+        </div>
+    `).join('');
+}
+
+function addAlternativePrice() {
+    const labelInput = document.getElementById('newPriceLabel');
+    const valueInput = document.getElementById('newPriceValue');
+
+    const name = labelInput.value.trim();
+    const price = parseFloat(valueInput.value);
+
+    if (!name || isNaN(price) || price < 0) {
+        showToast('Please enter a valid name and price', 'warning');
+        return;
+    }
+
+    currentAlternativePrices.push({ name, price });
+    renderAlternativePrices();
+
+    // Clear inputs
+    labelInput.value = '';
+    valueInput.value = '';
+    labelInput.focus();
+}
+
+function removeAlternativePrice(index) {
+    currentAlternativePrices.splice(index, 1);
+    renderAlternativePrices();
+}

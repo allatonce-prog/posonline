@@ -154,9 +154,12 @@ async function switchTab(tab) {
         products: 'Products',
         inventory: 'Inventory Management',
         sales: 'Sales Records',
+        expenses: 'Expenses Tracking',
+        collectibles: 'Collectibles Monitoring',
         reports: 'Reports & Analytics',
         users: 'User Management',
-        settings: 'System Settings'
+        settings: 'System Settings',
+        history: 'Stock Movement History'
     };
     document.getElementById('pageTitle').textContent = titles[tab] || tab;
 
@@ -175,8 +178,21 @@ async function switchTab(tab) {
             case 'inventory':
                 await loadInventory();
                 break;
+            case 'history':
+                if (typeof loadStockMovements === 'function') {
+                    await loadStockMovements();
+                } else {
+                    console.warn('loadStockMovements not found');
+                }
+                break;
             case 'sales':
                 await loadSales();
+                break;
+            case 'expenses':
+                await loadExpenses();
+                break;
+            case 'collectibles':
+                await loadCollectibles();
                 break;
             case 'reports':
                 await loadReports();
@@ -200,6 +216,7 @@ async function switchTab(tab) {
 async function loadDashboard() {
     const products = await db.getAll('products');
     const transactions = await db.getAll('transactions');
+    const expenses = await db.getAll('expenses');
     const users = await db.getAll('users');
     const userMap = {};
     users.forEach(u => {
@@ -216,12 +233,52 @@ async function loadDashboard() {
         return transDate.getTime() === today.getTime();
     });
 
-    const todaySales = todayTransactions.reduce((sum, t) => sum + t.total, 0);
+    const todayExpensesList = expenses.filter(e => {
+        const expenseDate = new Date(e.date);
+        expenseDate.setHours(0, 0, 0, 0);
+        return expenseDate.getTime() === today.getTime();
+    });
+
+    const todaySales = todayTransactions.reduce((sum, t) => {
+        // Handle both standard sales and collectible payments
+        // Ensure values are numbers and default to 0 if invalid
+        const total = Number(t.total) || Number(t.amount) || 0;
+        return sum + total;
+    }, 0);
+
+    // Ensure expenses amount is treated as a number
+    const todayExpensesTotal = todayExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const todayNetProfit = todaySales - todayExpensesTotal;
+
     const lowStockThreshold = getLowStockThreshold();
     const lowStockItems = products.filter(p => p.stock <= lowStockThreshold).length;
 
     // Update stats
-    document.getElementById('todaySales').textContent = formatCurrency(todaySales);
+    const todaySalesEl = document.getElementById('todaySales');
+    const todayExpensesEl = document.getElementById('todayExpensesDash');
+    const todayNetProfitEl = document.getElementById('todayNetProfit');
+    const netProfitIcon = document.getElementById('netProfitIcon');
+
+    if (todaySalesEl) todaySalesEl.textContent = formatCurrency(todaySales);
+    if (todayExpensesEl) todayExpensesEl.textContent = formatCurrency(todayExpensesTotal);
+    if (todayNetProfitEl) {
+        todayNetProfitEl.textContent = formatCurrency(todayNetProfit);
+        if (todayNetProfit < 0) {
+            todayNetProfitEl.style.color = 'var(--danger)';
+            if (netProfitIcon) {
+                netProfitIcon.className = 'stat-icon danger';
+                netProfitIcon.innerHTML = '<i class="ph ph-trend-down"></i>';
+            }
+        } else {
+            todayNetProfitEl.style.color = 'var(--success-dark)';
+            if (netProfitIcon) {
+                netProfitIcon.className = 'stat-icon success';
+                netProfitIcon.innerHTML = '<i class="ph ph-trend-up"></i>';
+            }
+        }
+    }
+
     document.getElementById('totalProducts').textContent = products.length;
     document.getElementById('lowStockItems').textContent = lowStockItems;
     document.getElementById('totalTransactions').textContent = transactions.length;

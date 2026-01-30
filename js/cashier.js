@@ -379,7 +379,12 @@ function updateCart() {
         </div>
         <div class="cart-item-info">
           <div class="cart-item-name">${escapeHtml(item.name)}</div>
-          <div class="cart-item-price">${formatCurrency(item.price)} × ${item.quantity}</div>
+          <div class="cart-item-price">
+            ${formatCurrency(item.price)} × ${item.quantity}
+             ${item.alternativePrices && item.alternativePrices.length > 0 ?
+                `<button class="btn btn-sm btn-outline-primary" style="padding: 2px 8px; margin-left: 8px; font-size: 0.9rem;" onclick="event.stopPropagation(); showPriceSelector('${item.id}')" title="Change Price">🏷️</button>`
+                : ''}
+          </div>
           <div class="cart-item-controls">
             <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">−</button>
             <input 
@@ -674,11 +679,21 @@ function setupMobileCart() {
     document.addEventListener('click', (e) => {
         const cartSidebar = document.getElementById('cartSidebar');
         const mobileBar = document.getElementById('mobileCartBar');
+        const priceModal = document.getElementById('priceSelectorModal');
+        const checkoutModal = document.getElementById('checkoutModal');
+
+        // Check if click is inside price selector or checkout modal
+        if ((priceModal && priceModal.classList.contains('active') && priceModal.contains(e.target)) ||
+            (checkoutModal && checkoutModal.classList.contains('active') && checkoutModal.contains(e.target))) {
+            return;
+        }
 
         if (window.innerWidth <= 900 &&
             cartSidebar.classList.contains('expanded') &&
             !cartSidebar.contains(e.target) &&
-            !mobileBar.contains(e.target)) {
+            !mobileBar.contains(e.target) &&
+            (!priceModal || !priceModal.contains(e.target)) &&
+            (!checkoutModal || !checkoutModal.contains(e.target))) {
             cartSidebar.classList.remove('expanded');
             document.body.style.overflow = ''; // Restore scroll
         }
@@ -713,38 +728,63 @@ let allSales = [];
 let currentSalesFilter = 'recent';
 
 // Switch View (POS vs Sales)
+// Switch View (POS vs Sales vs Expenses)
 window.switchView = async function (view) {
     // Update Tabs
     document.querySelectorAll('.view-tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    // Find the tab that matches the view (index 0 for pos, 1 for sales)
-    const tabIndex = view === 'pos' ? 0 : 1;
-    document.querySelectorAll('.view-tab')[tabIndex].classList.add('active');
 
-    // Update Views
+    // Find the tab that matches the view
+    let tabIndex = 0;
+    if (view === 'pos') tabIndex = 0;
+    if (view === 'sales') tabIndex = 1;
+    if (view === 'expenses') tabIndex = 2;
+
+    // Safely add active class
+    const tabs = document.querySelectorAll('.view-tab');
+    if (tabs[tabIndex]) {
+        tabs[tabIndex].classList.add('active');
+    }
+
+    // Hide all views first
+    document.getElementById('posView').style.display = 'none';
+    document.getElementById('salesView').style.display = 'none';
+    document.getElementById('expensesView').style.display = 'none';
+    const collectiblesView = document.getElementById('collectiblesView');
+    if (collectiblesView) collectiblesView.style.display = 'none';
+
+    // Sidebar visibility
+    const cartSidebar = document.getElementById('cartSidebar');
+    const mobileBar = document.getElementById('mobileCartBar');
+
+    // Show selected view
     if (view === 'pos') {
         document.getElementById('posView').style.display = 'block';
-        document.getElementById('salesView').style.display = 'none';
-
-        // Show Sidebar/Mobile Bar only in POS view
-        document.getElementById('cartSidebar').style.display = 'flex';
-        const mobileBar = document.getElementById('mobileCartBar');
+        cartSidebar.style.display = 'flex';
         if (mobileBar) mobileBar.style.display = 'flex';
-
     } else if (view === 'sales') {
-        document.getElementById('posView').style.display = 'none';
         document.getElementById('salesView').style.display = 'block';
-
-        // Hide Sidebar/Mobile Bar in Sales view
-        document.getElementById('cartSidebar').style.display = 'none';
-        const mobileBar = document.getElementById('mobileCartBar');
+        cartSidebar.style.display = 'none';
         if (mobileBar) mobileBar.style.display = 'none';
-
-        // Load Sales Data
         await loadSalesHistory();
+    } else if (view === 'expenses') {
+        document.getElementById('expensesView').style.display = 'block';
+        cartSidebar.style.display = 'none';
+        if (mobileBar) mobileBar.style.display = 'none';
+        await loadExpenses();
+    } else if (view === 'collectibles') {
+        if (collectiblesView) collectiblesView.style.display = 'block';
+        cartSidebar.style.display = 'none';
+        if (mobileBar) mobileBar.style.display = 'none';
+        // Load collectibles using the global function if available
+        if (typeof loadCollectibles === 'function') {
+            await loadCollectibles();
+        }
     }
 }
+
+let allExpenses = [];
 
 // Load Sales History
 async function loadSalesHistory() {
@@ -761,6 +801,12 @@ async function loadSalesHistory() {
         // We use getAllByIndex to filter by 'cashier' == user.username
         // The DB method also enforces storeId filtering if applicable
         const sales = await db.getAllByIndex('transactions', 'cashier', user.username);
+
+        // Fetch expenses for this cashier
+        // Filter manually since we might not have a perfect index for (cashier + date) easily available
+        // But let's assume we get all expenses and filter
+        const expenses = await db.getAll('expenses');
+        allExpenses = expenses.filter(exp => exp.storeId === user.storeId && exp.cashier === user.username);
 
         // Sort by date descending
         allSales = sales.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -785,44 +831,61 @@ window.filterSales = function (filterType) {
     currentSalesFilter = filterType;
 
     // Update buttons
-    document.querySelectorAll('.sales-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.toLowerCase() === filterType) { // text content matches filter name loosely
-            btn.classList.add('active');
-        }
-        // Better matching: check onclick attribute or just index
-    });
-    // Fix: Match button by onclick since textContent might vary slightly or be capitalized
     const buttons = document.querySelectorAll('.sales-filter-btn');
-    if (filterType === 'recent') buttons[0].classList.add('active');
-    if (filterType === 'today') buttons[1].classList.add('active');
-    if (filterType === 'yesterday') buttons[2].classList.add('active');
-
+    buttons.forEach((btn, index) => {
+        btn.classList.remove('active');
+        if (filterType === 'recent' && index === 0) btn.classList.add('active');
+        if (filterType === 'today' && index === 1) btn.classList.add('active');
+        if (filterType === 'yesterday' && index === 2) btn.classList.add('active');
+    });
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    let filtered = [];
+    let filteredSales = [];
+    let filteredExpenses = [];
 
     if (filterType === 'recent') {
-        // Last 20 transactions
-        filtered = allSales.slice(0, 20);
+        filteredSales = allSales.slice(0, 20);
+        // For recent expenses, let's just match the time window of the oldest recent sale?
+        // Or just show calculate net profit for 'Today' implicitly? 
+        // Typically 'Recent' view stats might just show stats for those 20 items?
+        // Actually, for "Net Profit", it usually implies a time period. 
+        // If "Recent", Net Profit is ambiguous. Let's assume user wants "Today's" net profit if viewing recent, OR just sum of displayed.
+        // Let's go with "Today" logic for consistency if 'Recent' is default, OR just 0.
+        // Better: let's filter expenses for Today when in Recent mode to give context of "Current Session", 
+        // OR better yet, just sum the expense of the items retrieved? No, expenses aren't linked to sales.
+        // Let's stick to: If Recent -> Show today's stats? No, that is confusing.
+        // Let's make "Recent" calculate based on "Today" for stats, but show recent list.
+        filteredExpenses = allExpenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= today;
+        });
+
     } else if (filterType === 'today') {
-        filtered = allSales.filter(sale => {
+        filteredSales = allSales.filter(sale => {
             const saleDate = new Date(sale.date);
             return saleDate >= today && saleDate < new Date(today.getTime() + 86400000);
         });
+        filteredExpenses = allExpenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= today && expDate < new Date(today.getTime() + 86400000);
+        });
     } else if (filterType === 'yesterday') {
-        filtered = allSales.filter(sale => {
+        filteredSales = allSales.filter(sale => {
             const saleDate = new Date(sale.date);
             return saleDate >= yesterday && saleDate < today;
         });
+        filteredExpenses = allExpenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= yesterday && expDate < today;
+        });
     }
 
-    renderSalesList(filtered);
-    updateSalesStats(filtered);
+    renderSalesList(filteredSales);
+    updateSalesStats(filteredSales, filteredExpenses);
 }
 
 // Render Sales List
@@ -871,16 +934,28 @@ function renderSalesList(sales) {
 }
 
 // Update Stats
-function updateSalesStats(sales) {
+function updateSalesStats(sales, expenses = []) {
     // Filter out voided sales for total calculation
     const validSales = sales.filter(s => s.status !== 'voided');
-
     const totalAmount = validSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
     const totalCount = validSales.length;
 
+    // Calculate expenses total
+    const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+    const netProfit = totalAmount - totalExpenses;
+
     document.getElementById('salesTotalAmount').textContent = formatCurrency(totalAmount);
-    // Show total count (maybe show valid count or total count including voids? Usually valid count is more useful for "Sales" stats)
     document.getElementById('salesTotalCount').textContent = totalCount;
+
+    const profitEl = document.getElementById('salesNetProfit');
+    if (profitEl) {
+        profitEl.textContent = formatCurrency(netProfit);
+        if (netProfit < 0) {
+            profitEl.style.color = 'var(--danger)';
+        } else {
+            profitEl.style.color = 'var(--success-dark)';
+        }
+    }
 }
 
 // ---------------------------------------------------------
@@ -956,3 +1031,234 @@ document.addEventListener('click', (e) => {
         closeTransactionModal();
     }
 });
+
+// ---------------------------------------------------------
+// Expenses Feature
+// ---------------------------------------------------------
+
+async function loadExpenses(filter = 'today') {
+    const listContainer = document.getElementById('expensesList');
+    const totalBadge = document.getElementById('todayExpensesTotal');
+    const title = document.getElementById('expensesTitle');
+
+    // Update buttons
+    const buttons = document.querySelectorAll('#expensesView .sales-filter-btn');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase() === filter) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    if (filter === 'today') title.textContent = "Today's Expenses";
+    else if (filter === 'yesterday') title.textContent = "Yesterday's Expenses";
+    else title.textContent = "Expense History";
+
+    listContainer.innerHTML = '<div class="loading-spinner">Loading expenses...</div>';
+
+    try {
+        const user = auth.getCurrentUser();
+        if (!user) return;
+
+        let expenses = await db.getAll('expenses');
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterdayStart = new Date(todayStart);
+        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+        const filteredExpenses = expenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            const isUserMatch = exp.storeId === user.storeId && exp.cashier === user.username;
+
+            if (!isUserMatch) return false;
+
+            if (filter === 'today') {
+                return expDate >= todayStart;
+            } else if (filter === 'yesterday') {
+                return expDate >= yesterdayStart && expDate < todayStart;
+            } else {
+                return true; // History shows all
+            }
+        });
+
+        // Sort new to old
+        filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Calculate total
+        const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        totalBadge.textContent = formatCurrency(total);
+
+        // Render
+        if (filteredExpenses.length === 0) {
+            listContainer.innerHTML = `
+                <div class="empty-state" style="padding: 2rem;">
+                    <div style="font-size: 2rem;">💸</div>
+                    <p>No expenses found for ${filter}</p>
+                </div>`;
+            return;
+        }
+
+        listContainer.innerHTML = filteredExpenses.map(exp => `
+            <div class="sale-card" style="cursor: default;">
+                <div class="sale-header">
+                    <div class="sale-time">
+                        ${new Date(exp.date).toLocaleDateString()} ${new Date(exp.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div class="sale-amount" style="color: var(--danger);">-${formatCurrency(exp.amount)}</div>
+                </div>
+                <div class="sale-footer">
+                    <div class="sale-items-count">
+                        <span>📝</span> ${escapeHtml(exp.reason)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        listContainer.innerHTML = `<div class="p-3 text-center text-danger">Error loading expenses</div>`;
+    }
+}
+
+window.submitExpense = async function () {
+    const amountInput = document.getElementById('expenseAmount');
+    const reasonInput = document.getElementById('expenseReason');
+
+    const amount = parseFloat(amountInput.value);
+    const reason = reasonInput.value.trim();
+
+    if (isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid amount', 'warning');
+        return;
+    }
+
+    if (!reason) {
+        showToast('Please enter a reason', 'warning');
+        return;
+    }
+
+    showLoading('Saving expense...');
+
+    try {
+        const user = auth.getCurrentUser();
+        const expense = {
+            date: new Date().toISOString(),
+            amount: amount,
+            reason: reason,
+            cashier: user.username,
+            cashierName: user.name || user.username,
+            storeId: user.storeId
+        };
+
+        await db.add('expenses', expense);
+
+        // Reset form
+        amountInput.value = '';
+        reasonInput.value = '';
+
+        hideLoading();
+        showToast('Expense recorded', 'success');
+
+        // Reload list
+        await loadExpenses();
+
+    } catch (error) {
+        hideLoading();
+        showToast('Error saving expense: ' + error.message, 'error');
+    }
+}
+
+// ---------------------------------------------------------
+// Price Selection Feature
+// ---------------------------------------------------------
+
+function showPriceSelector(itemId) {
+    const item = cart.find(i => i.id === itemId);
+    if (!item || !item.alternativePrices || item.alternativePrices.length === 0) return;
+
+    // Create modal if not exists
+    let modal = document.getElementById('priceSelectorModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'priceSelectorModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h2>Select Price</h2>
+                    <button class="modal-close" onclick="closePriceSelector()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="priceOptionsList" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'priceSelectorModal') closePriceSelector();
+        });
+    }
+
+    const list = document.getElementById('priceOptionsList');
+    list.innerHTML = '';
+
+    // Add Original Price Option
+    const productMaster = products.find(p => p.id === item.id);
+    const basePrice = productMaster ? productMaster.price : item.price;
+    // Use formatCurrency for friendly display
+    const currentPrice = item.price;
+
+    // Base Price Button
+    const baseBtn = document.createElement('button');
+    baseBtn.className = 'btn btn-outline-primary';
+    baseBtn.style.display = 'flex';
+    baseBtn.style.justifyContent = 'space-between';
+    baseBtn.style.alignItems = 'center';
+    baseBtn.style.padding = '1rem';
+    // Highlight if active
+    if (basePrice === currentPrice) baseBtn.style.borderColor = 'var(--primary)';
+
+    baseBtn.innerHTML = `<span>Default Price</span> <strong>${formatCurrency(basePrice)}</strong>`;
+    baseBtn.onclick = () => selectItemPrice(itemId, basePrice);
+    list.appendChild(baseBtn);
+
+    // Alternative Prices
+    item.alternativePrices.forEach(alt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline-secondary';
+        btn.style.display = 'flex';
+        btn.style.justifyContent = 'space-between';
+        btn.style.alignItems = 'center';
+        btn.style.padding = '1rem';
+        // Highlight if active
+        if (alt.price === currentPrice) {
+            btn.className = 'btn btn-primary'; // solid
+            btn.style.color = 'white';
+        }
+
+        btn.innerHTML = `<span>${escapeHtml(alt.name)}</span> <strong>${formatCurrency(alt.price)}</strong>`;
+        btn.onclick = () => selectItemPrice(itemId, alt.price);
+        list.appendChild(btn);
+    });
+
+    modal.classList.add('active');
+}
+
+function closePriceSelector() {
+    const modal = document.getElementById('priceSelectorModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function selectItemPrice(itemId, price) {
+    const item = cart.find(i => i.id === itemId);
+    if (item) {
+        item.price = parseFloat(price);
+        updateCart();
+        showToast('Price updated', 'success');
+    }
+    closePriceSelector();
+}

@@ -263,3 +263,38 @@ function getDateRange(range) {
 
     return { start, end: now };
 }
+
+// Reset App / Clear Cache
+async function resetAppCache() {
+    if (!confirm('This will clear the app cache and reload to get the latest updates. Continue?')) {
+        return;
+    }
+
+    showLoading('Updating app...');
+
+    try {
+        // 1. Unregister Service Workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // 2. Clear all Caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+        }
+
+        // 3. Reload Page with Force Get
+        window.location.reload(true);
+
+    } catch (error) {
+        console.error('Error resetting app:', error);
+        showToast('Error resetting app: ' + error.message, 'error');
+        hideLoading();
+    }
+}

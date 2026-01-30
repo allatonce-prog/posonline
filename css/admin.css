@@ -329,21 +329,22 @@
 }
 
 .data-table th {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     text-align: left;
     font-weight: 600;
     color: var(--gray-500);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--gray-200);
 }
 
 .data-table td {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--gray-100);
     color: var(--gray-700);
     vertical-align: middle;
+    font-size: 0.9rem;
 }
 
 .data-table tbody tr {
@@ -1498,4 +1499,538 @@ textarea.form-control {
     .chart-card.wide {
         grid-column: span 1;
     }
+}
+
+/* Responsive Card Table for Mobile (Simple List) */
+@media (max-width: 768px) {
+
+    /* Force table to not be like tables anymore */
+    .data-table,
+    .data-table thead,
+    .data-table tbody,
+    .data-table th,
+    .data-table td,
+    .data-table tr {
+        display: block;
+        width: 100%;
+        min-width: 0 !important;
+        /* OVERRIDE ANY FIXED WIDTH */
+    }
+
+    .table-container {
+        overflow-x: hidden;
+        /* Disable horizontal scroll on container */
+    }
+
+    /* Hide table headers */
+    .data-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    /* Flex Container for the Row */
+    .data-table tr {
+        background: #fff;
+        border-bottom: 1px solid var(--gray-200);
+        padding: 0.75rem 0.25rem;
+        /* Add horizontal padding to inner cells instead */
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        /* Align top */
+    }
+
+    .data-table tr:last-child {
+        border-bottom: none;
+    }
+
+    .data-table td {
+        border: none;
+        padding: 0 0.25rem;
+        margin: 0;
+    }
+
+    /* Order 1: SKU (Small Top Label) or Name? User screenshot showed SKU above name actually. 
+       Let's put Name first as it's most important usually, but screenshot had code above.
+       User screenshot: "2938383" (small) then "Biogesic" (large). 
+    */
+
+    .data-table td[data-label="SKU"] {
+        order: 1;
+        width: 100%;
+        font-size: 0.75rem;
+        color: var(--gray-400);
+        margin-bottom: 0px;
+    }
+
+    /* Order 2: Name (65% width) */
+    .data-table td[data-label="Name"] {
+        order: 2;
+        width: 60%;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+        /* Allow wrapping instead of forcing wide width */
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.2;
+    }
+
+    /* Order 3: Price (35% width, Right Aligned) */
+    .data-table td[data-label="Price"] {
+        order: 3;
+        width: 40%;
+        text-align: right;
+        font-size: 1.1rem;
+        font-weight: 700;
+        /* Green color is handled inline by JS, but ensure alignment */
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Order 4: Category (Bottom Left) */
+    .data-table td[data-label="Category"] {
+        order: 4;
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .data-table td[data-label="Category"]::before {
+        content: "•";
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+        line-height: 0;
+        position: relative;
+        top: 1px;
+    }
+
+    /* Order 5: Stock (Bottom Right) */
+    .data-table td[data-label="Stock"] {
+        order: 5;
+        margin-left: auto;
+        /* Push to right */
+        margin-top: 0.25rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ADD TEXT LABEL FOR STOCK */
+    .data-table td[data-label="Stock"]::before {
+        content: "Stock:";
+        color: var(--gray-500);
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .data-table td.action-cell {
+        display: none;
+    }
+
+    /* Mobile Stock Movement History Specifics */
+    .movement-table td[data-label="Product"] {
+        order: 1;
+        width: 60%;
+        font-weight: 600;
+        white-space: normal;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+        color: var(--dark);
+    }
+
+    /* Reason - Top Right */
+    .movement-table td[data-label="Reason"] {
+        order: 2;
+        width: 40%;
+        text-align: right;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        align-self: flex-start;
+    }
+
+    /* Row 2: Badge | Qty | Date */
+    .movement-table td[data-label="Type"] {
+        order: 3;
+        margin-top: 0.25rem;
+    }
+
+    .movement-table td[data-label="Quantity"] {
+        order: 4;
+        font-weight: bold;
+        margin-left: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    .movement-table td[data-label="Date"] {
+        order: 5;
+        width: auto;
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: var(--gray-400);
+        margin-top: 0.25rem;
+    }
+
+    /* Hide others on mobile */
+    .movement-table td[data-label="User"],
+    .movement-table td[data-label="Stock After"] {
+        display: none !important;
+    }
+
+    /* Mobile Inventory Table Specifics */
+    .inventory-table td[data-label="Image"] {
+        display: none !important;
+    }
+
+    .inventory-table td[data-label="Product"] {
+        order: 1;
+        width: 100%;
+        margin-bottom: 0.5rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    /* Current Stock - Big & Bold */
+    .inventory-table td[data-label="Current Stock"] {
+        order: 2;
+        width: 50%;
+        font-weight: bold;
+    }
+
+    .inventory-table td[data-label="Current Stock"] .stock-quantity {
+        font-size: 1.25rem;
+        padding: 4px 12px;
+    }
+
+    /* Status Badge */
+    .inventory-table td[data-label="Status"] {
+        order: 3;
+        width: 50%;
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Prices - Small */
+    .inventory-table td[data-label="Unit Price"],
+    .inventory-table td[data-label="Total Value"] {
+        order: 4;
+        width: 50%;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* SKU/Category - Small */
+    .inventory-table td[data-label="SKU"],
+    .inventory-table td[data-label="Category"] {
+        order: 5;
+        width: 50%;
+        font-size: 0.75rem;
+        color: var(--gray-400);
+    }
+
+    /* Actions Row - Big Buttons */
+    .inventory-table td[data-label="Actions"] {
+        order: 10;
+        width: 100%;
+        margin-top: 1rem;
+        display: block !important;
+        padding: 0 !important;
+        border: none;
+    }
+
+    .inventory-table .inventory-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 100%;
+    }
+
+    .inventory-table .inventory-actions .btn {
+        width: 100%;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    /* Mobile Sales Table Specifics (Clean Card) */
+    /* Row 1: Date | Total */
+    .data-table td[data-label="Date"] {
+        order: 1;
+        width: 60%;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--dark);
+    }
+
+    .data-table td[data-label="Total"] {
+        order: 2;
+        width: 40%;
+        text-align: right;
+        font-size: 1.1rem;
+        font-weight: 800;
+        /* Extra Bold */
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    /* Row 2: ID */
+    .data-table td[data-label="ID"] {
+        order: 3;
+        width: 100%;
+        font-size: 0.75rem;
+        color: var(--gray-400);
+        margin-top: -0.25rem;
+        /* Tucked under date */
+        font-family: monospace;
+        letter-spacing: -0.5px;
+    }
+
+    /* Row 3: Customer • Items */
+    .data-table td[data-label="Customer"] {
+        order: 4;
+        width: auto;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+        font-weight: 500;
+    }
+
+    .data-table td[data-label="Items"] {
+        order: 5;
+        width: auto;
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        margin-right: 50%;
+    }
+
+    /* Add separator between Cust and Items? pseudo element? */
+    .data-table td[data-label="Customer"]::after {
+        content: "•";
+        margin-left: 0.5rem;
+        color: var(--gray-400);
+    }
+
+    /* Row 4: Payment | Actions */
+    .data-table td[data-label="Payment"] {
+        order: 6;
+        width: 50%;
+        margin-top: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .data-table td[data-label="Actions"] {
+        order: 7;
+        width: 50%;
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: flex-end;
+        padding-bottom: 0.25rem;
+    }
+
+    .data-table td[data-label="Actions"] .btn {
+        width: auto;
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    /* Hide Cashier */
+    .data-table td[data-label="Cashier"] {
+        display: none !important;
+
+        /* Mobile Reports Improvements */
+        #reports-tab .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 2 Columns */
+            gap: 0.75rem;
+        }
+
+        #reports-tab .stat-card {
+            padding: 0.75rem;
+        }
+
+        #reports-tab .stat-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #reports-tab .stat-info h3 {
+            font-size: 0.7rem;
+            margin-bottom: 0;
+        }
+
+        #reports-tab .stat-value {
+            font-size: 1rem;
+            /* Slightly smaller to fit */
+        }
+
+        /* Analytics Table Card Layout */
+        .stock-movement-analytics .data-table td[data-label="Period"] {
+            order: 1;
+            width: 100%;
+            border-bottom: 1px dashed #eee;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            font-size: 1rem;
+            color: var(--dark);
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Stock In"] {
+            order: 2;
+            width: 33%;
+            text-align: center;
+            font-size: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Stock In"]::before {
+            content: "IN";
+            font-size: 0.65rem;
+            color: var(--gray-500);
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Stock Out"] {
+            order: 3;
+            width: 33%;
+            text-align: center;
+            font-size: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Stock Out"]::before {
+            content: "OUT";
+            font-size: 0.65rem;
+            color: var(--gray-500);
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Net Change"] {
+            order: 4;
+            width: 33%;
+            text-align: center;
+            font-size: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stock-movement-analytics .data-table td[data-label="Net Change"]::before {
+            content: "NET";
+            font-size: 0.65rem;
+            color: var(--gray-500);
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        /* Hide Monetary Values on mobile to keep it clean */
+        .stock-movement-analytics .data-table td[data-label="Value In"],
+        .stock-movement-analytics .data-table td[data-label="Value Out"] {
+            display: none !important;
+        }
+    }
+}
+
+
+/* Collectibles Grid */
+.collectibles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.collectible-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: var(--transition);
+    position: relative;
+}
+
+.collectible-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.collectible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.collectible-customer {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 1rem;
+}
+
+.collectible-date {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.collectible-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--gray-100);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.collectible-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--dark);
+}
+
+.collectible-balance {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--danger);
+}
+
+.collectible-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collectible-items {
+    font-size: 0.85rem;
+    color: var(--gray-600);
 }

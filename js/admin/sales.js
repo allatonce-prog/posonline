@@ -63,20 +63,20 @@ async function loadSales() {
     const cashierDisplay = transaction.cashierName || userMap[transaction.cashier] || transaction.cashier;
 
     return `
-    <tr style="${rowStyle}">
-      <td>
+    <tr class="clickable-row" style="${rowStyle}" onclick="viewTransaction('${transaction.id}')">
+      <td data-label="ID">
         ${formatTransactionId(transaction.id)}
         ${isVoided ? '<span class="badge badge-danger" style="margin-left: 0.5rem; font-size: 0.7rem;">VOIDED</span>' : ''}
       </td>
-      <td style="${textStyle}">${formatDateTime(transaction.date)}</td>
-      <td style="${textStyle}">${escapeHtml(cashierDisplay)}</td>
-      <td style="${textStyle}">${escapeHtml(transaction.customerName || 'Walk-in')}</td>
-      <td style="${textStyle}">${transaction.items.length} items</td>
-      <td style="${textStyle}">${formatCurrency(transaction.total)}</td>
-      <td><span class="badge ${isVoided ? 'badge-secondary' : 'badge-primary'}">${escapeHtml(transaction.paymentMethod)}</span></td>
-      <td>
-        <button class="btn btn-sm btn-secondary btn-icon" onclick="viewTransaction('${transaction.id}')" title="View Details">
-          👁️
+      <td data-label="Date" style="${textStyle}">${formatDateTime(transaction.date)}</td>
+      <td data-label="Cashier" style="${textStyle}">${escapeHtml(cashierDisplay)}</td>
+      <td data-label="Customer" style="${textStyle}">${escapeHtml(transaction.customerName || 'Walk-in')}</td>
+      <td data-label="Items" style="${textStyle}">${transaction.items ? transaction.items.length : 0} items</td>
+      <td data-label="Total" style="${textStyle} font-weight: bold; color: var(--success);">${formatCurrency(Number(transaction.total) || Number(transaction.amount) || 0)}</td>
+      <td data-label="Payment"><span class="badge ${isVoided ? 'badge-secondary' : 'badge-primary'}">${escapeHtml(transaction.paymentMethod || 'Cash')}</span></td>
+      <td data-label="Actions">
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="event.stopPropagation(); viewTransaction('${transaction.id}')" title="View Details">
+          <i class="ph ph-eye"></i>
         </button>
       </td>
     </tr>
@@ -93,69 +93,72 @@ async function viewTransaction(id) {
   }
 
   const detailsHtml = `
-    <div style="margin-bottom: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: start;">
-        <h3 style="margin-bottom: 1rem; color: var(--dark);">Transaction ${formatTransactionId(transaction.id)}</h3>
-        ${transaction.status === 'voided'
-      ? '<span class="badge badge-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">VOIDED</span>'
-      : '<button onclick="initiateVoidTransaction(\'' + transaction.id + '\')" class="btn btn-danger btn-sm">⛔ Void Transaction</button>'}
+    <div class="transaction-header">
+      <div class="transaction-title">
+        <h3>Txn Details</h3>
+        <span class="transaction-id">${transaction.id}</span>
       </div>
+      <div class="transaction-actions">
+        ${transaction.status === 'voided'
+      ? '<span class="badge badge-danger">VOIDED</span>'
+      : `<button onclick="initiateVoidTransaction('${transaction.id}')" class="btn btn-danger btn-sm">Void</button>`}
+      </div>
+    </div>
       
-      ${transaction.status === 'voided' ? `
-      <div style="background-color: #fee2e2; color: #b91c1c; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-        <strong>Void Reason:</strong> ${escapeHtml(transaction.voidReason || 'No reason provided')}
-      </div>` : ''}
+    ${transaction.status === 'voided' ? `
+    <div style="background-color: #fee2e2; color: #b91c1c; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #fecaca;">
+      <strong>Void Reason:</strong> ${escapeHtml(transaction.voidReason || 'No reason provided')}
+      <br><small>Voided at: ${formatDateTime(transaction.voidedAt)}</small>
+    </div>` : ''}
 
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-        <div>
-          <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0.25rem;">Date & Time</p>
-          <p style="font-weight: 600;">${formatDateTime(transaction.date)}</p>
-        </div>
-        <div>
-          <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0.25rem;">Cashier</p>
-          <p style="font-weight: 600;">${escapeHtml(transaction.cashier)}</p>
-        </div>
-        <div>
-          <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0.25rem;">Customer</p>
-          <p style="font-weight: 600;">${escapeHtml(transaction.customerName || 'Walk-in Customer')}</p>
-        </div>
-        <div>
-          <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0.25rem;">Payment Method</p>
-          <p style="font-weight: 600;">${escapeHtml(transaction.paymentMethod)}</p>
-        </div>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <p style="font-weight: 800; color: var(--dark);">Date</p>
+        <p>${formatDateTime(transaction.date)}</p>
+      </div>
+      <div class="detail-item">
+        <p style="font-weight: 800; color: var(--dark);">Cashier</p>
+        <p>${escapeHtml(transaction.cashier)}</p>
+      </div>
+      <div class="detail-item">
+        <p style="font-weight: 800; color: var(--dark);">Customer</p>
+        <p>${escapeHtml(transaction.customerName || 'Walk-in')}</p>
+      </div>
+      <div class="detail-item">
+        <p style="font-weight: 800; color: var(--dark);">Payment</p>
+        <p>${escapeHtml(transaction.paymentMethod)}</p>
       </div>
     </div>
 
-    <h4 style="margin-bottom: 1rem; color: var(--dark);">Items</h4>
-    <table class="data-table" style="margin-bottom: 1.5rem;">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Price</th>
-          <th>Qty</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${transaction.items.map(item => `
-          <tr>
-            <td>${escapeHtml(item.name)}</td>
-            <td>${formatCurrency(item.price)}</td>
-            <td>${item.quantity}</td>
-            <td>${formatCurrency(item.subtotal)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+    <h4 style="margin-bottom: 0.5rem; color: var(--dark); font-size: 1rem; font-weight: 600;">Items</h4>
+    
+    <div class="transaction-items-list">
+      ${transaction.items.map(item => `
+        <div class="transaction-item">
+          <div class="item-info">
+            <span class="item-name">${escapeHtml(item.name)}</span>
+            <span class="item-meta">${formatCurrency(item.price)} × ${item.quantity}</span>
+          </div>
+          <div class="item-total">
+            ${formatCurrency(item.subtotal)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
 
-    <div style="border-top: 2px solid var(--gray-200); padding-top: 1rem;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-        <span>Subtotal:</span>
+    <div class="transaction-summary">
+      <div class="summary-row">
+        <span>Subtotal</span>
         <strong>${formatCurrency(transaction.subtotal)}</strong>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 1.25rem; color: var(--primary); margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--gray-300);">
-        <strong>Total:</strong>
-        <strong>${formatCurrency(transaction.total)}</strong>
+      ${transaction.tax > 0 ? `
+      <div class="summary-row">
+        <span>Tax</span>
+        <strong>${formatCurrency(transaction.tax)}</strong>
+      </div>` : ''}
+      <div class="summary-row total">
+        <span>Total</span>
+        <span>${formatCurrency(transaction.total)}</span>
       </div>
     </div>
   `;
@@ -212,7 +215,7 @@ async function processVoidTransaction(id, reason) {
           productName: product.name, // Redundant but useful for logs
           type: 'in',
           quantity: item.quantity,
-          reason: `Void Transaction: ${formatTransactionId(id)}`,
+          reason: `Void Transaction: ${formatTransactionId(id)} `,
           date: new Date().toISOString(),
           storeId: transaction.storeId // Preserve store context
         });

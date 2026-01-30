@@ -695,9 +695,31 @@ body {
   color: #000;
 }
 
+/* Clickable Table Rows */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .receipt-footer {
   text-align: center;
   margin-top: 20px;
   font-size: 11px;
   color: #000;
+}
+
+/* Modal Title Bolding */
+.detail-item p:first-child {
+  font-weight: 700 !important;
+  color: var(--dark) !important;
+  font-size: 0.9rem !important;
+}
+
+.transaction-title h3 {
+  font-weight: 800;
+  color: var(--primary);
 }

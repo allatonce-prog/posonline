@@ -1,6 +1,6 @@
 // IndexedDB wrapper for POS System
 const DB_NAME = 'POSDatabase';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class Database {
     constructor() {
@@ -55,6 +55,14 @@ class Database {
                 if (!db.objectStoreNames.contains('settings')) {
                     db.createObjectStore('settings', { keyPath: 'key' });
                 }
+
+                // Expenses store (New in v2)
+                if (!db.objectStoreNames.contains('expenses')) {
+                    const expenseStore = db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+                    expenseStore.createIndex('date', 'date', { unique: false });
+                    expenseStore.createIndex('cashier', 'cashier', { unique: false });
+                    expenseStore.createIndex('storeId', 'storeId', { unique: false });
+                }
             };
         });
     }
@@ -108,7 +116,7 @@ class Database {
     }
 
     // Generic delete method
-    async delete(storeName, id) {
+    async remove(storeName, id) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
