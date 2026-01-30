@@ -265,6 +265,8 @@ body {
   transition: all 0.3s ease;
   max-width: 350px;
   border-left: 4px solid var(--primary);
+  user-select: none;
+  touch-action: pan-y;
 }
 
 .toast.show {

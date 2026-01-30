@@ -57,17 +57,79 @@ function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
+    toast.style.cursor = 'grab';
 
     // Add to body
     document.body.appendChild(toast);
+
+    // Swipe logic
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let autoDismissTimeout;
+
+    const startDragging = (e) => {
+        isDragging = true;
+        startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        toast.style.transition = 'none';
+        toast.style.cursor = 'grabbing';
+        clearTimeout(autoDismissTimeout); // Pause auto-dismiss
+    };
+
+    const drag = (e) => {
+        if (!isDragging) return;
+        const x = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        currentX = x - startX;
+
+        // Only allow horizontal swipe out
+        toast.style.transform = `translateX(${currentX}px)`;
+        toast.style.opacity = 1 - Math.abs(currentX) / 300;
+    };
+
+    const stopDragging = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        toast.style.cursor = 'grab';
+
+        const threshold = 100;
+        if (Math.abs(currentX) > threshold) {
+            // Dismiss
+            toast.style.transition = 'all 0.3s ease';
+            toast.style.transform = `translateX(${currentX > 0 ? 500 : -500}px)`;
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        } else {
+            // Reset
+            toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            toast.style.transform = 'translateX(0)';
+            toast.style.opacity = '1';
+
+            // Resume auto-dismiss
+            autoDismissTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    };
+
+    toast.addEventListener('touchstart', startDragging, { passive: true });
+    toast.addEventListener('touchmove', drag, { passive: true });
+    toast.addEventListener('touchend', stopDragging);
+
+    // Mouse support
+    toast.addEventListener('mousedown', startDragging);
+    window.addEventListener('mousemove', drag);
+    window.addEventListener('mouseup', stopDragging);
 
     // Trigger animation
     setTimeout(() => toast.classList.add('show'), 10);
 
     // Remove after 3 seconds
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
+    autoDismissTimeout = setTimeout(() => {
+        if (!isDragging) {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }
     }, 3000);
 }
 
