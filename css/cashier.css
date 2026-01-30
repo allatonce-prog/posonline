@@ -564,8 +564,8 @@
         right: 15px;
         width: 36px;
         height: 36px;
-        background: rgba(0, 0, 0, 0.05);
-        color: var(--dark);
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--white);
         border: none;
         border-radius: 50%;
         align-items: center;
@@ -577,7 +577,7 @@
     }
 
     .mobile-cart-close:hover {
-        background: rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.2);
     }
 
     /* Ensure Modal/Overlay effect */
