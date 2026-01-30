@@ -65,6 +65,7 @@ class Auth {
             const sessionUser = {
                 id: user.id,
                 username: user.username,
+                email: user.email || '', // Include email in session
                 name: user.name || user.username, // Fallback to username if name is not set
                 role: user.role,
                 storeId: user.storeId

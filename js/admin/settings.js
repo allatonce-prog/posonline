@@ -36,17 +36,29 @@ async function getSettings() {
 
     try {
         // Try to load from Firebase first
-        if (typeof db !== 'undefined' && db.db) {
+        if (typeof db !== 'undefined') {
+            let cloudSettings = null;
+
             // Try settings collection first
             const settingsDoc = await db.get('settings', `settings_${storeId}`);
             if (settingsDoc && settingsDoc.data) {
-                return { ...DEFAULT_SETTINGS, ...settingsDoc.data };
+                cloudSettings = { ...DEFAULT_SETTINGS, ...settingsDoc.data };
             }
 
-            // Try stores collection (settings might be stored there)
-            const storeDoc = await db.get('stores', storeId);
-            if (storeDoc && storeDoc.settings) {
-                return { ...DEFAULT_SETTINGS, ...storeDoc.settings };
+            // Try stores collection if not found
+            if (!cloudSettings) {
+                const storeDoc = await db.get('stores', storeId);
+                if (storeDoc && storeDoc.settings) {
+                    cloudSettings = { ...DEFAULT_SETTINGS, ...storeDoc.settings };
+                }
+            }
+
+            if (cloudSettings) {
+                // Always sync with user profile email if available
+                if (currentUser?.email) {
+                    cloudSettings.adminEmail = currentUser.email;
+                }
+                return cloudSettings;
             }
         }
     } catch (error) {
@@ -56,16 +68,22 @@ async function getSettings() {
     // Fallback to localStorage
     const settingsKey = `posSettings_${storeId}`;
     const stored = localStorage.getItem(settingsKey);
+    let finalSettings = { ...DEFAULT_SETTINGS };
 
     if (stored) {
         try {
-            return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+            finalSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
         } catch (e) {
             console.error('Error parsing settings:', e);
-            return { ...DEFAULT_SETTINGS };
         }
     }
-    return { ...DEFAULT_SETTINGS };
+
+    // Override with user's specific email if available in session
+    if (currentUser?.email) {
+        finalSettings.adminEmail = currentUser.email;
+    }
+
+    return finalSettings;
 }
 
 // Synchronous version for immediate use (uses localStorage only)
@@ -75,15 +93,22 @@ function getSettingsSync() {
     const settingsKey = `posSettings_${storeId}`;
     const stored = localStorage.getItem(settingsKey);
 
+    let finalSettings = { ...DEFAULT_SETTINGS };
+
     if (stored) {
         try {
-            return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+            finalSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
         } catch (e) {
             console.error('Error parsing settings:', e);
-            return { ...DEFAULT_SETTINGS };
         }
     }
-    return { ...DEFAULT_SETTINGS };
+
+    // Override with user's specific email if available in session
+    if (currentUser?.email) {
+        finalSettings.adminEmail = currentUser.email;
+    }
+
+    return finalSettings;
 }
 
 // Save settings
@@ -148,6 +173,10 @@ async function saveSettings() {
                         email: settings.adminEmail,
                         updatedAt: new Date().toISOString()
                     });
+
+                    // Update current session in memory
+                    currentUser.email = settings.adminEmail;
+                    auth.saveSession(currentUser);
                 }
 
                 console.log('Settings saved to Firebase (settings, stores, & users collections)');
