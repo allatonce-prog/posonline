@@ -4,13 +4,19 @@ if (!window.currentSalesFilter) {
     window.currentSalesFilter = 'recent';
 }
 
+// Pagination
+const SALES_PER_PAGE = 5;
+let currentSalesPage = 1;
+
 window.loadSales = async function () {
+    currentSalesPage = 1; // Reset to first page
     await filterSales(window.currentSalesFilter);
 };
 
 window.filterSales = async function (filter) {
     console.log('filterSales called with filter:', filter);
     window.currentSalesFilter = filter;
+    currentSalesPage = 1; // Reset to first page when filter changes
 
     // Update filter button states
     const filterBtns = document.querySelectorAll('.sales-filter-btn');
@@ -154,7 +160,7 @@ window.filterSales = async function (filter) {
             }
         }
 
-        // Render sales list
+        // Render sales list with pagination
         if (transactions.length === 0) {
             salesList.innerHTML = `
                 <div class="empty-state">
@@ -166,7 +172,14 @@ window.filterSales = async function (filter) {
             return;
         }
 
-        salesList.innerHTML = transactions.map(transaction => {
+        // Calculate pagination
+        const totalPages = Math.ceil(transactions.length / SALES_PER_PAGE);
+        const startIndex = (currentSalesPage - 1) * SALES_PER_PAGE;
+        const endIndex = startIndex + SALES_PER_PAGE;
+        const paginatedTransactions = transactions.slice(startIndex, endIndex);
+
+        // Render paginated sales
+        salesList.innerHTML = paginatedTransactions.map(transaction => {
             const date = new Date(transaction.date);
             const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -195,6 +208,36 @@ window.filterSales = async function (filter) {
             `;
         }).join('');
 
+        // Add pagination controls if more than one page
+        if (totalPages > 1) {
+            const paginationHTML = `
+                <div class="pagination-controls" style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; padding: 1rem;">
+                    <button 
+                        class="btn btn-secondary" 
+                        onclick="changeSalesPage(${currentSalesPage - 1})"
+                        ${currentSalesPage === 1 ? 'disabled' : ''}
+                        style="min-width: 80px; ${currentSalesPage === 1 ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+                    >
+                        <i class="ph ph-caret-left"></i> Previous
+                    </button>
+                    
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); min-width: 100px; text-align: center;">
+                        Page ${currentSalesPage} of ${totalPages}
+                    </span>
+                    
+                    <button 
+                        class="btn btn-secondary" 
+                        onclick="changeSalesPage(${currentSalesPage + 1})"
+                        ${currentSalesPage === totalPages ? 'disabled' : ''}
+                        style="min-width: 80px; ${currentSalesPage === totalPages ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+                    >
+                        Next <i class="ph ph-caret-right"></i>
+                    </button>
+                </div>
+            `;
+            salesList.innerHTML += paginationHTML;
+        }
+
         console.log('Sales loaded successfully');
 
     } catch (error) {
@@ -215,3 +258,15 @@ function formatTransactionId(id) {
     // Show last 8 characters
     return 'TXN-' + id.slice(-8).toUpperCase();
 }
+
+// Pagination function
+window.changeSalesPage = function (page) {
+    currentSalesPage = page;
+    filterSales(window.currentSalesFilter);
+
+    // Scroll to top of sales list
+    const salesView = document.getElementById('salesView');
+    if (salesView) {
+        salesView.scrollTop = 0;
+    }
+};

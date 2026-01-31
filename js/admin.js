@@ -141,20 +141,28 @@ async function switchTab(tab) {
     }
 
     // Cleanup before switching (prevent memory leaks)
-    if (window.mobileStability) {
-        window.mobileStability.cleanupForTabSwitch();
+    try {
+        if (window.mobileStability && typeof window.mobileStability.cleanupForTabSwitch === 'function') {
+            window.mobileStability.cleanupForTabSwitch();
+        }
+    } catch (e) {
+        console.warn('Mobile stability cleanup failed:', e);
     }
 
     // Clear any active charts/intervals from previous tab
-    if (window.activeChartInstances) {
-        window.activeChartInstances.forEach(chart => {
-            try {
-                chart.destroy();
-            } catch (e) {
-                console.warn('Error destroying chart:', e);
-            }
-        });
-        window.activeChartInstances = [];
+    try {
+        if (window.activeChartInstances) {
+            window.activeChartInstances.forEach(chart => {
+                try {
+                    chart.destroy();
+                } catch (e) {
+                    console.warn('Error destroying chart:', e);
+                }
+            });
+            window.activeChartInstances = [];
+        }
+    } catch (e) {
+        console.warn('Chart cleanup failed:', e);
     }
 
     // Update navigation
@@ -166,6 +174,8 @@ async function switchTab(tab) {
     const allTabs = document.querySelectorAll('.tabs');
     allTabs.forEach(tabContent => {
         tabContent.classList.remove('active');
+        tabContent.style.display = 'none'; // CRITICAL FIX: Explicitly hide previous tabs
+
         // Store scroll position
         if (tabContent.scrollTop > 0) {
             tabContent.dataset.scrollTop = tabContent.scrollTop;

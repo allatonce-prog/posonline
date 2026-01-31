@@ -19,10 +19,12 @@ let pullToRefresh = {
         // Create refresh indicator
         this.createIndicator();
 
-        // Add touch listeners
+        // Add touchstart listener (passive is fine here)
         this.container.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: true });
-        this.container.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-        this.container.addEventListener('touchend', this.onTouchEnd.bind(this), { passive: true });
+
+        // Prepare bound listeners for dynamic adding/removing
+        this.onTouchMoveBound = this.onTouchMove.bind(this);
+        this.onTouchEndBound = this.onTouchEnd.bind(this);
 
         this.enabled = true;
         console.log('Pull-to-refresh initialized');
@@ -92,35 +94,70 @@ let pullToRefresh = {
         document.body.insertBefore(this.indicator, document.body.firstChild);
     },
 
+    getScrollContainer() {
+        const cashierView = document.querySelector('.cashier-main > div:not([style*="display: none"])');
+        if (cashierView) return cashierView;
+
+        const adminTab = document.querySelector('.tabs.active');
+        if (adminTab) return adminTab;
+
+        return document.querySelector('.admin-main') ||
+            document.querySelector('.cashier-main') ||
+            document.documentElement;
+    },
+
     onTouchStart(e) {
-        // Only allow pull-to-refresh if at top of page
+        // 1. Only allow if we are near the top of the viewport
+        const touchY = e.touches[0].clientY;
+        if (touchY > 150) return;
+
+        // 2. Only allow if at top of ACTIVE container
         const scrollContainer = this.getScrollContainer();
         if (scrollContainer.scrollTop > 0) return;
 
+        // 3. Check for nested scrolling
+        let parent = e.target.parentElement;
+        while (parent && parent !== document.body) {
+            if (parent.scrollTop > 0) return;
+            parent = parent.parentElement;
+        }
+
+        // START PULL GESTURE
         this.startY = e.touches[0].pageY;
         this.pulling = true;
+
+        // Dynamically add heavier listeners ONLY when needed
+        // this improves general scrolling performance significantly
+        document.addEventListener('touchmove', this.onTouchMoveBound, { passive: false });
+        document.addEventListener('touchend', this.onTouchEndBound, { passive: true });
     },
 
     onTouchMove(e) {
         if (!this.pulling || this.refreshing) return;
 
-        const scrollContainer = this.getScrollContainer();
-        if (scrollContainer.scrollTop > 0) {
-            this.pulling = false;
+        const currentY = e.touches[0].pageY;
+        const pullDistance = currentY - this.startY;
+
+        if (pullDistance <= 0) {
+            // User is scrolling UP, abort pull
+            this.abortPull();
             return;
         }
 
-        this.currentY = e.touches[0].pageY;
-        const pullDistance = this.currentY - this.startY;
+        const scrollContainer = this.getScrollContainer();
+        if (scrollContainer.scrollTop > 0) {
+            this.abortPull();
+            return;
+        }
 
         if (pullDistance > 0 && pullDistance < this.maxPull) {
-            e.preventDefault(); // Prevent default scroll
+            if (e.cancelable) e.preventDefault();
 
+            this.currentY = currentY;
             const translateY = Math.min(pullDistance, this.maxPull);
             this.indicator.style.transform = `translateY(${translateY}px)`;
             this.indicator.classList.add('pulling');
 
-            // Update text based on threshold
             if (pullDistance >= this.threshold) {
                 this.indicator.querySelector('.refresh-text').textContent = 'Release to refresh';
             } else {
@@ -130,26 +167,35 @@ let pullToRefresh = {
     },
 
     onTouchEnd(e) {
-        if (!this.pulling || this.refreshing) return;
+        if (!this.pulling) return;
 
         const pullDistance = this.currentY - this.startY;
 
-        this.pulling = false;
-        this.indicator.classList.remove('pulling');
+        // Clean up listeners
+        this.abortPull(false); // false = don't reset pulling state yet
+
+        if (this.refreshing) return;
 
         if (pullDistance >= this.threshold) {
             this.triggerRefresh();
         } else {
-            // Reset indicator
             this.indicator.style.transform = '';
         }
+
+        this.pulling = false;
+        this.indicator.classList.remove('pulling');
     },
 
-    getScrollContainer() {
-        // Get the main scrollable container
-        const adminMain = document.querySelector('.admin-main');
-        const cashierMain = document.querySelector('.cashier-main');
-        return adminMain || cashierMain || document.documentElement;
+    abortPull(resetState = true) {
+        // Remove heavy listeners
+        document.removeEventListener('touchmove', this.onTouchMoveBound);
+        document.removeEventListener('touchend', this.onTouchEndBound);
+
+        if (resetState) {
+            this.pulling = false;
+            this.indicator.classList.remove('pulling');
+            this.indicator.style.transform = '';
+        }
     },
 
     async triggerRefresh() {
