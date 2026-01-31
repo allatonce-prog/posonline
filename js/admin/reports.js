@@ -5,6 +5,8 @@ async function loadReports() {
     const transactions = await db.getAll('transactions');
     const products = await db.getAll('products');
     const stockMovements = await db.getAll('stockMovements');
+    const expenses = await db.getAll('expenses');
+    const collectibles = await db.getAll('collectibles');
 
     if (transactions.length === 0) {
         document.getElementById('weekSales').textContent = '₱0.00';
@@ -24,10 +26,40 @@ async function loadReports() {
     const weekTransactions = transactions.filter(t => new Date(t.date) >= weekAgo);
     const monthTransactions = transactions.filter(t => new Date(t.date) >= monthAgo);
 
+    // Filter expenses
+    const weekExpenses = expenses.filter(e => new Date(e.date) >= weekAgo);
+    const monthExpenses = expenses.filter(e => new Date(e.date) >= monthAgo);
+
+    // Filter collectibles (unpaid only)
+    const weekCollectibles = collectibles.filter(c =>
+        new Date(c.date) >= weekAgo && c.status !== 'paid'
+    );
+    const monthCollectibles = collectibles.filter(c =>
+        new Date(c.date) >= monthAgo && c.status !== 'paid'
+    );
+
     // Calculate sales
     const weekSales = weekTransactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
     const monthSales = monthTransactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
     const avgSale = transactions.reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0) / (transactions.length || 1);
+
+    // Calculate expenses
+    const weekExpensesTotal = weekExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const monthExpensesTotal = monthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    // Calculate collectibles outstanding balance
+    const weekCollectiblesTotal = weekCollectibles.reduce((sum, c) => {
+        const balance = (Number(c.totalAmount) || 0) - (Number(c.paidAmount) || 0);
+        return sum + balance;
+    }, 0);
+    const monthCollectiblesTotal = monthCollectibles.reduce((sum, c) => {
+        const balance = (Number(c.totalAmount) || 0) - (Number(c.paidAmount) || 0);
+        return sum + balance;
+    }, 0);
+
+    // Calculate Net Profit = Sales - Expenses - Collectibles
+    const weekNetProfit = weekSales - weekExpensesTotal - weekCollectiblesTotal;
+    const monthNetProfit = monthSales - monthExpensesTotal - monthCollectiblesTotal;
 
     // Find best day
     const salesByDay = {};
@@ -51,6 +83,20 @@ async function loadReports() {
     document.getElementById('monthSales').textContent = formatCurrency(monthSales);
     document.getElementById('avgSale').textContent = formatCurrency(avgSale);
     document.getElementById('bestDay').textContent = bestDay;
+
+    // Update net profit stats with color styling
+    const weekNetProfitEl = document.getElementById('weekNetProfit');
+    const monthNetProfitEl = document.getElementById('monthNetProfit');
+
+    if (weekNetProfitEl) {
+        weekNetProfitEl.textContent = formatCurrency(weekNetProfit);
+        weekNetProfitEl.style.color = weekNetProfit < 0 ? 'var(--danger)' : 'var(--success-dark)';
+    }
+
+    if (monthNetProfitEl) {
+        monthNetProfitEl.textContent = formatCurrency(monthNetProfit);
+        monthNetProfitEl.style.color = monthNetProfit < 0 ? 'var(--danger)' : 'var(--success-dark)';
+    }
 
     // Calculate top products
     const productSales = {};
@@ -157,15 +203,29 @@ async function loadInventoryAnalytics(products) {
             <div class="stat-card">
                 <div class="stat-icon primary"><i class="ph ph-calendar-blank"></i></div>
                 <div class="stat-info">
-                    <h3>This Week</h3>
+                    <h3>This Week Sales</h3>
                     <div class="stat-value" id="weekSales">₱0.00</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon success"><i class="ph ph-calendar"></i></div>
                 <div class="stat-info">
-                    <h3>This Month</h3>
+                    <h3>This Month Sales</h3>
                     <div class="stat-value" id="monthSales">₱0.00</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="ph ph-trend-up"></i></div>
+                <div class="stat-info">
+                    <h3>Week Net Profit</h3>
+                    <div class="stat-value" id="weekNetProfit">₱0.00</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="ph ph-chart-line-up"></i></div>
+                <div class="stat-info">
+                    <h3>Month Net Profit</h3>
+                    <div class="stat-value" id="monthNetProfit">₱0.00</div>
                 </div>
             </div>
             <div class="stat-card">

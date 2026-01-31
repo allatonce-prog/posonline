@@ -1,14 +1,16 @@
 
 // Sales View Functions
-let currentSalesFilter = 'recent';
+if (!window.currentSalesFilter) {
+    window.currentSalesFilter = 'recent';
+}
 
 window.loadSales = async function () {
-    await filterSales(currentSalesFilter);
+    await filterSales(window.currentSalesFilter);
 };
 
 window.filterSales = async function (filter) {
     console.log('filterSales called with filter:', filter);
-    currentSalesFilter = filter;
+    window.currentSalesFilter = filter;
 
     // Update filter button states
     const filterBtns = document.querySelectorAll('.sales-filter-btn');
@@ -77,27 +79,64 @@ window.filterSales = async function (filter) {
         transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         console.log('Final transactions after filter:', transactions.length);
 
-        // Calculate stats
+        // Calculate total sales
         const totalAmount = transactions.reduce((sum, t) => sum + (t.total || t.amount || 0), 0);
         const totalCount = transactions.length;
 
-        // Calculate net profit (total - cost)
-        let netProfit = 0;
-        for (const transaction of transactions) {
-            if (transaction.items && transaction.items.length > 0) {
-                for (const item of transaction.items) {
-                    const product = await db.get('products', item.productId);
-                    const cost = Number(product?.cost) || 0;
-                    const price = Number(item.price) || 0;
-                    const quantity = Number(item.quantity) || 0;
+        // Fetch expenses for this cashier
+        const allExpenses = await db.getAll('expenses');
+        let expenses = allExpenses.filter(exp =>
+            exp.storeId === user.storeId &&
+            exp.cashier === user.username
+        );
 
-                    const profit = (price - cost) * quantity;
-                    if (!isNaN(profit)) {
-                        netProfit += profit;
-                    }
-                }
-            }
+        // Fetch collectibles for this cashier
+        const allCollectibles = await db.getAll('collectibles');
+        let collectibles = allCollectibles.filter(col => {
+            const totalAmt = parseFloat(col.totalAmount) || 0;
+            const paidAmt = parseFloat(col.paidAmount) || 0;
+            const balance = totalAmt - paidAmt;
+
+            return col.storeId === user.storeId &&
+                col.cashier === user.username &&
+                balance > 0; // Only count outstanding balances
+        });
+
+        // Apply same date filter to expenses and collectibles
+        if (filter === 'today') {
+            expenses = expenses.filter(e => new Date(e.date) >= today);
+            collectibles = collectibles.filter(c => new Date(c.createdAt || c.date) >= today);
+        } else if (filter === 'yesterday') {
+            expenses = expenses.filter(e => {
+                const expDate = new Date(e.date);
+                return expDate >= yesterday && expDate < today;
+            });
+            collectibles = collectibles.filter(c => {
+                const colDate = new Date(c.createdAt || c.date);
+                return colDate >= yesterday && colDate < today;
+            });
+        } else if (filter === 'recent') {
+            // For recent, use today's expenses and collectibles
+            expenses = expenses.filter(e => new Date(e.date) >= today);
+            collectibles = collectibles.filter(c => new Date(c.createdAt || c.date) >= today);
         }
+
+        // Calculate totals
+        const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+        const totalCollectibles = collectibles.reduce((sum, col) => {
+            const totalAmt = parseFloat(col.totalAmount) || 0;
+            const paidAmt = parseFloat(col.paidAmount) || 0;
+            return sum + (totalAmt - paidAmt);
+        }, 0);
+
+        // Net Profit = Total Sales - Expenses - Collectibles
+        const netProfit = totalAmount - totalExpenses - totalCollectibles;
+
+        console.log('📊 Sales Stats (cashier-sales.js):');
+        console.log('  Total Sales:', formatCurrency(totalAmount));
+        console.log('  Expenses:', formatCurrency(totalExpenses));
+        console.log('  Collectibles:', formatCurrency(totalCollectibles));
+        console.log('  Net Profit:', formatCurrency(netProfit));
 
         // Update stats
         const totalAmountEl = document.getElementById('salesTotalAmount');
@@ -106,7 +145,14 @@ window.filterSales = async function (filter) {
 
         if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalAmount);
         if (totalCountEl) totalCountEl.textContent = totalCount;
-        if (netProfitEl) netProfitEl.textContent = formatCurrency(netProfit);
+        if (netProfitEl) {
+            netProfitEl.textContent = formatCurrency(netProfit);
+            if (netProfit < 0) {
+                netProfitEl.style.color = 'var(--danger)';
+            } else {
+                netProfitEl.style.color = 'var(--success-dark)';
+            }
+        }
 
         // Render sales list
         if (transactions.length === 0) {

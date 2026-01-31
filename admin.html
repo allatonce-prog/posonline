@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -155,6 +156,14 @@
                             <div class="stat-info">
                                 <h3>Today's Expenses</h3>
                                 <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i
+                                    class="ph ph-coins"></i></div>
+                            <div class="stat-info">
+                                <h3>Today's Collectibles</h3>
+                                <div class="stat-value" id="todayCollectibles">₱0.00</div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -949,6 +958,7 @@
     <script src="js/admin/store-switcher.js"></script>
     <script src="js/admin/notifications.js"></script>
     <script src="js/tawk-to.js"></script>
+    <script src="js/pull-to-refresh.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,576 @@
+/* Mobile No-Zoom & Touch Optimization */
+/* Prevents double-tap zoom and makes the app feel like a native mobile app */
+
+/* Apply touch-action to all elements to prevent zoom gestures */
+*,
+*::before,
+*::after {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+/* Prevent text selection on UI elements (not inputs) */
+body,
+button,
+.btn,
+.nav-item,
+.sidebar-item,
+.stat-card,
+.product-card,
+.cart-item,
+.modal-header {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Allow text selection in inputs and content areas */
+input,
+textarea,
+.form-control,
+[contenteditable="true"],
+.table td,
+.table th,
+.transaction-details,
+pre,
+code {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Remove tap highlight color on all elements */
+button,
+a,
+input,
+select,
+textarea,
+.clickable,
+.product-card,
+.cart-item,
+.nav-item,
+.sidebar-item,
+.stat-card,
+.modal-overlay,
+[onclick],
+[role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Prevent context menu on long press (except on inputs) */
+img,
+button,
+a,
+.btn,
+.product-card,
+.cart-item {
+    -webkit-touch-callout: none;
+}
+
+/* Allow context menu on text inputs */
+input,
+textarea {
+    -webkit-touch-callout: default;
+}
+
+/* Optimize button clicks with touch-action */
+button,
+.btn,
+[role="button"],
+.clickable,
+a:not([href^="http"]) {
+    touch-action: manipulation;
+    cursor: pointer;
+}
+
+/* Prevent zoom on inputs (iOS Safari) */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+    font-size: 16px;
+    /* Prevents iOS zoom on focus */
+    touch-action: manipulation;
+}
+
+/* Smooth scrolling for better UX */
+html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent pull-to-refresh on certain elements (except our custom one) */
+body {
+    overscroll-behavior-y: contain;
+}
+
+/* Optimize modal and overlay interactions */
+.modal,
+.modal-content,
+.modal-overlay {
+    touch-action: manipulation;
+}
+
+/* Prevent accidental zoom on double-tap of cards */
+.stat-card,
+.product-card,
+.sale-card,
+.chart-card,
+.table-container,
+.card {
+    touch-action: manipulation;
+}
+
+/* Prevent zoom on chart areas while allowing pan */
+canvas {
+    touch-action: pan-x pan-y;
+}
+
+/* Optimize mobile cart interactions */
+.cart-sidebar,
+.cart-item,
+.checkout-section {
+    touch-action: manipulation;
+}
+
+/* Prevent zoom in tables */
+table,
+thead,
+tbody,
+tr,
+td,
+th {
+    touch-action: manipulation;
+}
+
+/* Fast tap feedback for buttons (native-like) */
+button:active,
+.btn:active,
+[role="button"]:active,
+.clickable:active {
+    transform: scale(0.98);
+    transition: transform 0.05s ease;
+}
+
+/* Remove default focus outline on mobile (use custom styling instead) */
+@media (max-width: 768px) {
+    *:focus {
+        outline: none;
+    }
+
+    /* Add custom focus for accessibility */
+    input:focus,
+    textarea:focus,
+    select:focus,
+    button:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+}
+
+/* Prevent image dragging */
+img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    /* user-drag is non-standard, using pointer-events instead */
+}
+
+/* Allow pointer events on clickable images */
+img[onclick],
+img.clickable,
+.product-card img,
+button img {
+    pointer-events: auto;
+}
+
+/* Optimize scroll containers */
+.admin-main,
+.cashier-main,
+.product-grid,
+.cart-items,
+.modal-body,
+.table-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Prevent bounce scroll on iOS */
+body,
+html {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Allow scroll in main containers */
+.admin-layout,
+.cashier-layout,
+.admin-main,
+.cashier-main {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+/* Make the entire app feel smooth on mobile */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize product grid interactions */
+.products-grid,
+.product-card {
+    touch-action: manipulation;
+}
+
+/* Prevent zoom on stat cards click */
+.stats-grid,
+.stat-card {
+    touch-action: manipulation;
+}
+
+/* Optimize form interactions */
+.form-group,
+.form-control,
+label {
+    touch-action: manipulation;
+}
+
+/* Better mobile keyboard handling */
+@media (max-width: 768px) {
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        /* Prevent keyboard from covering input */
+        scroll-margin-bottom: 150px;
+    }
+}
+
+/* Prevent zoom on modal open/close */
+.modal.active {
+    touch-action: manipulation;
+}
+
+/* Optimize sidebar interactions */
+.admin-sidebar,
+.cashier-sidebar,
+.admin-nav,
+.cashier-nav {
+    touch-action: manipulation;
+}
+
+/* Prevent long-press save on product images */
+.product-card img,
+.product-img,
+.product-img-mini img {
+    pointer-events: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Make product card itself clickable instead */
+.product-card {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* ========================================== */
+/* CASHIER-SPECIFIC NO-ZOOM OPTIMIZATIONS */
+/* ========================================== */
+
+/* Prevent zoom on all cashier views */
+#posView,
+#salesView,
+#expensesView,
+#collectiblesView {
+    touch-action: manipulation;
+}
+
+/* Cashier header and navigation */
+.cashier-header,
+.cashier-sidebar,
+.sidebar-nav,
+.sidebar-item,
+.sidebar-toggle {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Product grid and cards */
+.products-grid,
+.product-card,
+.product-info,
+.product-price,
+.add-to-cart-btn {
+    touch-action: manipulation;
+}
+
+/* Category filters */
+.category-filters,
+.filter-btn,
+.category-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Cart elements */
+.cart-sidebar,
+.cart-header,
+.cart-items,
+.cart-item,
+.cart-footer,
+.checkout-btn,
+.cart-summary,
+.cart-total {
+    touch-action: manipulation;
+}
+
+/* Cart quantity controls */
+.quantity-controls,
+.quantity-btn,
+.quantity-input,
+.remove-btn {
+    touch-action: manipulation;
+}
+
+/* Mobile cart bar */
+.mobile-cart-bar,
+.cart-toggle-btn,
+.mobile-cart-info,
+.mobile-cart-total {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Checkout modal */
+#checkoutModal,
+.checkout-form,
+.payment-method-selector,
+.payment-option {
+    touch-action: manipulation;
+}
+
+/* Transaction details modal */
+#transactionDetailsModal,
+.transaction-details,
+.transaction-items,
+.transaction-total {
+    touch-action: manipulation;
+}
+
+/* Held orders modal */
+#heldOrdersModal,
+.held-orders-list,
+.held-order-item,
+.restore-btn {
+    touch-action: manipulation;
+}
+
+/* Sales history cards */
+.sales-list,
+.sale-card,
+.sale-header,
+.sale-footer,
+.sales-filter-btn {
+    touch-action: manipulation;
+}
+
+/* Sales stats */
+.sales-stats,
+.stat-item,
+.stat-label,
+.stat-value {
+    touch-action: manipulation;
+}
+
+/* Expenses view */
+.expenses-list,
+.expense-card,
+.expense-form,
+.expense-input,
+.submit-expense-btn {
+    touch-action: manipulation;
+}
+
+/* Collectibles view */
+.collectibles-list,
+.collectible-card,
+.collectible-details,
+.payment-history,
+.add-collectible-modal,
+.collectible-form {
+    touch-action: manipulation;
+}
+
+/* All modal overlays */
+.modal-overlay,
+.modal,
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+    touch-action: manipulation;
+}
+
+/* Modal buttons */
+.modal-close,
+.modal-cancel,
+.modal-submit {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Search bar */
+#searchInput,
+.search-container,
+.search-icon {
+    touch-action: manipulation;
+}
+
+/* View tabs/switcher */
+.view-tabs,
+.view-tab,
+.tab-indicator {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Price selector modal */
+#priceSelectorModal,
+.price-options-list,
+.price-option-btn {
+    touch-action: manipulation;
+}
+
+/* Alert/confirmation dialogs */
+.alert-modal,
+.confirm-dialog,
+.alert-buttons,
+.confirm-btn,
+.cancel-btn {
+    touch-action: manipulation;
+}
+
+/* Receipt/print preview */
+.receipt-preview,
+.print-receipt-btn {
+    touch-action: manipulation;
+}
+
+/* Loading overlays */
+.loading-overlay,
+.loading-spinner,
+.loading-text {
+    touch-action: manipulation;
+}
+
+/* Toast notifications */
+.toast,
+.toast-message,
+.toast-close {
+    touch-action: manipulation;
+}
+
+/* Prevent zoom on all input fields in cashier */
+.cashier-layout input[type="text"],
+.cashier-layout input[type="number"],
+.cashier-layout input[type="search"],
+.cashier-layout textarea,
+.cashier-layout select {
+    font-size: 16px;
+    touch-action: manipulation;
+}
+
+/* Optimize cashier-specific buttons */
+.cashier-layout button,
+.cashier-layout .btn,
+.add-to-cart-btn,
+.checkout-btn,
+.clear-cart-btn,
+.hold-order-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Fast feedback on cashier buttons */
+.add-to-cart-btn:active,
+.checkout-btn:active,
+.quantity-btn:active,
+.filter-btn:active {
+    transform: scale(0.96);
+    transition: transform 0.05s ease;
+}
+
+/* Prevent text selection in cashier UI */
+.cashier-layout .product-card,
+.cashier-layout .cart-item,
+.cashier-layout .sale-card,
+.cashier-layout .stat-card {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Allow selection in cashier inputs */
+.cashier-layout input,
+.cashier-layout textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Smooth scrolling in cashier views */
+.cashier-main,
+.products-grid,
+.cart-items,
+.sales-list,
+.expenses-list,
+.collectibles-list {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Prevent image context menu in product cards */
+.product-card img,
+.product-thumbnail img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Cashier sidebar overlay on mobile */
+.sidebar-overlay,
+.cart-overlay {
+    touch-action: manipulation;
+}
+
+/* Empty state illustrations */
+.empty-state,
+.no-products,
+.no-sales,
+.empty-illustration {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}

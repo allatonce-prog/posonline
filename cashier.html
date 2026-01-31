@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/cashier.css">
     <link rel="stylesheet" href="css/cashier-sidebar.css">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
@@ -526,6 +527,7 @@
     <script src="js/admin/settings.js"></script>
     <script src="js/collectibles-payment.js"></script>
     <script src="js/cashier.js"></script>
+    <script src="js/cashier-sales.js"></script>
     <script>
         // Apply custom settings to cashier page
         document.addEventListener('DOMContentLoaded', () => {
@@ -1026,177 +1028,7 @@
                 }
             };
 
-            // Sales View Functions
-            let currentSalesFilter = 'today';
-
-            window.loadSales = async function () {
-                console.log('loadSales called');
-                await filterSales(currentSalesFilter);
-            };
-
-            window.filterSales = async function (filter) {
-                console.log('filterSales called with filter:', filter);
-                currentSalesFilter = filter;
-
-                const filterBtns = document.querySelectorAll('.sales-filter-btn');
-                filterBtns.forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.textContent.toLowerCase().includes(filter)) {
-                        btn.classList.add('active');
-                    }
-                });
-
-                const salesList = document.getElementById('salesList');
-                if (!salesList) {
-                    console.error('salesList element not found');
-                    return;
-                }
-
-                salesList.innerHTML = '<div class="loading-spinner">Loading sales...</div>';
-
-                try {
-                    const user = auth.getCurrentUser();
-                    console.log('Current user:', user);
-
-                    if (!user) {
-                        salesList.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-state-icon">⚠️</div>
-                                <h3>Not logged in</h3>
-                                <p>Please log in to view sales</p>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    console.log('Fetching transactions...');
-                    const allTransactions = await db.getAll('transactions');
-                    console.log('All transactions:', allTransactions.length);
-
-                    let transactions = allTransactions.filter(t =>
-                        t.cashier === user.username &&
-                        t.storeId === user.storeId &&
-                        !t.voided
-                    );
-                    console.log('Filtered transactions for cashier:', transactions.length);
-
-                    const now = new Date();
-                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-
-                    if (filter === 'today') {
-                        transactions = transactions.filter(t => new Date(t.date) >= today);
-                    } else if (filter === 'yesterday') {
-                        transactions = transactions.filter(t => {
-                            const txDate = new Date(t.date);
-                            return txDate >= yesterday && txDate < today;
-                        });
-                    } else if (filter === 'recent') {
-                        transactions = transactions.slice(0, 20);
-                    }
-
-                    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    console.log('Final transactions after filter:', transactions.length);
-
-                    // Robust total calculation handling NaN or missing fields
-                    const totalAmount = transactions.reduce((sum, t) => {
-                        const val = Number(t.total) || Number(t.amount) || 0;
-                        return sum + val;
-                    }, 0);
-
-                    const totalCount = transactions.length;
-
-                    // Calculate net profit as Total Sales - Expenses for the same period
-                    const allExpenses = await db.getAll('expenses');
-
-                    // Filter expenses by same date range and cashier
-                    let expenses = allExpenses.filter(e =>
-                        e.cashier === user.username &&
-                        e.storeId === user.storeId
-                    );
-
-                    // Apply same date filter to expenses
-                    if (filter === 'today') {
-                        expenses = expenses.filter(e => new Date(e.date) >= today);
-                    } else if (filter === 'yesterday') {
-                        expenses = expenses.filter(e => {
-                            const expDate = new Date(e.date);
-                            return expDate >= yesterday && expDate < today;
-                        });
-                    } else if (filter === 'recent') {
-                        // For recent, use same date range as the oldest transaction
-                        if (transactions.length > 0) {
-                            const oldestTxDate = new Date(transactions[transactions.length - 1].date);
-                            expenses = expenses.filter(e => new Date(e.date) >= oldestTxDate);
-                        }
-                    }
-
-                    const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-                    const netProfit = totalAmount - totalExpenses;
-
-                    console.log('Total Sales:', totalAmount, 'Total Expenses:', totalExpenses, 'Net Profit:', netProfit);
-
-                    const totalAmountEl = document.getElementById('salesTotalAmount');
-                    const totalCountEl = document.getElementById('salesTotalCount');
-                    const netProfitEl = document.getElementById('salesNetProfit');
-
-                    if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalAmount);
-                    if (totalCountEl) totalCountEl.textContent = totalCount;
-                    if (netProfitEl) netProfitEl.textContent = formatCurrency(netProfit);
-
-                    if (transactions.length === 0) {
-                        salesList.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-state-icon">📋</div>
-                                <h3>No sales found</h3>
-                                <p>No transactions for this period</p>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    salesList.innerHTML = transactions.map(transaction => {
-                        const date = new Date(transaction.date);
-                        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        const txId = transaction.id ? 'TXN-' + transaction.id.slice(-8).toUpperCase() : 'N/A';
-
-                        // Handle potential NaN in display
-                        const displayTotal = Number(transaction.total) || Number(transaction.amount) || 0;
-
-                        return `
-                            <div class="sale-card" onclick="viewTransactionDetails('${transaction.id}')">
-                                <div class="sale-header">
-                                    <div>
-                                        <div class="sale-id">${txId}</div>
-                                        <div class="sale-date">${dateStr} at ${timeStr}</div>
-                                    </div>
-                                    <div class="sale-amount">${formatCurrency(displayTotal)}</div>
-                                </div>
-                                <div class="sale-details">
-                                    <span>${transaction.items ? transaction.items.length : 0} item${(transaction.items && transaction.items.length !== 1) ? 's' : ''}</span>
-                                    <span>•</span>
-                                    <span>${transaction.paymentMethod || 'Cash'}</span>
-                                    ${transaction.customerName ? `<span>•</span><span>${escapeHtml(transaction.customerName)}</span>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                    console.log('Sales loaded successfully');
-
-                } catch (error) {
-                    console.error('Error loading sales:', error);
-                    salesList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">⚠️</div>
-                            <h3>Error loading sales</h3>
-                            <p>${error.message}</p>
-                        </div>
-                    `;
-                }
-            };
+            // Sales View Functions - now loaded from external js/cashier-sales.js
 
             // View switching function
             // Switch View Function (optimized for mobile stability)
@@ -1343,6 +1175,7 @@
             };
         });
     </script>
+    <script src="js/pull-to-refresh.js"></script>
 </body>
 
 </html>

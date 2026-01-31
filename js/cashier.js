@@ -807,6 +807,7 @@ window.switchView = async function (view) {
 }
 
 let allExpenses = [];
+let allCollectibles = [];
 
 // Load Sales History
 async function loadSalesHistory() {
@@ -828,6 +829,24 @@ async function loadSalesHistory() {
         // Fetch expenses for this cashier (FORCE cloud read for live data)
         const expenses = await db.getAll('expenses', true);
         allExpenses = expenses.filter(exp => exp.storeId === user.storeId && exp.cashier === user.username);
+
+        // Fetch collectibles for this cashier (FORCE cloud read for live data)
+        const collectibles = await db.getAll('collectibles', true);
+        allCollectibles = collectibles.filter(col => {
+            const totalAmount = parseFloat(col.totalAmount) || 0;
+            const paidAmount = parseFloat(col.paidAmount) || 0;
+            const balance = totalAmount - paidAmount;
+
+            // Only include collectibles with outstanding balance from this store/cashier
+            return col.storeId === user.storeId &&
+                col.cashier === user.username &&
+                balance > 0; // Only count if there's outstanding balance
+        });
+
+        console.log('💰 Collectibles Loaded:');
+        console.log('  Total from DB:', collectibles.length);
+        console.log('  Filtered for cashier:', allCollectibles.length);
+        console.log('  Collectibles data:', allCollectibles);
 
         // Sort by date descending
         allSales = sales.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -867,6 +886,7 @@ window.filterSales = function (filterType) {
 
     let filteredSales = [];
     let filteredExpenses = [];
+    let filteredCollectibles = [];
 
     if (filterType === 'recent') {
         filteredSales = allSales.slice(0, 20);
@@ -884,6 +904,10 @@ window.filterSales = function (filterType) {
             const expDate = new Date(exp.date);
             return expDate >= today;
         });
+        filteredCollectibles = allCollectibles.filter(col => {
+            const colDate = new Date(col.createdAt || col.date); // Use createdAt, fallback to date
+            return colDate >= today;
+        });
 
     } else if (filterType === 'today') {
         filteredSales = allSales.filter(sale => {
@@ -894,6 +918,10 @@ window.filterSales = function (filterType) {
             const expDate = new Date(exp.date);
             return expDate >= today && expDate < new Date(today.getTime() + 86400000);
         });
+        filteredCollectibles = allCollectibles.filter(col => {
+            const colDate = new Date(col.createdAt || col.date); // Use createdAt, fallback to date
+            return colDate >= today && colDate < new Date(today.getTime() + 86400000);
+        });
     } else if (filterType === 'yesterday') {
         filteredSales = allSales.filter(sale => {
             const saleDate = new Date(sale.date);
@@ -903,10 +931,14 @@ window.filterSales = function (filterType) {
             const expDate = new Date(exp.date);
             return expDate >= yesterday && expDate < today;
         });
+        filteredCollectibles = allCollectibles.filter(col => {
+            const colDate = new Date(col.createdAt || col.date); // Use createdAt, fallback to date
+            return colDate >= yesterday && colDate < today;
+        });
     }
 
     renderSalesList(filteredSales);
-    updateSalesStats(filteredSales, filteredExpenses);
+    updateSalesStats(filteredSales, filteredExpenses, filteredCollectibles);
 }
 
 // Render Sales List
@@ -955,7 +987,7 @@ function renderSalesList(sales) {
 }
 
 // Update Stats
-function updateSalesStats(sales, expenses = []) {
+function updateSalesStats(sales, expenses = [], collectibles = []) {
     // Filter out voided sales for total calculation
     const validSales = sales.filter(s => s.status !== 'voided');
     const totalAmount = validSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
@@ -963,7 +995,27 @@ function updateSalesStats(sales, expenses = []) {
 
     // Calculate expenses total
     const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-    const netProfit = totalAmount - totalExpenses;
+
+    // Calculate collectibles total (outstanding balances)
+    const totalCollectibles = collectibles.reduce((sum, col) => {
+        // Calculate outstanding balance for each collectible
+        const totalAmount = parseFloat(col.totalAmount) || 0;
+        const paidAmount = parseFloat(col.paidAmount) || 0;
+        const balance = totalAmount - paidAmount;
+        return sum + balance;
+    }, 0);
+
+    // Net Profit = Total Sales - Expenses - Collectibles
+    const netProfit = totalAmount - totalExpenses - totalCollectibles;
+
+    // Debug logging
+    console.log('📊 Sales Stats Update:');
+    console.log('  Total Sales:', formatCurrency(totalAmount));
+    console.log('  Expenses:', formatCurrency(totalExpenses));
+    console.log('  Collectibles Count:', collectibles.length);
+    console.log('  Collectibles Total:', formatCurrency(totalCollectibles));
+    console.log('  Net Profit:', formatCurrency(netProfit));
+    console.log('  Formula: ₱' + totalAmount.toFixed(2) + ' - ₱' + totalExpenses.toFixed(2) + ' - ₱' + totalCollectibles.toFixed(2) + ' = ₱' + netProfit.toFixed(2));
 
     document.getElementById('salesTotalAmount').textContent = formatCurrency(totalAmount);
     document.getElementById('salesTotalCount').textContent = totalCount;

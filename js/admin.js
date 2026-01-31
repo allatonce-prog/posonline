@@ -133,9 +133,12 @@ function setupNavigation() {
     });
 }
 
-// Switch tab (optimized for mobile stability)
+// Switch tab (optimized for mobile stability and white screen prevention)
 async function switchTab(tab) {
-    if (currentTab === tab) return;
+    if (currentTab === tab) {
+        // If already on this tab, force reload to fix white screen
+        console.log('Force reloading current tab:', tab);
+    }
 
     // Cleanup before switching (prevent memory leaks)
     if (window.mobileStability) {
@@ -163,13 +166,9 @@ async function switchTab(tab) {
     const allTabs = document.querySelectorAll('.tabs');
     allTabs.forEach(tabContent => {
         tabContent.classList.remove('active');
-        // Clear innerHTML of hidden tabs to save memory
-        if (tabContent.id !== `${tab}-tab`) {
-            // Store scroll position before clearing
-            const scrollTop = tabContent.scrollTop;
-            if (scrollTop > 0) {
-                tabContent.dataset.scrollTop = scrollTop;
-            }
+        // Store scroll position
+        if (tabContent.scrollTop > 0) {
+            tabContent.dataset.scrollTop = tabContent.scrollTop;
         }
     });
 
@@ -181,6 +180,14 @@ async function switchTab(tab) {
         if (savedScroll) {
             selectedTab.scrollTop = parseInt(savedScroll);
         }
+
+        // Force display to ensure visibility
+        selectedTab.style.display = 'block';
+        selectedTab.style.opacity = '1';
+    } else {
+        console.error(`Tab element not found: ${tab}-tab`);
+        showToast('Error loading tab. Please refresh.', 'error');
+        return;
     }
 
     // Update page title
@@ -200,75 +207,96 @@ async function switchTab(tab) {
 
     currentTab = tab;
 
-    // Load tab data with error recovery
+    // Load tab data with retry mechanism
     showLoading('Loading...');
 
-    // Use requestIdleCallback for non-critical tabs (better mobile performance)
-    const loadFunction = async () => {
-        try {
-            switch (tab) {
-                case 'dashboard':
-                    await loadDashboard();
-                    break;
-                case 'products':
-                    await loadProducts();
-                    break;
-                case 'inventory':
-                    await loadInventory();
-                    break;
-                case 'history':
-                    if (typeof loadStockMovements === 'function') {
-                        await loadStockMovements();
-                    } else {
-                        console.warn('loadStockMovements not found');
-                    }
-                    break;
-                case 'sales':
-                    await loadSales();
-                    break;
-                case 'expenses':
-                    await loadExpenses();
-                    break;
-                case 'collectibles':
-                    await loadCollectibles();
-                    break;
-                case 'reports':
-                    await loadReports();
-                    break;
-                case 'users':
-                    await loadUsers();
-                    break;
-                case 'settings':
-                    await loadSettings();
-                    break;
-            }
-            hideLoading();
-        } catch (error) {
-            hideLoading();
-            console.error('Tab loading error:', error);
-            showToast('Error loading data. Please try again.', 'error');
+    let retryCount = 0;
+    const maxRetries = 2;
 
-            // Fallback: show error state instead of blank screen
-            if (selectedTab) {
-                selectedTab.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; color: var(--gray-600);">
-                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
-                        <h3>Failed to Load</h3>
-                        <p style="margin-bottom: 1rem;">An error occurred while loading this page.</p>
-                        <button class="btn btn-primary" onclick="switchTab('${tab}')">Try Again</button>
-                    </div>
-                `;
+    const loadWithRetry = async () => {
+        try {
+            await loadTabContent(tab);
+            hideLoading();
+
+            // Verify content was actually loaded
+            if (selectedTab && !selectedTab.hasChildNodes()) {
+                throw new Error('Tab content empty after load');
+            }
+
+        } catch (error) {
+            console.error('Tab loading error (attempt ' + (retryCount + 1) + '):', error);
+
+            if (retryCount < maxRetries) {
+                retryCount++;
+                console.log('Retrying tab load...');
+                setTimeout(() => loadWithRetry(), 500);
+            } else {
+                hideLoading();
+                showToast('Error loading data. Swipe down to refresh.', 'error');
+
+                // Show error state in tab
+                if (selectedTab) {
+                    selectedTab.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; color: var(--gray-600); padding: 2rem;">
+                            <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                            <h3>Failed to Load</h3>
+                            <p style="margin-bottom: 1rem; text-align: center;">An error occurred while loading this page.</p>
+                            <button class="btn btn-primary" onclick="switchTab('${tab}')">
+                                <i class="ph ph-arrow-clockwise"></i> Try Again
+                            </button>
+                            <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--gray-500);">Or swipe down to refresh</p>
+                        </div>
+                    `;
+                }
             }
         }
     };
 
-    // Execute load function
+    // Execute with idle callback for better performance
     if (window.requestIdleCallback && tab !== 'dashboard') {
-        // Use idle callback for non-critical tabs
-        requestIdleCallback(() => loadFunction(), { timeout: 2000 });
+        requestIdleCallback(() => loadWithRetry(), { timeout: 2000 });
     } else {
-        // Load immediately for dashboard
-        await loadFunction();
+        await loadWithRetry();
+    }
+}
+
+// Separate function for loading tab content
+async function loadTabContent(tab) {
+    switch (tab) {
+        case 'dashboard':
+            await loadDashboard();
+            break;
+        case 'products':
+            await loadProducts();
+            break;
+        case 'inventory':
+            await loadInventory();
+            break;
+        case 'history':
+            if (typeof loadStockMovements === 'function') {
+                await loadStockMovements();
+            } else {
+                console.warn('loadStockMovements not found');
+            }
+            break;
+        case 'sales':
+            await loadSales();
+            break;
+        case 'expenses':
+            await loadExpenses();
+            break;
+        case 'collectibles':
+            await loadCollectibles();
+            break;
+        case 'reports':
+            await loadReports();
+            break;
+        case 'users':
+            await loadUsers();
+            break;
+        case 'settings':
+            await loadSettings();
+            break;
     }
 }
 
@@ -278,6 +306,7 @@ async function loadDashboard() {
     const products = await db.getAll('products');
     const transactions = await db.getAll('transactions');
     const expenses = await db.getAll('expenses');
+    const collectibles = await db.getAll('collectibles');
     const users = await db.getAll('users');
     const userMap = {};
     users.forEach(u => {
@@ -300,6 +329,13 @@ async function loadDashboard() {
         return expenseDate.getTime() === today.getTime();
     });
 
+    // Filter today's collectibles (unpaid only)
+    const todayCollectiblesList = collectibles.filter(c => {
+        const colDate = new Date(c.date);
+        colDate.setHours(0, 0, 0, 0);
+        return colDate.getTime() === today.getTime() && c.status !== 'paid';
+    });
+
     const todaySales = todayTransactions.reduce((sum, t) => {
         // Handle both standard sales and collectible payments
         // Ensure values are numbers and default to 0 if invalid
@@ -310,7 +346,16 @@ async function loadDashboard() {
     // Ensure expenses amount is treated as a number
     const todayExpensesTotal = todayExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
-    const todayNetProfit = todaySales - todayExpensesTotal;
+    // Calculate today's collectibles outstanding balance
+    const todayCollectiblesTotal = todayCollectiblesList.reduce((sum, c) => {
+        const totalAmount = Number(c.totalAmount) || 0;
+        const paidAmount = Number(c.paidAmount) || 0;
+        const balance = totalAmount - paidAmount;
+        return sum + balance;
+    }, 0);
+
+    // Net Profit = Sales - Expenses - Collectibles
+    const todayNetProfit = todaySales - todayExpensesTotal - todayCollectiblesTotal;
 
     const lowStockThreshold = getLowStockThreshold();
     const lowStockItems = products.filter(p => p.stock <= lowStockThreshold).length;
@@ -323,6 +368,13 @@ async function loadDashboard() {
 
     if (todaySalesEl) todaySalesEl.textContent = formatCurrency(todaySales);
     if (todayExpensesEl) todayExpensesEl.textContent = formatCurrency(todayExpensesTotal);
+
+    // Update today's collectibles
+    const todayCollectiblesEl = document.getElementById('todayCollectibles');
+    if (todayCollectiblesEl) {
+        todayCollectiblesEl.textContent = formatCurrency(todayCollectiblesTotal);
+    }
+
     if (todayNetProfitEl) {
         todayNetProfitEl.textContent = formatCurrency(todayNetProfit);
         if (todayNetProfit < 0) {
