@@ -3596,3 +3596,49 @@ textarea.form-control {
     color: #ffffff;
     border-color: var(--primary);
 }
+
+/* --- STOCK TYPE FILTER PILLS --- */
+.stock-filter-pills {
+    display: flex;
+    gap: 5px;
+}
+
+.stock-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.stock-filter-pill i {
+    font-size: 0.9rem;
+}
+
+.stock-filter-pill:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(99,102,241,0.05);
+}
+
+.stock-filter-pill.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(99,102,241,0.25);
+}
+
+.stock-filter-pill.active-ingredient {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+    box-shadow: 0 2px 6px rgba(16,185,129,0.25);
+}

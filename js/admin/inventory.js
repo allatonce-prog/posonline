@@ -100,13 +100,17 @@ function renderStockMovementRow(movement, productMap) {
 
 // Quick stock in
 async function quickStockIn(productId) {
-    const product = await db.get('products', productId);
-    if (!product) {
-        showToast('Product not found', 'error');
+    const isIngredient = productId.startsWith('ingredient_');
+    const dbId = productId.replace('product_', '').replace('ingredient_', '');
+    const collection = isIngredient ? 'ingredients' : 'products';
+
+    const item = await db.get(collection, dbId);
+    if (!item) {
+        showToast(`${isIngredient ? 'Ingredient' : 'Product'} not found`, 'error');
         return;
     }
 
-    const quantity = prompt(`Add stock for ${product.name}\n\nCurrent stock: ${product.stock}\n\nEnter quantity to add:`);
+    const quantity = prompt(`Add stock for ${isIngredient ? '[Ingredient] ' : ''}${item.name}\n\nCurrent stock: ${item.stock}\n\nEnter quantity to add:`);
 
     if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
         showToast('Invalid quantity', 'warning');
@@ -121,21 +125,25 @@ async function quickStockIn(productId) {
 
 // Quick stock out
 async function quickStockOut(productId) {
-    const product = await db.get('products', productId);
-    if (!product) {
-        showToast('Product not found', 'error');
+    const isIngredient = productId.startsWith('ingredient_');
+    const dbId = productId.replace('product_', '').replace('ingredient_', '');
+    const collection = isIngredient ? 'ingredients' : 'products';
+
+    const item = await db.get(collection, dbId);
+    if (!item) {
+        showToast(`${isIngredient ? 'Ingredient' : 'Product'} not found`, 'error');
         return;
     }
 
-    const quantity = prompt(`Remove stock for ${product.name}\n\nCurrent stock: ${product.stock}\n\nEnter quantity to remove:`);
+    const quantity = prompt(`Remove stock for ${isIngredient ? '[Ingredient] ' : ''}${item.name}\n\nCurrent stock: ${item.stock}\n\nEnter quantity to remove:`);
 
     if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
         showToast('Invalid quantity', 'warning');
         return;
     }
 
-    if (product.stock < parseInt(quantity)) {
-        showToast(`Insufficient stock. Available: ${product.stock}`, 'error');
+    if (item.stock < parseInt(quantity)) {
+        showToast(`Insufficient stock. Available: ${item.stock}`, 'error');
         return;
     }
 
@@ -716,6 +724,52 @@ window.setStockOutReason = function (reason, btnEl) {
     if (btnEl) btnEl.classList.add('active');
 };
 
+// --- Stock Modal Type Filters ---
+let _stockInTypeFilter = 'all';
+let _stockOutTypeFilter = 'all';
+
+window.setStockInFilter = function (type, btnEl) {
+    _stockInTypeFilter = type;
+
+    // Update active pill state
+    document.querySelectorAll('#stockInFilterPills .stock-filter-pill').forEach(p => {
+        p.classList.remove('active', 'active-ingredient');
+    });
+    if (btnEl) {
+        btnEl.classList.add(type === 'ingredient' ? 'active-ingredient' : 'active');
+    }
+
+    // Filter and re-render
+    const query = document.getElementById('stockInSearch')?.value.toLowerCase().trim() || '';
+    const filtered = _stockModalProducts.filter(p => {
+        const typeMatch = type === 'all' || p.type === type;
+        const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
+        return typeMatch && queryMatch;
+    });
+    renderSearchableOptions('stockInSelect', filtered);
+};
+
+window.setStockOutFilter = function (type, btnEl) {
+    _stockOutTypeFilter = type;
+
+    // Update active pill state
+    document.querySelectorAll('#stockOutFilterPills .stock-filter-pill').forEach(p => {
+        p.classList.remove('active', 'active-ingredient');
+    });
+    if (btnEl) {
+        btnEl.classList.add(type === 'ingredient' ? 'active-ingredient' : 'active');
+    }
+
+    // Filter and re-render
+    const query = document.getElementById('stockOutSearch')?.value.toLowerCase().trim() || '';
+    const filtered = _stockModalProducts.filter(p => {
+        const typeMatch = type === 'all' || p.type === type;
+        const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
+        return typeMatch && queryMatch;
+    });
+    renderSearchableOptions('stockOutSelect', filtered);
+};
+
 // Show stock in modal
 async function showStockInModal() {
     const products = await db.getAll('products');
@@ -745,6 +799,12 @@ async function showStockInModal() {
 
     if (searchInput) searchInput.value = '';
     if (hiddenInput) hiddenInput.value = '';
+
+    _stockInTypeFilter = 'all';
+    document.querySelectorAll('#stockInFilterPills .stock-filter-pill').forEach((p, i) => {
+        p.classList.remove('active', 'active-ingredient');
+        if (i === 0) p.classList.add('active');
+    });
 
     renderSearchableOptions('stockInSelect', _stockModalProducts);
 
@@ -817,6 +877,12 @@ async function showStockOutModal() {
     if (searchInput) searchInput.value = '';
     if (hiddenInput) hiddenInput.value = '';
 
+    _stockOutTypeFilter = 'all';
+    document.querySelectorAll('#stockOutFilterPills .stock-filter-pill').forEach((p, i) => {
+        p.classList.remove('active', 'active-ingredient');
+        if (i === 0) p.classList.add('active');
+    });
+
     renderSearchableOptions('stockOutSelect', _stockModalProducts);
 
     // Hide stock info
@@ -878,19 +944,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add search listeners for modals
     document.getElementById('stockInSearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
-        const filtered = _stockModalProducts.filter(p =>
-            p.name.toLowerCase().includes(query) ||
-            p.meta.toLowerCase().includes(query)
-        );
+        const filtered = _stockModalProducts.filter(p => {
+            const typeMatch = _stockInTypeFilter === 'all' || p.type === _stockInTypeFilter;
+            const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
+            return typeMatch && queryMatch;
+        });
         renderSearchableOptions('stockInSelect', filtered);
     });
 
     document.getElementById('stockOutSearch')?.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
-        const filtered = _stockModalProducts.filter(p =>
-            p.name.toLowerCase().includes(query) ||
-            p.meta.toLowerCase().includes(query)
-        );
+        const filtered = _stockModalProducts.filter(p => {
+            const typeMatch = _stockOutTypeFilter === 'all' || p.type === _stockOutTypeFilter;
+            const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
+            return typeMatch && queryMatch;
+        });
         renderSearchableOptions('stockOutSelect', filtered);
     });
 
