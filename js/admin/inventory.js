@@ -604,12 +604,69 @@ window.selectSearchableOption = function (containerId, value, label, stock) {
     if (infoDivId) {
         const infoDiv = document.getElementById(infoDivId);
         if (infoDiv) {
-            infoDiv.innerHTML = `Current Stock: <span style="font-size: 1.1rem;">${stock}</span>`;
+            if (containerId === 'stockInSelect') {
+                const threshold = Number(getLowStockThreshold());
+                let statusClass = 'normal';
+                let statusLabel = 'Normal Stock';
+                if (stock === 0) {
+                    statusClass = 'out';
+                    statusLabel = 'Out of Stock';
+                } else if (stock <= threshold) {
+                    statusClass = 'low';
+                    statusLabel = 'Low Stock';
+                }
+                infoDiv.innerHTML = `
+                    <div class="stock-in-card ${statusClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 600; display: block; letter-spacing: 0.5px;">CURRENT STOCK</span>
+                                <span style="font-size: 1.35rem; font-weight: 800; color: var(--dark);">${stock} units</span>
+                            </div>
+                            <span class="stock-in-badge ${statusClass}">
+                                <i class="ph ph-info"></i> ${statusLabel}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoDiv.innerHTML = `Current Stock: <span style="font-size: 1.1rem;">${stock}</span>`;
+            }
             infoDiv.style.display = 'block';
         }
     }
 
     container.classList.remove('active');
+};
+
+// Redesigned Stock In Helpers
+window.adjustStockInQty = function (amount) {
+    const input = document.getElementById('stockInQuantity');
+    if (!input) return;
+    let val = parseInt(input.value);
+    if (isNaN(val)) val = 1;
+    val += amount;
+    if (val < 1) val = 1;
+    input.value = val;
+};
+
+window.addStockInQtyPreset = function (amount) {
+    const input = document.getElementById('stockInQuantity');
+    if (!input) return;
+    let val = parseInt(input.value);
+    if (isNaN(val)) val = 0;
+    val += amount;
+    if (val < 1) val = 1;
+    input.value = val;
+};
+
+window.setStockInReason = function (reason, btnEl) {
+    const input = document.getElementById('stockInReason');
+    if (!input) return;
+    input.value = reason;
+
+    const pills = document.querySelectorAll('#stockInModal .preset-reason-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
 };
 
 // Show stock in modal
@@ -626,10 +683,18 @@ async function showStockInModal() {
 
     // Hide stock info
     const infoDiv = document.getElementById('stockInCurrentInfo');
-    if (infoDiv) infoDiv.style.display = 'none';
+    if (infoDiv) {
+        infoDiv.style.display = 'none';
+        infoDiv.innerHTML = '';
+    }
 
-    document.getElementById('stockInQuantity').value = '';
+    document.getElementById('stockInQuantity').value = '1';
     document.getElementById('stockInReason').value = '';
+    
+    // Clear preset button active states
+    const pills = document.querySelectorAll('#stockInModal .preset-reason-pill');
+    pills.forEach(p => p.classList.remove('active'));
+
     document.getElementById('stockInModal').classList.add('active');
     document.body.classList.add('modal-open');
 }

@@ -1512,38 +1512,69 @@
 
     <!-- Stock In Modal -->
     <div class="modal" id="stockInModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Stock In</h2>
-                <button class="modal-close" onclick="closeStockInModal()">×</button>
+        <div class="modal-content" style="max-width: 480px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--success) 0%, #10b981 100%); color: white; padding: 1.25rem 1.5rem; position: relative;">
+                <h2 style="color: white; margin: 0; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-arrow-down" style="font-size: 1.5rem;"></i> Stock In
+                </h2>
+                <button class="modal-close" onclick="closeStockInModal()" style="color: white; background: rgba(255,255,255,0.15); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; transition: all 0.2s;">×</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Product *</label>
-                    <div class="searchable-select" id="stockInSelect">
-                        <div class="select-header" onclick="toggleSearchableSelect('stockInSelect')">
-                            <input type="text" class="select-search-input" id="stockInSearch"
-                                placeholder="Select Product..." autocomplete="off">
-                            <i class="ph ph-caret-down"></i>
+            <div class="modal-body" style="padding: 1.5rem; background: var(--white);">
+                <div class="stock-in-container">
+                    <!-- Product Searchable Select -->
+                    <div class="form-group">
+                        <label style="font-weight: 700; margin-bottom: 0.5rem; display: block; color: var(--dark);">Select Product *</label>
+                        <div class="searchable-select" id="stockInSelect">
+                            <div class="select-header" onclick="toggleSearchableSelect('stockInSelect')">
+                                <input type="text" class="select-search-input" id="stockInSearch"
+                                    placeholder="Select Product..." autocomplete="off">
+                                <i class="ph ph-caret-down"></i>
+                            </div>
+                            <div class="select-options" id="stockInOptions"></div>
+                            <input type="hidden" id="stockInProduct" required>
                         </div>
-                        <div class="select-options" id="stockInOptions"></div>
-                        <input type="hidden" id="stockInProduct" required>
                     </div>
-                    <div id="stockInCurrentInfo" class="stock-info-text"></div>
-                </div>
-                <div class="form-group">
-                    <label for="stockInQuantity">Quantity *</label>
-                    <input type="number" id="stockInQuantity" class="form-control" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="stockInReason">Reason *</label>
-                    <input type="text" id="stockInReason" class="form-control" placeholder="e.g., New shipment"
-                        required>
+                    
+                    <!-- Dynamic Current Stock Card (Will be updated in JS) -->
+                    <div id="stockInCurrentInfo" style="display: none;"></div>
+
+                    <!-- Quantity with Circular Buttons & Presets -->
+                    <div class="form-group" style="text-align: center; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px dashed #cbd5e1; margin: 0.5rem 0;">
+                        <label style="font-weight: 700; display: block; margin-bottom: 0.75rem; color: var(--dark); font-size: 0.95rem;">Quantity to Add *</label>
+                        <div class="quantity-control-wrapper">
+                            <button type="button" class="qty-btn-circle" onclick="adjustStockInQty(-1)">
+                                <i class="ph ph-minus"></i>
+                            </button>
+                            <input type="number" id="stockInQuantity" class="qty-input-large" min="1" value="1" required>
+                            <button type="button" class="qty-btn-circle" onclick="adjustStockInQty(1)">
+                                <i class="ph ph-plus"></i>
+                            </button>
+                        </div>
+                        <div class="presets-container">
+                            <button type="button" class="preset-pill" onclick="addStockInQtyPreset(1)">+1</button>
+                            <button type="button" class="preset-pill" onclick="addStockInQtyPreset(5)">+5</button>
+                            <button type="button" class="preset-pill" onclick="addStockInQtyPreset(10)">+10</button>
+                            <button type="button" class="preset-pill" onclick="addStockInQtyPreset(50)">+50</button>
+                            <button type="button" class="preset-pill" onclick="addStockInQtyPreset(100)">+100</button>
+                        </div>
+                    </div>
+
+                    <!-- Reason with Presets -->
+                    <div class="form-group">
+                        <label for="stockInReason" style="font-weight: 700; margin-bottom: 0.5rem; display: block; color: var(--dark);">Reason *</label>
+                        <input type="text" id="stockInReason" class="form-control" placeholder="e.g., New shipment" required style="border-radius: var(--radius-md); min-height: 42px;">
+                        <div class="presets-container reasons">
+                            <button type="button" class="preset-reason-pill" onclick="setStockInReason('New Shipment', this)">New Shipment</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockInReason('Restock', this)">Restock</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockInReason('Correction', this)">Correction</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockInReason('Supplier Delivery', this)">Delivery</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeStockInModal()">Cancel</button>
-                <button class="btn btn-success" onclick="processStockIn()">Add Stock</button>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; background: var(--gray-50); border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeStockInModal()" style="border-radius: var(--radius-md); font-weight: 600; padding: 0.6rem 1.25rem; font-size: 0.9rem;">Cancel</button>
+                <button class="btn btn-success" onclick="processStockIn()" style="border-radius: var(--radius-md); font-weight: 700; padding: 0.6rem 1.5rem; font-size: 0.9rem; background: #10b981; border: none; color: white;">Add Stock</button>
             </div>
         </div>
     </div>
@@ -2051,7 +2082,7 @@
     <script src="js/admin/products.js?v=4.4"></script>
     <script src="js/admin/recipes.js?v=4.4"></script>
     <script src="js/admin/modifiers.js?v=4.4"></script>
-    <script src="js/admin/inventory.js?v=4.1"></script>
+    <script src="js/admin/inventory.js?v=4.4"></script>
     <script src="js/admin/sales.js?v=4.1"></script>
     <script src="js/admin/daily-collections.js?v=4.1"></script>
     <script src="js/admin/expenses.js?v=4.1"></script>
