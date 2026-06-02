@@ -1581,38 +1581,69 @@
 
     <!-- Stock Out Modal -->
     <div class="modal" id="stockOutModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Stock Out</h2>
-                <button class="modal-close" onclick="closeStockOutModal()">×</button>
+        <div class="modal-content" style="max-width: 480px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--warning) 0%, #f59e0b 100%); color: white; padding: 1.25rem 1.5rem; position: relative;">
+                <h2 style="color: white; margin: 0; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-arrow-up" style="font-size: 1.5rem;"></i> Stock Out
+                </h2>
+                <button class="modal-close" onclick="closeStockOutModal()" style="color: white; background: rgba(255,255,255,0.15); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; transition: all 0.2s;">×</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Product *</label>
-                    <div class="searchable-select" id="stockOutSelect">
-                        <div class="select-header" onclick="toggleSearchableSelect('stockOutSelect')">
-                            <input type="text" class="select-search-input" id="stockOutSearch"
-                                placeholder="Select Product..." autocomplete="off">
-                            <i class="ph ph-caret-down"></i>
+            <div class="modal-body" style="padding: 1.5rem; background: var(--white);">
+                <div class="stock-out-container">
+                    <!-- Product Searchable Select -->
+                    <div class="form-group">
+                        <label style="font-weight: 700; margin-bottom: 0.5rem; display: block; color: var(--dark);">Select Product *</label>
+                        <div class="searchable-select" id="stockOutSelect">
+                            <div class="select-header" onclick="toggleSearchableSelect('stockOutSelect')">
+                                <input type="text" class="select-search-input" id="stockOutSearch"
+                                    placeholder="Select Product..." autocomplete="off">
+                                <i class="ph ph-caret-down"></i>
+                            </div>
+                            <div class="select-options" id="stockOutOptions"></div>
+                            <input type="hidden" id="stockOutProduct" required>
                         </div>
-                        <div class="select-options" id="stockOutOptions"></div>
-                        <input type="hidden" id="stockOutProduct" required>
                     </div>
-                    <div id="stockOutCurrentInfo" class="stock-info-text"></div>
-                </div>
-                <div class="form-group">
-                    <label for="stockOutQuantity">Quantity *</label>
-                    <input type="number" id="stockOutQuantity" class="form-control" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="stockOutReason">Reason *</label>
-                    <input type="text" id="stockOutReason" class="form-control" placeholder="e.g., Damaged, Expired"
-                        required>
+                    
+                    <!-- Dynamic Current Stock Card (Will be updated in JS) -->
+                    <div id="stockOutCurrentInfo" style="display: none;"></div>
+
+                    <!-- Quantity with Circular Buttons & Presets -->
+                    <div class="form-group" style="text-align: center; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px dashed #cbd5e1; margin: 0.5rem 0;">
+                        <label style="font-weight: 700; display: block; margin-bottom: 0.75rem; color: var(--dark); font-size: 0.95rem;">Quantity to Remove *</label>
+                        <div class="quantity-control-wrapper">
+                            <button type="button" class="qty-btn-circle" onclick="adjustStockOutQty(-1)">
+                                <i class="ph ph-minus"></i>
+                            </button>
+                            <input type="number" id="stockOutQuantity" class="qty-input-large" min="1" value="1" required>
+                            <button type="button" class="qty-btn-circle" onclick="adjustStockOutQty(1)">
+                                <i class="ph ph-plus"></i>
+                            </button>
+                        </div>
+                        <div class="presets-container">
+                            <button type="button" class="preset-pill" onclick="addStockOutQtyPreset(1)">+1</button>
+                            <button type="button" class="preset-pill" onclick="addStockOutQtyPreset(5)">+5</button>
+                            <button type="button" class="preset-pill" onclick="addStockOutQtyPreset(10)">+10</button>
+                            <button type="button" class="preset-pill" onclick="addStockOutQtyPreset(50)">+50</button>
+                            <button type="button" class="preset-pill" onclick="addStockOutQtyPreset(100)">+100</button>
+                        </div>
+                    </div>
+
+                    <!-- Reason with Presets -->
+                    <div class="form-group">
+                        <label for="stockOutReason" style="font-weight: 700; margin-bottom: 0.5rem; display: block; color: var(--dark);">Reason *</label>
+                        <input type="text" id="stockOutReason" class="form-control" placeholder="e.g., Damaged, Expired" required style="border-radius: var(--radius-md); min-height: 42px;">
+                        <div class="presets-container reasons">
+                            <button type="button" class="preset-reason-pill" onclick="setStockOutReason('Wastage', this)">Wastage</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockOutReason('Damaged', this)">Damaged</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockOutReason('Expired', this)">Expired</button>
+                            <button type="button" class="preset-reason-pill" onclick="setStockOutReason('Correction', this)">Correction</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeStockOutModal()">Cancel</button>
-                <button class="btn btn-warning" onclick="processStockOut()">Remove Stock</button>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; background: var(--gray-50); border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeStockOutModal()" style="border-radius: var(--radius-md); font-weight: 600; padding: 0.6rem 1.25rem; font-size: 0.9rem;">Cancel</button>
+                <button class="btn btn-warning" onclick="processStockOut()" style="border-radius: var(--radius-md); font-weight: 700; padding: 0.6rem 1.5rem; font-size: 0.9rem; background: #f59e0b; border: none; color: white;">Remove Stock</button>
             </div>
         </div>
     </div>

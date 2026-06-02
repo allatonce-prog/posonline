@@ -604,7 +604,7 @@ window.selectSearchableOption = function (containerId, value, label, stock) {
     if (infoDivId) {
         const infoDiv = document.getElementById(infoDivId);
         if (infoDiv) {
-            if (containerId === 'stockInSelect') {
+            if (containerId === 'stockInSelect' || containerId === 'stockOutSelect') {
                 const threshold = Number(getLowStockThreshold());
                 let statusClass = 'normal';
                 let statusLabel = 'Normal Stock';
@@ -615,14 +615,15 @@ window.selectSearchableOption = function (containerId, value, label, stock) {
                     statusClass = 'low';
                     statusLabel = 'Low Stock';
                 }
+                const badgePrefix = containerId === 'stockInSelect' ? 'stock-in' : 'stock-out';
                 infoDiv.innerHTML = `
-                    <div class="stock-in-card ${statusClass}">
+                    <div class="${badgePrefix}-card ${statusClass}">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 600; display: block; letter-spacing: 0.5px;">CURRENT STOCK</span>
                                 <span style="font-size: 1.35rem; font-weight: 800; color: var(--dark);">${stock} units</span>
                             </div>
-                            <span class="stock-in-badge ${statusClass}">
+                            <span class="${badgePrefix}-badge ${statusClass}">
                                 <i class="ph ph-info"></i> ${statusLabel}
                             </span>
                         </div>
@@ -665,6 +666,37 @@ window.setStockInReason = function (reason, btnEl) {
     input.value = reason;
 
     const pills = document.querySelectorAll('#stockInModal .preset-reason-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+};
+
+// Redesigned Stock Out Helpers
+window.adjustStockOutQty = function (amount) {
+    const input = document.getElementById('stockOutQuantity');
+    if (!input) return;
+    let val = parseInt(input.value);
+    if (isNaN(val)) val = 1;
+    val += amount;
+    if (val < 1) val = 1;
+    input.value = val;
+};
+
+window.addStockOutQtyPreset = function (amount) {
+    const input = document.getElementById('stockOutQuantity');
+    if (!input) return;
+    let val = parseInt(input.value);
+    if (isNaN(val)) val = 0;
+    val += amount;
+    if (val < 1) val = 1;
+    input.value = val;
+};
+
+window.setStockOutReason = function (reason, btnEl) {
+    const input = document.getElementById('stockOutReason');
+    if (!input) return;
+    input.value = reason;
+
+    const pills = document.querySelectorAll('#stockOutModal .preset-reason-pill');
     pills.forEach(p => p.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 };
@@ -734,10 +766,18 @@ async function showStockOutModal() {
 
     // Hide stock info
     const infoDiv = document.getElementById('stockOutCurrentInfo');
-    if (infoDiv) infoDiv.style.display = 'none';
+    if (infoDiv) {
+        infoDiv.style.display = 'none';
+        infoDiv.innerHTML = '';
+    }
 
-    document.getElementById('stockOutQuantity').value = '';
+    document.getElementById('stockOutQuantity').value = '1';
     document.getElementById('stockOutReason').value = '';
+    
+    // Clear preset button active states
+    const pills = document.querySelectorAll('#stockOutModal .preset-reason-pill');
+    pills.forEach(p => p.classList.remove('active'));
+
     document.getElementById('stockOutModal').classList.add('active');
     document.body.classList.add('modal-open');
 }
