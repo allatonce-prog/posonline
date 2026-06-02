@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - JEN TECH SOLUTION</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            height: 100vh;
+            color: #fff;
+            overflow: hidden;
+            /* Prevent body scroll, use container scroll */
+            position: relative;
+        }
+
+        /* Ambient Background Animation */
+        .ambient-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .light-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: #667eea;
+            top: -10%;
+            left: -10%;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: #764ba2;
+            bottom: -10%;
+            right: -10%;
+            animation-duration: 25s;
+        }
+
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: #43e97b;
+            top: 40%;
+            left: 40%;
+            opacity: 0.2;
+            animation-duration: 15s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(30px, 50px) rotate(10deg);
+            }
+        }
+
+        /* Scrollable Container */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 100px 20px 50px 20px;
+            /* Top padding for back button */
+            position: relative;
+            z-index: 10;
+            scroll-behavior: smooth;
+        }
+
+        /* Hide scrollbar */
+        .scroll-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Content */
+        .header-section {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .brand-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .brand-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            /* Increased gap */
+            max-width: 500px;
+            margin: 0 auto 4rem auto;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s ease-out;
+            /* Smooth JS animation */
+            opacity: 0;
+            /* JS will handle showing */
+            transform: scale(0.9);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #818cf8;
+            background: rgba(129, 140, 248, 0.1);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-text h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .feature-text p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.4;
+        }
+
+        .footer-section {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+            opacity: 0.6;
+            margin-bottom: 3rem;
+        }
+
+        /* Back Button */
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-3px);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .brand-title {
+                font-size: 2.2rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem;
+            }
+
+            .feature-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animation -->
+    <div class="ambient-light">
+        <div class="light-orb orb-1"></div>
+        <div class="light-orb orb-2"></div>
+        <div class="light-orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <a href="index.html" class="back-btn">
+        <i class="ph ph-arrow-left"></i> Back
+    </a>
+
+    <!-- Scroll Content -->
+    <div class="scroll-container" id="scrollContainer">
+
+        <header class="header-section">
+            <h1 class="brand-title">About our system?</h1>
+        </header>
+
+        <div class="features-list">
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-lightning"></i></div>
+                <div class="feature-text">
+                    <h3>Fast &amp; Reliable</h3>
+                    <p>Engineered for maximum performance and stability, ensuring your business never stops.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-shield-check"></i></div>
+                <div class="feature-text">
+                    <h3>Secure by Design</h3>
+                    <p>Enterprise-grade security protocols to protect your sensitive business data.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-cloud"></i></div>
+                <div class="feature-text">
+                    <h3>Offline First</h3>
+                    <p>Continue operations seamlessly even without internet connection. Data syncs automatically.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-chart-line-up"></i></div>
+                <div class="feature-text">
+                    <h3>Real-time Analytics</h3>
+                    <p>Gain actionable insights with comprehensive dashboards and reporting tools.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-users"></i></div>
+                <div class="feature-text">
+                    <h3>Multi-User Support</h3>
+                    <p>Manage roles and permissions efficiently for your entire team.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-storefront"></i></div>
+                <div class="feature-text">
+                    <h3>Multi-Store Ready</h3>
+                    <p>Scale your business effortlessly with built-in multi-store management capabilities.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-arrows-clockwise"></i></div>
+                <div class="feature-text">
+                    <h3>Auto Sync</h3>
+                    <p>Data synchronized instantly across all devices so you're always up to date.</p>
+                </div>
+            </div>
+
+            <div class="feature-card scroll-item">
+                <div class="feature-icon"><i class="ph ph-headset"></i></div>
+                <div class="feature-text">
+                    <h3>24/7 Support</h3>
+                    <p>Our dedicated team is always ready to assist you with any technical challenges.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer-section scroll-item">
+            <h4>Jen Tech Solution Team</h4>
+            <p style="font-size: 0.8rem; margin-top: 5px; color: rgba(255,255,255,0.4);">&copy; 2026 All Rights Reserved
+            </p>
+            <div class="social-links" style="margin-top: 15px;">
+                <a href="https://www.facebook.com/profile.php?id=61581024958953" target="_blank"
+                    style="color: white; font-size: 1.5rem; opacity: 0.8; transition: opacity 0.3s; display: inline-block; text-decoration: none;">
+                    <i class="ph ph-facebook-logo"></i>
+                </a>
+            </div>
+        </div>
+
+        <div style="height: 100px;"></div> <!-- Spacer -->
+    </div>
+
+    <script>
+        // Scroll Animation Logic
+        const container = document.getElementById('scrollContainer');
+        const items = document.querySelectorAll('.scroll-item');
+
+        function updateScrollAnimation() {
+            const containerCenter = container.clientHeight / 2;
+            const focusArea = 250; // Height of the focused area in pixels
+
+            items.forEach((item, index) => {
+                const rect = item.getBoundingClientRect();
+
+                // Calculate distance from center of viewport
+                // We use item center
+                const itemCenter = rect.top + (rect.height / 2);
+                let distanceFromCenter = Math.abs(containerCenter - itemCenter);
+
+                // Check if at bottom
+                const isAtBottom = (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 50);
+
+                // If at bottom, force items below center to be fully visible
+                if (isAtBottom && itemCenter > containerCenter) {
+                    distanceFromCenter = 0;
+                }
+
+                // Max distance to be fully invisible
+                const maxDistance = container.clientHeight / 1.5;
+
+                // Calculate Opacity: 1 at center, 0 at maxDistance
+                let opacity = 1 - (distanceFromCenter / maxDistance);
+
+                // Clamp values
+                if (opacity < 0.1) opacity = 0.1;
+                if (opacity > 1) opacity = 1;
+
+                // Calculate Scale: 1 at center, 0.9 at edges
+                let scale = 1 - (distanceFromCenter / maxDistance) * 0.15;
+                if (scale < 0.85) scale = 0.85;
+
+                item.style.opacity = opacity;
+                item.style.transform = `scale(${scale})`;
+
+                // Optional: blur effect for very far items
+                const blurAmount = (1 - opacity) * 5;
+                item.style.filter = 'none';
+            });
+        }
+
+        // Run on scroll
+        container.addEventListener('scroll', () => {
+            requestAnimationFrame(updateScrollAnimation);
+        });
+
+        // Run initially
+        updateScrollAnimation();
+
+        // Run on resize
+        window.addEventListener('resize', updateScrollAnimation);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Admin Dashboard - POS System</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+
+    <link rel="stylesheet" href="css/styles.css?v=3.8">
+    <link rel="stylesheet" href="css/admin.css?v=3.8">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=3.8">
+    <link rel="stylesheet" href="css/recipes.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/pagination.js"></script>
+
+    <!-- iOS Cache Buster - Force reload if old version detected -->
+    <script>
+        (function () {
+            const CURRENT_VERSION = '4.4';
+            const storedVersion = localStorage.getItem('admin_js_version');
+
+            // If version mismatch or first load, clear everything and reload
+            if (storedVersion !== CURRENT_VERSION) {
+                console.log('Version mismatch detected. Clearing cache...');
+
+                // Clear all caches
+                if ('caches' in window) {
+                    caches.keys().then(function (names) {
+                        for (let name of names) caches.delete(name);
+                    });
+                }
+
+                // Unregister service workers
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                        for (let registration of registrations) {
+                            registration.unregister();
+                        }
+                    });
+                }
+
+                // Update version
+                localStorage.setItem('admin_js_version', CURRENT_VERSION);
+
+                // Force reload with cache bypass
+                if (storedVersion) {
+                    window.location.reload(true);
+                }
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle"><i class="ph ph-list"></i></button>
+
+    <!-- Overlay (iOS Fix: pointer-events none to prevent blocking sidebar) -->
+    <div class="overlay" id="overlay" style="pointer-events: none;"></div>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <div class="logo-content">
+                    <h1 id="adminLogoTitle">🛒 POS System</h1>
+                    <p>Admin Dashboard</p>
+                </div>
+                <!-- Mobile logout button -->
+                <div class="mobile-logout">
+                    <button class="btn btn-danger btn-sm" onclick="auth.logout()">Logout</button>
+                </div>
+            </div>
+
+            <nav class="admin-nav">
+                <div class="nav-item active" data-tab="dashboard">
+                    <i class="ph ph-squares-four nav-icon"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-tab="products">
+                    <i class="ph ph-package nav-icon"></i>
+                    <span>Products</span>
+                </div>
+                <div class="nav-item" data-tab="recipes">
+                    <i class="ph ph-chef-hat nav-icon"></i>
+                    <span>Recipes</span>
+                </div>
+                <div class="nav-item" data-tab="modifiers">
+                    <i class="ph ph-list-plus nav-icon"></i>
+                    <span>Modifiers</span>
+                </div>
+
+                <div class="nav-item" data-tab="inventory">
+                    <i class="ph ph-clipboard-text nav-icon"></i>
+                    <span>Inventory</span>
+                </div>
+                <div class="nav-item" data-tab="history">
+                    <i class="ph ph-clock-counter-clockwise nav-icon"></i>
+                    <span>History</span>
+                </div>
+                <div class="nav-item" data-tab="sales">
+                    <i class="ph ph-receipt nav-icon"></i>
+                    <span>Sales</span>
+                </div>
+                <!-- Item Sales Tab -->
+                <div class="nav-item" data-tab="item-sales">
+                    <i class="ph ph-chart-bar nav-icon"></i>
+                    <span>Item Sales</span>
+                </div>
+                <!-- Collections Tab (Payments) -->
+                <div class="nav-item" data-tab="collections">
+                    <i class="ph ph-hand-coins nav-icon"></i>
+                    <span>Collections</span>
+                </div>
+                <!-- Collectibles Tab (Accounts) -->
+                <div class="nav-item" data-tab="collectibles">
+                    <i class="ph ph-coins nav-icon"></i>
+                    <span>Collectibles</span>
+                </div>
+                <div class="nav-item" data-tab="expenses">
+                    <i class="ph ph-money nav-icon"></i>
+                    <span>Expenses</span>
+                </div>
+                <!-- Salaries Tab -->
+                <div class="nav-item" data-tab="salaries">
+                    <i class="ph ph-wallet nav-icon"></i>
+                    <span>Salaries</span>
+                </div>
+                <div class="nav-item" data-tab="deliveries">
+                    <i class="ph ph-truck nav-icon"></i>
+                    <span>Deliveries</span>
+                </div>
+                <div class="nav-item" data-tab="reports">
+                    <i class="ph ph-chart-line-up nav-icon"></i>
+                    <span>Reports</span>
+                </div>
+                <div class="nav-item" data-tab="users">
+                    <i class="ph ph-users nav-icon"></i>
+                    <span>Users</span>
+                </div>
+                <div class="nav-item" data-tab="settings">
+                    <i class="ph ph-gear nav-icon"></i>
+                    <span>Settings</span>
+                </div>
+            </nav>
+
+            <div class="admin-user">
+                <div class="user-info">
+                    <div class="user-avatar"><i class="ph ph-user"></i></div>
+                    <div class="user-details">
+                        <h3 id="adminName">Administrator</h3>
+                        <p>Admin</p>
+                        <p id="adminStoreName" style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
+                            📍 Store Name</p>
+                    </div>
+                </div>
+                <button class="sidebar-logout" onclick="auth.logout()">
+                    <i class="ph ph-sign-out"></i>
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-header">
+                <div class="header-left">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="currentStoreName" style="font-size: 0.85rem; color: var(--gray-600); margin: 0.25rem 0 0 0;">
+                        📍 Loading store...
+                    </p>
+                </div>
+                <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+                    <!-- Notifications -->
+                    <div class="notifications-dropdown">
+                        <button class="notification-btn" id="notificationBtn">
+                            <i class="ph ph-bell"></i>
+                            <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                        </button>
+                        <div class="notifications-panel" id="notificationsPanel">
+                            <div class="notifications-header">
+                                <h3>Notifications</h3>
+                                <button class="btn-clear-all" id="clearAllNotifications">Clear
+                                    All</button>
+                            </div>
+                            <div class="notifications-list" id="notificationsList">
+                                <div class="empty-notifications">
+                                    <i class="ph ph-bell-slash"></i>
+                                    <p>No new notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Switcher (for super admins managing multiple stores) -->
+                    <div id="storeSwitcherContainer" style="display: none;">
+                        <select id="storeSwitcher" class="form-control" style="min-width: 200px;">
+                            <option value="">Loading stores...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <div class="tabs active" id="dashboard-tab">
+                    <!-- Time Range Selector -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <!-- Main Filter Buttons -->
+                        <div
+                            style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                            <button class="time-range-btn active" data-range="today" onclick="switchTimeRange('today')"
+                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);">
+                                <i class="ph ph-calendar-blank"></i> Today
+                            </button>
+                            <button class="time-range-btn" data-range="week" onclick="switchTimeRange('week')"
+                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                                <i class="ph ph-calendar"></i> This Week
+                            </button>
+                            <button class="time-range-btn" data-range="month" onclick="switchTimeRange('month')"
+                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
+                                <i class="ph ph-calendar-check"></i> This Month
+                            </button>
+                        </div>
+
+                        <!-- Custom Range Button (Below) -->
+                        <div style="display: flex; justify-content: center;">
+                            <button class="time-range-btn" data-range="custom" onclick="showCustomRangeModal()"
+                                style="padding: 0.5rem 1.25rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-600); border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.3s;">
+                                <i class="ph ph-calendar-dots"></i> Custom Range
+                            </button>
+                        </div>
+
+                        <!-- Selected Date Range Display -->
+                        <div id="selectedRangeDisplay"
+                            style="text-align: center; font-size: 0.9rem; color: var(--gray-600); font-weight: 500; margin-top: 0.75rem; padding: 0.5rem; background: var(--gray-100); border-radius: 8px;">
+                            <!-- Will show selected date range -->
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <!-- 1. TODAY SALES -->
+                        <div class="stat-card">
+                            <div class="stat-icon primary"><i class="ph ph-currency-dollar"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todaySalesLabel">Today's Sales</h3>
+                                <div class="stat-value" id="todaySales">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 2. TODAY EXPENSES -->
+                        <div class="stat-card">
+                            <div class="stat-icon warning"><i class="ph ph-money"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayExpensesLabel">Today's Expenses</h3>
+                                <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 3. TODAY COLLECTIBLES -->
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i
+                                    class="ph ph-coins"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayCollectiblesLabel">Today's Collectibles</h3>
+                                <div class="stat-value" id="todayCollectibles">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 4. COLLECTED TODAY -->
+                        <div class="stat-card">
+                            <div class="stat-icon success"><i class="ph ph-hand-coins"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayCollectedLabel">Collections Today</h3>
+                                <div class="stat-value" id="todayCollected">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 5. TODAY TRANSACTIONS -->
+                        <div class="stat-card">
+                            <div class="stat-icon danger"><i class="ph ph-shopping-cart"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalTransactionsLabel">Sales Transactions Today</h3>
+                                <div class="stat-value" id="totalTransactions">0</div>
+                            </div>
+                        </div>
+
+                        <!-- 7. NET PROFIT -->
+                        <div class="stat-card">
+                            <div class="stat-icon success" id="netProfitIcon"><i class="ph ph-trend-up"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayNetProfitLabel">Net Profit (Today)</h3>
+                                <div class="stat-value" id="todayNetProfit">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 8. THIS MONTH DELIVERIES -->
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i
+                                    class="ph ph-truck"></i></div>
+                            <div class="stat-info">
+                                <h3 id="monthDeliveriesLabel">This Month Deliveries</h3>
+                                <div class="stat-value" id="monthDeliveries">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 9. TOTAL ITEMS SOLD -->
+                        <div class="stat-card" onclick="switchTab('item-sales')" style="cursor:pointer;"
+                            title="View Item Sales breakdown">
+                            <div class="stat-icon" style="background: rgba(16,185,129,0.12); color: #10b981;"><i
+                                    class="ph ph-shopping-bag-open"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalItemsSoldLabel">Items Sold Today</h3>
+                                <div class="stat-value" id="totalItemsSold">0</div>
+                                <div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">tap to see
+                                    breakdown →</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <!-- Charts Section -->
+                    <div class="charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+
+                        <!-- Sales Trend (Full Width) -->
+                        <div class="chart-card" style="grid-column: 1 / -1;">
+                            <div class="chart-header">
+                                <h3><i class="ph ph-trend-up"></i> Sales Trend</h3>
+                            </div>
+                            <div class="chart-body" style="height: 300px;">
+                                <canvas id="salesTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Top Categories -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="ph ph-chart-pie-slice"></i> Sales by Category</h3>
+                            </div>
+                            <div class="chart-body" style="height: 300px;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="ph ph-credit-card"></i> Payment Methods</h3>
+                            </div>
+                            <div class="chart-body" style="height: 300px;">
+                                <canvas id="paymentMethodChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Peak Hours -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="ph ph-clock"></i> Peak Hours Heatmap</h3>
+                            </div>
+                            <div class="chart-body" style="height: 300px;">
+                                <canvas id="peakHoursChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item Sales Tab -->
+                <div class="tabs" id="item-sales-tab">
+                    <div class="table-container">
+                        <!-- Header -->
+                        <div class="table-header" style="flex-wrap:wrap;gap:0.75rem;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <i class="ph ph-chart-bar" style="font-size:1.4rem;color:var(--primary);"></i>
+                                <h3 style="margin:0;">Items Sold</h3>
+                            </div>
+                            <div class="table-actions"
+                                style="flex:1;justify-content:flex-end;flex-wrap:wrap;gap:0.5rem;">
+                                <!-- Period filter buttons -->
+                                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                                    <button class="btn btn-sm item-sales-filter-btn" data-filter="today"
+                                        onclick="switchItemSalesFilter('today')"
+                                        style="border:2px solid var(--gray-300);background:white;color:var(--gray-700);border-radius:8px;font-weight:600;">
+                                        <i class="ph ph-calendar-blank"></i> Today
+                                    </button>
+                                    <button class="btn btn-sm item-sales-filter-btn" data-filter="week"
+                                        onclick="switchItemSalesFilter('week')"
+                                        style="border:2px solid var(--gray-300);background:white;color:var(--gray-700);border-radius:8px;font-weight:600;">
+                                        <i class="ph ph-calendar"></i> This Week
+                                    </button>
+                                    <button class="btn btn-sm item-sales-filter-btn active" data-filter="month"
+                                        onclick="switchItemSalesFilter('month')"
+                                        style="border:2px solid var(--primary);background:var(--primary);color:white;border-radius:8px;font-weight:600;">
+                                        <i class="ph ph-calendar-check"></i> This Month
+                                    </button>
+                                    <button class="btn btn-sm item-sales-filter-btn" data-filter="pick"
+                                        onclick="switchItemSalesFilter('pick')"
+                                        style="border:2px solid var(--gray-300);background:white;color:var(--gray-700);border-radius:8px;font-weight:600;">
+                                        <i class="ph ph-calendar-dots"></i> Pick Month
+                                    </button>
+                                </div>
+
+                                <!-- Month Picker (visible only when Pick Month is active) -->
+                                <div id="itemSalesMonthPickerWrap" style="display:none;align-items:center;gap:0.4rem;">
+                                    <input type="month" id="itemSalesMonthPicker" class="form-control"
+                                        style="max-width:160px;height:36px;" onchange="applyItemSalesMonthPicker()">
+                                </div>
+
+                                <!-- Search -->
+                                <input type="text" id="itemSalesSearch" placeholder="Search product..."
+                                    class="form-control" style="max-width:180px;">
+                            </div>
+                        </div>
+
+                        <!-- Stats chips -->
+                        <div id="itemSalesStats"
+                            style="display:flex;flex-wrap:wrap;gap:0.6rem;padding:0.75rem 0 0.5rem;"></div>
+
+                        <!-- Table -->
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:48px;text-align:center;">#</th>
+                                    <th>Product</th>
+                                    <th>Units Sold</th>
+                                    <th style="text-align:right;">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemSalesTableBody">
+                                <tr>
+                                    <td colspan="4" class="table-empty">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+                        <div id="itemSalesPagination"></div>
+                    </div>
+                </div>
+
+                <!-- Products Tab -->
+                <div class="tabs" id="products-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Products</h3>
+                            <div class="table-actions">
+                                <input type="text" id="productSearchInput" placeholder="Search products..."
+                                    class="form-control" style="max-width: 250px; margin-right: 0.5rem;">
+                                <select id="productCategoryFilter" class="form-control"
+                                    style="max-width: 200px; margin-right: 0.5rem;">
+                                    <option value="all">All Categories</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="showAddProductModal()">
+                                    + Add Product
+                                </button>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="6" class="table-empty">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recipes Tab -->
+                <div class="tabs" id="recipes-tab">
+                    <!-- Ingredients Section -->
+                    <div class="table-container"
+                        style="margin-bottom: 2rem; background: transparent; border: none; box-shadow: none; padding: 0;">
+                        <div class="table-header"
+                            style="background: white; padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-package" style="font-size: 1.25rem; color: var(--primary);"></i>
+                                <h3 style="margin: 0;">Ingredients Inventory</h3>
+                            </div>
+                            <div class="table-actions" style="flex: 1; justify-content: flex-end; min-width: 300px;">
+                                <input type="text" id="ingredientSearchInput" placeholder="Search ingredients..."
+                                    class="form-control" style="max-width: 100%; width: 100%; flex: 1;">
+                                <button class="btn btn-primary" onclick="showAddIngredientModal()"
+                                    style="white-space: nowrap;">
+                                    + Add Ingredient
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Responsive Grid/List -->
+                        <div id="ingredientsList"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                            <!-- Dynamic Cards -->
+                        </div>
+                        <div id="ingredientsEmpty"
+                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: white; border-radius: var(--radius-md);">
+                            No ingredients found.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modifiers Tab -->
+                <div class="tabs" id="modifiers-tab">
+                    <div class="table-container"
+                        style="margin-bottom: 2rem; background: transparent; border: none; box-shadow: none; padding: 0;">
+                        <div class="table-header"
+                            style="background: white; padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-list-plus" style="font-size: 1.25rem; color: var(--primary);"></i>
+                                <h3 style="margin: 0;">Modifiers & Extras</h3>
+                            </div>
+                            <div class="table-actions" style="flex: 1; justify-content: flex-end; min-width: 300px;">
+                                <input type="text" id="modifierSearchInput" placeholder="Search modifiers..."
+                                    class="form-control" style="max-width: 100%; width: 100%; flex: 1;">
+                                <button class="btn btn-primary" onclick="showAddModifierModal()"
+                                    style="white-space: nowrap;">
+                                    + Add Modifier Group
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Responsive Grid/List -->
+                        <div id="modifiersList"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                            <!-- Dynamic Modifier Cards -->
+                        </div>
+                        <div id="modifiersEmpty"
+                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: white; border-radius: var(--radius-md);">
+                            No modifiers found.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Tab -->
+                <div class="tabs" id="inventory-tab">
+                    <!-- Current Stock Overview -->
+                    <div class="table-container" style="margin-bottom: 1.5rem;">
+                        <div class="table-header">
+                            <h3>Current Stock Overview</h3>
+                            <div class="table-actions">
+                                <button class="btn btn-success" onclick="showStockInModal()">
+                                    + Stock In
+                                </button>
+                                <button class="btn btn-warning" onclick="showStockOutModal()">
+                                    - Stock Out
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportInventory()">
+                                    📊 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="inventory-stats">
+                            <div class="stat-card">
+                                <div class="stat-icon success"><i class="ph ph-package"></i></div>
+                                <div class="stat-info">
+                                    <h3>Total Products</h3>
+                                    <div class="stat-value" id="totalProductsInventory">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="showInventoryListModal('low')" style="cursor: pointer;">
+                                <div class="stat-icon warning"><i class="ph ph-warning"></i></div>
+                                <div class="stat-info">
+                                    <h3>Low Stock</h3>
+                                    <div class="stat-value" id="lowStockCount">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="showInventoryListModal('out')" style="cursor: pointer;">
+                                <div class="stat-icon danger"><i class="ph ph-warning-octagon"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>Out of Stock</h3>
+                                    <div class="stat-value" id="outOfStockCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Stock Table -->
+                    <div class="table-container" style="margin-bottom: 1.5rem;">
+                        <div class="table-header">
+                            <h3>Products Stock Status</h3>
+                            <div class="filter-controls">
+                                <input type="text" id="stockSearchInput" placeholder="Search products..."
+                                    class="form-control" style="max-width: 300px;">
+                                <select id="stockFilterSelect" class="form-control" style="max-width: 200px;">
+                                    <option value="all">All Products</option>
+                                    <option value="low">Low Stock</option>
+                                    <option value="out">Out of Stock</option>
+                                    <option value="normal">Normal Stock</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>SKU</th>
+                                        <th>Category</th>
+                                        <th>Current Stock</th>
+                                        <th>Unit Price</th>
+                                        <th>Total Value</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryProductsTable">
+                                    <tr>
+                                        <td colspan="9" class="table-empty">Loading inventory...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- History Tab -->
+                <div class="tabs" id="history-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Stock Movement History</h3>
+                            <div class="filter-controls">
+                                <select id="movementFilterSelect" class="form-control" style="max-width: 150px;">
+                                    <option value="all">All Movements</option>
+                                    <option value="in">Stock In Only</option>
+                                    <option value="out">Stock Out Only</option>
+                                </select>
+                                <select id="movementTimeFilter" class="form-control" style="max-width: 150px;">
+                                    <option value="all">All Time</option>
+                                    <option value="today" selected>Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                </select>
+                                <input type="date" id="movementDateFilter" class="form-control"
+                                    style="max-width: 150px;">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table movement-table"
+                                style="border-collapse: separate; border-spacing: 0;">
+                                <thead style="display: none;">
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Product</th>
+                                        <th>Type</th>
+                                        <th>Quantity</th>
+                                        <th>Reason</th>
+                                        <th>User</th>
+                                        <th>Stock After</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockMovementsTable">
+                                    <tr>
+                                        <td colspan="7" class="table-empty">Loading stock movements...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Tab -->
+                <div class="tabs" id="sales-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>All Transactions</h3>
+                            <div class="table-actions">
+                                <select id="salesFilter" class="form-control"
+                                    style="max-width: 150px; margin-right: 0.5rem;" onchange="loadSales()">
+                                    <option value="recent">Recent</option>
+                                    <option value="today" selected>Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                </select>
+                                <select id="salesCashierFilter" class="form-control" style="max-width: 150px;"
+                                    onchange="loadSales()">
+                                    <option value="all">All Cashiers</option>
+                                </select>
+                            </div>
+                        </div>
+                        <table class="data-table" style="border-collapse: separate; border-spacing: 0;">
+                            <thead style="display: none;">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Cashier</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesTable">
+                                <tr>
+                                    <td colspan="8" class="table-empty">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Collections Tab -->
+                <div class="tabs" id="collections-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Daily Collections</h3>
+                            <div class="table-actions">
+                                <div style="font-size: 0.9rem; color: var(--gray-600); font-weight: 500;"
+                                    id="collectionsDateDisplay">
+                                    Today
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon success"><i class="ph ph-hand-coins"></i></div>
+                                <div class="stat-info">
+                                    <h3>Total Collected</h3>
+                                    <div class="stat-value" id="dailyTotalCollected">₱0.00</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon primary"><i class="ph ph-receipt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Payments Count</h3>
+                                    <div class="stat-value" id="dailyPaymentsCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="collectionsGrid" class="collections-grid"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                            <div class="table-empty">Loading collections...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collectibles Tab -->
+                <div class="tabs" id="collectibles-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Collectibles Monitoring</h3>
+
+                            <div class="table-actions">
+                                <div class="search-box">
+                                    <input type="text" id="collectiblesSearch" placeholder="Search customer..."
+                                        class="form-control">
+                                </div>
+                                <select id="collectiblesFilter" class="form-control">
+                                    <option value="all">All Time</option>
+                                    <option value="recent">Recent</option>
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                    <option value="thisMonth">This Month</option>
+                                </select>
+                            </div>
+                            <div class="collectible-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                                <button class="btn btn-sm btn-primary active" id="btnCollectiblesPending"
+                                    onclick="filterByCollectibleStatus('pending')">Pending</button>
+                                <button class="btn btn-sm btn-secondary" id="btnCollectiblesPaid"
+                                    onclick="filterByCollectibleStatus('paid')">All Paid</button>
+                            </div>
+
+                            <div class="stats-grid" style="margin-bottom: 20px;">
+
+                                <div class="stat-card">
+                                    <div class="stat-icon primary"><i class="ph ph-calendar-check"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <h3>TODAY COLLECTIBLES</h3>
+                                        <div class="stat-value" id="todayCollectiblesAmount">₱0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="collectiblesList" class="collectibles-grid">
+                                <div class="table-empty">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expenses Tab -->
+                <div class="tabs" id="expenses-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Expenses</h3>
+                            <div class="table-actions">
+                                <select id="expensesFilter" class="form-control"
+                                    style="max-width: 150px; margin-right: 0.5rem;" onchange="loadExpenses()">
+                                    <option value="today" selected>Today</option>
+                                    <option value="recent">Recent</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="last7days">Last 7 Days</option>
+                                    <option value="thisMonth">This Month</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon warning"><i class="ph ph-money"></i></div>
+                                <div class="stat-info">
+                                    <h3>Total Expenses (Filtered)</h3>
+                                    <div class="stat-value" id="totalExpensesAmount">₱0.00</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon primary"><i class="ph ph-receipt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Count</h3>
+                                    <div class="stat-value" id="totalExpensesCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="data-table" style="border-collapse: separate; border-spacing: 0;">
+                            <thead style="display: none;">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Cashier</th>
+                                    <th>Reason</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            </thead>
+                            <tbody id="expensesTable">
+                                <tr>
+                                    <td colspan="4" class="table-empty">Loading expenses...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Salaries Tab -->
+                <div class="tabs" id="salaries-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>💼 Staff Salaries</h3>
+                            <div class="table-actions"
+                                style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                                <div id="salariesPeriodLabel"
+                                    style="font-weight: 600; color: var(--dark); margin-right: 0.5rem;">
+                                    This Month
+                                </div>
+                                <input type="month" id="salariesMonthFilter" class="form-control"
+                                    style="max-width: 150px;" onchange="filterSalariesByMonth()">
+                                <button class="btn btn-primary" onclick="showAddSalaryModal()">
+                                    <i class="ph ph-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon warning">
+                                    <i class="ph ph-wallet"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>Total Salaries (Month)</h3>
+                                    <div class="stat-value" id="monthSalariesTotal">₱0.00</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon primary">
+                                    <i class="ph ph-users"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>Staff Paid</h3>
+                                    <div class="stat-value" id="monthSalariesCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salaries List -->
+                        <table class="data-table" style="border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>Date Paid</th>
+                                    <th>Staff Name</th>
+                                    <th>Role / Description</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salariesTable">
+                                <tr>
+                                    <td colspan="5" class="table-empty">Loading salaries...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deliveries Tab -->
+                <div class="tabs" id="deliveries-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>🚚 Delivery Expenses</h3>
+                            <div class="table-actions"
+                                style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                                <div id="deliveriesPeriodLabel"
+                                    style="font-weight: 600; color: var(--dark); margin-right: 0.5rem;">
+                                    This Month
+                                </div>
+                                <input type="date" id="deliveriesDateFilter" class="form-control"
+                                    style="max-width: 150px;" onchange="filterDeliveriesByDate()">
+                                <button class="btn btn-primary" onclick="showAddDeliveryModal()">
+                                    <i class="ph ph-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                                    <i class="ph ph-truck"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>This Month Total</h3>
+                                    <div class="stat-value" id="monthDeliveryTotal">₱0.00</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon success">
+                                    <i class="ph ph-calendar-check"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>Deliveries Count</h3>
+                                    <div class="stat-value" id="monthDeliveryCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deliveries List -->
+                        <table class="data-table" style="border-collapse: collapse;">
+                            <tbody id="deliveriesTable">
+                                <tr>
+                                    <td class="table-empty">Loading deliveries...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reports Tab -->
+                <div class="tabs" id="reports-tab">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Reports Overview</h3>
+                        <button class="btn btn-primary" onclick="sendEndOfDayReport()">
+                            <i class="ph ph-envelope-simple"></i> Email End of Day Report
+                        </button>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon primary"><i class="ph ph-calendar-blank"></i></div>
+                            <div class="stat-info">
+                                <h3>This Week</h3>
+                                <div class="stat-value" id="weekSales">$0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon success"><i class="ph ph-calendar"></i></div>
+                            <div class="stat-info">
+                                <h3>This Month</h3>
+                                <div class="stat-value" id="monthSales">$0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon warning"><i class="ph ph-money"></i></div>
+                            <div class="stat-info">
+                                <h3>Average Sale</h3>
+                                <div class="stat-value" id="avgSale">$0.00</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon danger"><i class="ph ph-trophy"></i></div>
+                            <div class="stat-info">
+                                <h3>Best Day</h3>
+                                <div class="stat-value" id="bestDay">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>Top Selling Products</h3>
+                        </div>
+                        <table class="data-table" style="border-collapse: separate; border-spacing: 0;">
+                            <thead style="display: none;">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Units Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTable">
+                                <tr>
+                                    <td colspan="5" class="table-empty">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tabs" id="users-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div>
+                                <h3>User Management</h3>
+                                <div
+                                    style="display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.9rem; color: var(--gray-600);">
+                                    <span class="status-indicator status-active"></span>
+                                    <span>Active now: <strong id="activeUsersCount">0</strong></span>
+                                </div>
+                            </div>
+                            <div class="table-actions">
+                                <select id="userStatusFilter" class="form-control"
+                                    style="width: auto; padding-right: 2rem;" onchange="loadUsers()">
+                                    <option value="all">All Users</option>
+                                    <option value="active">Active Now</option>
+                                    <option value="away">Away</option>
+                                    <option value="offline">Offline</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="showAddUserModal()">
+                                    + Add User
+                                </button>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Created At</th>
+                                    <th>Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="5" class="table-empty">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tabs" id="settings-tab">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>System Settings</h3>
+                        </div>
+                        <div class="settings-content">
+                            <form id="settingsForm" class="settings-form">
+                                <!-- General Settings -->
+                                <div class="settings-section">
+                                    <h4>General Settings</h4>
+                                    <div class="form-group">
+                                        <label for="systemName">POS System Name *</label>
+                                        <input type="text" id="systemName" class="form-control"
+                                            placeholder="e.g., My Store POS" required>
+                                        <small class="form-text">This name will appear on the login
+                                            page</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="systemDescription">System Description</label>
+                                        <input type="text" id="systemDescription" class="form-control"
+                                            placeholder="e.g., Point of Sale & Inventory Management">
+                                        <small class="form-text">Short description shown on login
+                                            page</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="businessType">Business Type</label>
+                                        <select id="businessType" class="form-control">
+                                            <option value="retail">Retail Store (Default)</option>
+                                            <option value="pharmacy">Pharmacy</option>
+                                        </select>
+                                        <small class="form-text">Select your business type to enable
+                                            specific features
+                                            (e.g., Pharmacy mode enables expiry dates & generic
+                                            names).</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adminEmail">Admin Email for Reports</label>
+                                        <input type="email" id="adminEmail" class="form-control"
+                                            placeholder="admin@example.com">
+                                        <small class="form-text"> Daily sales reports will be sent to
+                                            this email.
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                style="margin-top: 5px; padding: 2px 8px; font-size: 0.75rem;"
+                                                onclick="sendManualYesterdayReport()">
+                                                <i class="ph ph-paper-plane-right"></i> Send Yesterday's
+                                                Report Now
+                                            </button>
+                                        </small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="systemIcon">System Icon (Emoji)</label>
+                                        <input type="text" id="systemIcon" class="form-control" placeholder="🛒"
+                                            maxlength="2">
+                                        <small class="form-text">Emoji icon for the login page</small>
+                                    </div>
+                                </div>
+
+
+                                <!-- Inventory Settings -->
+                                <div class="settings-section">
+                                    <h4>Inventory Settings</h4>
+                                    <div class="form-group">
+                                        <label for="lowStockThreshold">Low Stock Threshold *</label>
+                                        <input type="number" id="lowStockThreshold" class="form-control"
+                                            placeholder="10" min="0" required>
+                                        <small class="form-text">Products with stock at or below this
+                                            value will be
+                                            marked as low stock</small>
+                                    </div>
+                                </div>
+
+                                <!-- Save Button -->
+                                <div class="settings-actions">
+                                    <button type="submit" class="btn btn-primary">💾 Save
+                                        Settings</button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄
+                                        Reset
+                                        to Default</button>
+                                </div>
+
+                                <!-- Data Correction -->
+                                <div class="settings-section">
+                                    <h4>Data Correction</h4>
+                                    <div class="form-group">
+                                        <label>Today's Collectibles Amount</label>
+                                        <div
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <div
+                                                style="background: var(--light); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--gray-200);">
+                                                <span style="color: var(--gray-600); font-size: 0.9rem;">Current:</span>
+                                                <span id="currentTodayCollectibles"
+                                                    style="font-weight: bold; color: var(--primary);">Loading...</span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                onclick="refreshCorrectionData()">
+                                                <i class="ph ph-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="number" id="targetCollectiblesAmount" class="form-control"
+                                                placeholder="Enter correct amount" step="0.01">
+                                            <button type="button" class="btn btn-primary"
+                                                onclick="applyCollectiblesCorrection()">Update
+                                                Amount</button>
+                                        </div>
+                                        <small class="form-text">
+                                            This will create a "System Adjustment" record to force the
+                                            total for
+                                            strictly <b>today</b> to match your input.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- App Maintenance -->
+                                <div class="settings-section">
+                                    <h4>App Maintenance</h4>
+                                    <div class="form-group">
+                                        <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
+                                            Use this if you are experiencing issues or not seeing the
+                                            latest
+                                            updates.
+                                        </p>
+                                        <button type="button" class="btn btn-warning" onclick="resetAppCache()">
+                                            <i class="ph ph-arrow-clockwise"></i> Reset App / Clear
+                                            Cache
+                                        </button>
+                                    </div>
+                                </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="settings-section"
+                            style="border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.05);">
+                            <h4 style="color: var(--danger);">Danger Zone</h4>
+                            <div class="form-group">
+                                <p
+                                    style="font-size: 0.9rem; color: var(--danger); margin-bottom: 0.5rem; font-weight: 500;">
+                                    This action will permanently delete ALL data (Products, Sales,
+                                    History, Users).
+                                    Only your current admin account will remain.
+                                </p>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-warning" onclick="clearTransactionRecords()"
+                                        style="flex: 1; border: 1px solid var(--warning); color: #854d0e; background: #fef9c3;">
+                                        <i class="ph ph-trash"></i> Clear Transaction Records Only
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="performHardReset()"
+                                        style="flex: 1;">
+                                        <i class="ph ph-warning-circle"></i> HARD RESET SYSTEM
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="productModalTitle">Add Product</h2>
+                <button class="modal-close" onclick="closeProductModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productSku">📷 SKU * <span
+                                    style="font-weight: normal; font-size: 0.85rem; color: var(--gray-600);">(Barcode
+                                    Scanner Ready)</span></label>
+                            <input type="text" id="productSku" class="form-control" required autocomplete="off">
+                            <small class="form-text"
+                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.8rem;">
+                                💡 Scan barcode or type manually. Press Enter to continue.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="productName">Product Name *</label>
+                            <input type="text" id="productName" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productGenericName">Generic Name</label>
+                            <input type="text" id="productGenericName" class="form-control"
+                                placeholder="e.g. Paracetamol">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productCategory">Category *</label>
+                            <input type="text" id="productCategory" class="form-control" list="categoryList" required
+                                autocomplete="off">
+                            <datalist id="categoryList">
+                                <!-- Categories will be populated dynamically -->
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <!-- Stock Mode Toggle -->
+                            <label
+                                style="font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; display: block;">Stock
+                                Type</label>
+                            <div id="stockModeToggle"
+                                style="display: flex; background: var(--gray-100); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 0.85rem;">
+                                <button type="button" id="btnStockBased" onclick="setStockMode('stock')"
+                                    style="flex: 1; padding: 0.45rem 0.5rem; border: none; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(99,102,241,0.3);">
+                                    <i class="ph ph-stack"></i> Stock-Based
+                                </button>
+                                <button type="button" id="btnAvailabilityBased" onclick="setStockMode('availability')"
+                                    style="flex: 1; padding: 0.45rem 0.5rem; border: none; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; background: transparent; color: var(--gray-600);">
+                                    <i class="ph ph-toggle-right"></i> Available / N/A
+                                </button>
+                            </div>
+                            <input type="hidden" id="productStockMode" value="stock">
+
+                            <!-- Stock-Based Panel -->
+                            <div id="panelStockBased">
+                                <label for="productStock" style="font-size: 0.85rem; color: var(--gray-600);">Quantity
+                                    *</label>
+                                <input type="number" id="productStock" class="form-control" min="0" required
+                                    placeholder="0">
+                                <small style="color: var(--gray-500); font-size: 0.75rem;">Deducts automatically on
+                                    every sale.</small>
+                            </div>
+
+                            <!-- Availability-Based Panel -->
+                            <div id="panelAvailabilityBased" style="display: none;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--dark); font-size: 0.9rem;"
+                                            id="availabilityLabel">Available</div>
+                                        <div style="font-size: 0.75rem; color: var(--gray-500);">Customers can order
+                                            this item</div>
+                                    </div>
+                                    <label class="avail-switch">
+                                        <input type="checkbox" id="productAvailability" checked
+                                            onchange="updateAvailabilityLabel()">
+                                        <span class="avail-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Pricing Calculator -->
+                    <div
+                        style="margin-bottom: 1rem; border: 2px solid var(--primary); padding: 1.25rem; border-radius: var(--radius-md); background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">
+                        <h4
+                            style="margin-bottom: 1rem; font-size: 1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="ph ph-calculator"></i> Smart Pricing Calculator
+                        </h4>
+                        <small style="display: block; margin-bottom: 1rem; color: var(--gray-600); font-size: 0.85rem;">
+                            💡 Enter any 2 values and the 3rd will auto-calculate!
+                        </small>
+
+                        <div class="form-group">
+                            <label for="productCost" style="font-weight: 600; color: var(--dark);">Cost Price *</label>
+                            <div style="position: relative;">
+                                <span
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
+                                <input type="number" id="productCost" class="form-control" step="0.01" min="0" required
+                                    style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                            </div>
+                            <small
+                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
+                                Your purchase/wholesale cost
+                            </small>
+                        </div>
+
+                        <div style="text-align: center; margin: 0.75rem 0; color: var(--gray-400);">
+                            <i class="ph ph-arrow-down" style="font-size: 1.5rem;"></i>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productMarkup" style="font-weight: 600; color: var(--dark);">Markup Percentage
+                                *</label>
+                            <div style="position: relative;">
+                                <input type="number" id="productMarkup" class="form-control" step="0.01" min="0"
+                                    style="padding-right: 35px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                                <span
+                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">%</span>
+                            </div>
+                            <small
+                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
+                                Your profit margin percentage
+                            </small>
+                        </div>
+
+                        <div style="text-align: center; margin: 0.75rem 0; color: var(--gray-400);">
+                            <i class="ph ph-arrow-down" style="font-size: 1.5rem;"></i>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productPrice" style="font-weight: 600; color: var(--dark);">Selling Price
+                                *</label>
+                            <div style="position: relative;">
+                                <span
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
+                                <input type="number" id="productPrice" class="form-control" step="0.01" min="0" required
+                                    style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                            </div>
+                            <small
+                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
+                                Final price for customers
+                            </small>
+                        </div>
+
+                        <!-- Profit Display -->
+                        <div id="profitDisplay"
+                            style="margin-top: 1rem; padding: 0.75rem; background: white; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: var(--gray-700); font-size: 0.9rem;">💰 Profit per
+                                    Unit:</span>
+                                <span id="profitAmount"
+                                    style="font-weight: 700; color: var(--success); font-size: 1.1rem;">₱0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Warning Display -->
+                        <div id="pricingWarning"
+                            style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-radius: var(--radius-sm); border: 1px solid #fbbf24; display: none;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-warning" style="color: #f59e0b; font-size: 1.2rem;"></i>
+                                <span id="warningText" style="font-size: 0.85rem; color: #92400e;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productExpiry">Expiry Date</label>
+                            <input type="date" id="productExpiry" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="productBatch">Batch Number</label>
+                            <input type="text" id="productBatch" class="form-control" placeholder="e.g. BN-12345">
+                        </div>
+                    </div>
+
+                    <!-- Ingredient Recipe Management -->
+                    <div
+                        style="margin-bottom: 1rem; border: 2px solid var(--success); padding: 1rem; border-radius: var(--radius-md); background: #f0fdf4;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <h4
+                                    style="margin: 0; font-size: 1rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="ph ph-chef-hat"></i> Recipe / Ingredients
+                                </h4>
+                                <label class="switch" style="transform: scale(0.8);">
+                                    <input type="checkbox" id="enableRecipeToggle" onchange="toggleRecipeConfig()">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <button type="button" id="btnAddIngredient" class="btn btn-sm btn-success"
+                                onclick="addIngredientRow()" style="display: none;">
+                                + Add Ingredient
+                            </button>
+                        </div>
+
+                        <div id="recipeConfigContainer" style="display: none;">
+                            <div style="margin-bottom: 1rem;">
+                                <div id="recipeIngredientsList"
+                                    style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <!-- Dynamic rows -->
+                                </div>
+                                <div id="recipeEmptyState"
+                                    style="text-align: center; padding: 1.5rem; color: var(--gray-500); background: white; border: 1px dashed var(--gray-300); border-radius: var(--radius-sm);">
+                                    No ingredients linked.
+                                </div>
+                            </div>
+
+                            <!-- Cost Analysis -->
+                            <div
+                                style="background: white; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--success-light);">
+                                <div
+                                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">
+                                    <span>Recipe Cost:</span>
+                                    <span id="recipeTotalCost"
+                                        style="font-weight: 600; color: var(--dark);">₱0.00</span>
+                                </div>
+                                <div
+                                    style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; padding-top: 0.5rem; border-top: 1px dashed var(--gray-200);">
+                                    <span>Profit Margin:</span>
+                                    <span id="recipeProfit" style="color: var(--success);">₱0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alternative Prices -->
+                    <div
+                        style="margin-bottom: 1rem; border: 1px solid var(--gray-200); padding: 1rem; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--gray-700);">
+                            Alternative Prices (Discounts/Wholesale)</h4>
+
+                        <div id="alternativePricesList" style="margin-bottom: 0.5rem;">
+                            <!-- Dynamic price fields will appear here -->
+                        </div>
+
+                        <div class="form-row" style="margin-bottom: 0; align-items: flex-end;">
+                            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem;">Label</label>
+                                <input type="text" id="newPriceLabel" class="form-control form-control-sm"
+                                    placeholder="e.g. Wholesale">
+                            </div>
+                            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem;">Price</label>
+                                <input type="number" id="newPriceValue" class="form-control form-control-sm"
+                                    placeholder="0.00">
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addAlternativePrice()"
+                                style="height: 38px;">Add Price</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="productDescription">Description</label>
+                        <textarea id="productDescription" class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteProduct" onclick="deleteCurrentProduct()"
+                    style="display: none; margin-right: auto;">Delete</button>
+                <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock In Modal -->
+    <div class="modal" id="stockInModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Stock In</h2>
+                <button class="modal-close" onclick="closeStockInModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Product *</label>
+                    <div class="searchable-select" id="stockInSelect">
+                        <div class="select-header" onclick="toggleSearchableSelect('stockInSelect')">
+                            <input type="text" class="select-search-input" id="stockInSearch"
+                                placeholder="Select Product..." autocomplete="off">
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                        <div class="select-options" id="stockInOptions"></div>
+                        <input type="hidden" id="stockInProduct" required>
+                    </div>
+                    <div id="stockInCurrentInfo" class="stock-info-text"></div>
+                </div>
+                <div class="form-group">
+                    <label for="stockInQuantity">Quantity *</label>
+                    <input type="number" id="stockInQuantity" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="stockInReason">Reason *</label>
+                    <input type="text" id="stockInReason" class="form-control" placeholder="e.g., New shipment"
+                        required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeStockInModal()">Cancel</button>
+                <button class="btn btn-success" onclick="processStockIn()">Add Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Out Modal -->
+    <div class="modal" id="stockOutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Stock Out</h2>
+                <button class="modal-close" onclick="closeStockOutModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Product *</label>
+                    <div class="searchable-select" id="stockOutSelect">
+                        <div class="select-header" onclick="toggleSearchableSelect('stockOutSelect')">
+                            <input type="text" class="select-search-input" id="stockOutSearch"
+                                placeholder="Select Product..." autocomplete="off">
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                        <div class="select-options" id="stockOutOptions"></div>
+                        <input type="hidden" id="stockOutProduct" required>
+                    </div>
+                    <div id="stockOutCurrentInfo" class="stock-info-text"></div>
+                </div>
+                <div class="form-group">
+                    <label for="stockOutQuantity">Quantity *</label>
+                    <input type="number" id="stockOutQuantity" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="stockOutReason">Reason *</label>
+                    <input type="text" id="stockOutReason" class="form-control" placeholder="e.g., Damaged, Expired"
+                        required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeStockOutModal()">Cancel</button>
+                <button class="btn btn-warning" onclick="processStockOut()">Remove Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal" id="transactionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Transaction Details</h2>
+                <button class="modal-close" onclick="closeTransactionModal()">×</button>
+            </div>
+            <div class="modal-body" id="transactionDetails">
+                <!-- Details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTransactionModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="userModalTitle">Add User</h2>
+                <button class="modal-close" onclick="closeUserModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="form-group">
+                        <label for="userUsername">Username *</label>
+                        <input type="text" id="userUsername" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userFullName">Full Name *</label>
+                        <input type="text" id="userFullName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Role *</label>
+                        <select id="userRole" class="form-control" required>
+                            <option value="cashier">Cashier</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPassword">Password <span id="passwordHint"
+                                style="font-weight: normal; font-size: 0.8rem; display: none;">(Leave blank to keep
+                                current)</span></label>
+                        <input type="password" id="userPassword" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Range Modal -->
+    <div id="customRangeModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Select Custom Date Range</h2>
+                <button class="modal-close" onclick="closeCustomRangeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="customStartDate">Start Date</label>
+                    <input type="date" id="customStartDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="customEndDate">End Date</label>
+                    <input type="date" id="customEndDate" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCustomRangeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyCustomRange()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Salary Modal -->
+    <div id="addSalaryModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>💼 Add Staff Salary</h2>
+                <button class="modal-close" onclick="closeAddSalaryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addSalaryForm">
+                    <div class="form-group">
+                        <label for="salaryStaffName">Staff Name *</label>
+                        <input type="text" id="salaryStaffName" class="form-control" placeholder="Enter staff name"
+                            required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="salaryRole">Role / Description *</label>
+                        <input type="text" id="salaryRole" class="form-control" placeholder="e.g. Cashier, Chef"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="salaryAmount">Amount Paid *</label>
+                        <input type="number" id="salaryAmount" class="form-control" placeholder="Enter amount" min="0"
+                            step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="salaryDate">Date Paid & Time</label>
+                        <input type="datetime-local" id="salaryDate" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddSalaryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSalary()">
+                    <i class="ph ph-check"></i> Save Salary
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Salary Modal -->
+    <div id="editSalaryModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>💼 Edit Staff Salary</h2>
+                <button class="modal-close" onclick="closeEditSalaryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="editSalaryForm">
+                    <input type="hidden" id="editSalaryId">
+                    <div class="form-group">
+                        <label for="editSalaryStaffName">Staff Name *</label>
+                        <input type="text" id="editSalaryStaffName" class="form-control" placeholder="Enter staff name"
+                            required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSalaryRole">Role / Description *</label>
+                        <input type="text" id="editSalaryRole" class="form-control" placeholder="e.g. Cashier, Chef"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSalaryAmount">Amount Paid *</label>
+                        <input type="number" id="editSalaryAmount" class="form-control" placeholder="Enter amount"
+                            min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSalaryDate">Date Paid & Time</label>
+                        <input type="datetime-local" id="editSalaryDate" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditSalaryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="updateSalary()">
+                    <i class="ph ph-check"></i> Update Salary
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Delivery Modal -->
+    <div id="addDeliveryModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>🚚 Add Delivery Expense</h2>
+                <button class="modal-close" onclick="closeAddDeliveryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addDeliveryForm">
+                    <div class="form-group">
+                        <label for="deliveryAmount">Amount Paid *</label>
+                        <input type="number" id="deliveryAmount" class="form-control" placeholder="Enter amount" min="0"
+                            step="0.01" required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryDate">Date & Time</label>
+                        <input type="datetime-local" id="deliveryDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryNote">Note (Optional)</label>
+                        <textarea id="deliveryNote" class="form-control"
+                            placeholder="Add delivery details, route, customer, etc." rows="3"
+                            maxlength="200"></textarea>
+                        <small style="color: var(--gray-500); font-size: 0.75rem;">Max 200 characters</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddDeliveryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveDelivery()">
+                    <i class="ph ph-check"></i> Save Delivery
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Delivery Modal -->
+    <div id="viewDeliveryModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>📦 Delivery Details</h2>
+                <button class="modal-close" onclick="closeViewDeliveryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
+                        <div style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.25rem;">Date & Time
+                        </div>
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--dark);" id="viewDeliveryDate">-
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
+                        <div style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.25rem;">Amount Paid
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);"
+                            id="viewDeliveryAmount">₱0.00
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
+                        <div style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.25rem;">Added By</div>
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--dark);" id="viewDeliveryCashier">-
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: var(--radius-md);"
+                        id="viewDeliveryNoteContainer">
+                        <div style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.25rem;">Note</div>
+                        <div style="font-size: 0.95rem; color: var(--dark); line-height: 1.5;" id="viewDeliveryNote">-
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
+                        <div style="font-size: 0.75rem; color: var(--gray-500); margin-bottom: 0.25rem;">Delivery ID
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600); font-family: monospace;"
+                            id="viewDeliveryId">-
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteDelivery" onclick="deleteDelivery()">
+                    <i class="ph ph-trash"></i> Delete
+                </button>
+                <button class="btn btn-secondary" onclick="closeViewDeliveryModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Ingredient Modal -->
+    <div class="modal" id="ingredientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="ingredientModalTitle">Add Ingredient</h2>
+                <button class="modal-close" onclick="closeIngredientModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="ingredientForm">
+                    <input type="hidden" id="ingredientId">
+                    <div class="form-group">
+                        <label for="ingredientName">Name *</label>
+                        <input type="text" id="ingredientName" class="form-control" required
+                            placeholder="e.g. Beef Patty">
+                    </div>
+                    <div class="form-group">
+                        <label for="ingredientUnit">Unit of Measurement *</label>
+                        <select id="ingredientUnit" class="form-control" required>
+                            <option value="pieces">pieces</option>
+                            <option value="grams">grams (g)</option>
+                            <option value="kg">kilograms (kg)</option>
+                            <option value="ml">milliliters (ml)</option>
+                            <option value="liters">liters (L)</option>
+                            <option value="cups">cups</option>
+                            <option value="tbsp">tablespoons (tbsp)</option>
+                            <option value="tsp">teaspoons (tsp)</option>
+                            <option value="oz">ounces (oz)</option>
+                            <option value="lb">pounds (lb)</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ingredientStock">Current Stock *</label>
+                            <input type="number" id="ingredientStock" class="form-control" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group" id="ingredientStockInGroup" style="display: none;">
+                            <label for="ingredientStockIn" style="color: var(--success); font-weight: 600;">Stock In (Add to Stock)</label>
+                            <input type="number" id="ingredientStockIn" class="form-control" min="0" step="0.01" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="ingredientCost">Cost per Unit (₱) *</label>
+                            <input type="number" id="ingredientCost" class="form-control" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIngredientModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveIngredient()">Save Ingredient</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Recipe Modal -->
+    <div class="modal" id="recipeModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 id="recipeModalTitle">Link Recipe to Product</h2>
+                <button class="modal-close" onclick="closeRecipeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Product *</label>
+                    <div class="searchable-select" id="recipeProductSelect">
+                        <div class="select-header" onclick="toggleSearchableSelect('recipeProductSelect')">
+                            <input type="text" class="select-search-input" id="recipeProductSearch"
+                                placeholder="Search Product..." autocomplete="off">
+                            <i class="ph ph-caret-down"></i>
+                        </div>
+                        <div class="select-options" id="recipeProductOptions"></div>
+                        <input type="hidden" id="recipeProductId" required>
+                    </div>
+                </div>
+
+                <div style="margin: 1.5rem 0; border: 1px solid var(--gray-200); border-radius: 8px; overflow: hidden;">
+                    <div
+                        style="background: var(--gray-50); padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin: 0;">Ingredients List</h4>
+                        <button class="btn btn-sm btn-primary" onclick="addIngredientRow()">
+                            + Add Ingredient
+                        </button>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <table class="data-table" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th>Ingredient</th>
+                                    <th style="width: 120px;">Quantity</th>
+                                    <th>Unit</th>
+                                    <th>Est. Cost</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipeIngredientsTable">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                        <div id="recipeEmptyState" style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                            No ingredients added yet. Click "+ Add Ingredient" to start.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recipe Summary Card -->
+                <div
+                    style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 1rem; border-radius: 8px; border: 1px solid #bbf7d0;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #166534;"><i class="ph ph-receipt"></i> Cost Analysis</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <span>Total Recipe Cost:</span>
+                        <span id="recipeTotalCost" style="font-weight: bold;">₱0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <span>Selling Price:</span>
+                        <span id="recipeSellingPrice">Select a product...</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; border-top: 1px dashed #86efac; padding-top: 0.5rem; margin-top: 0.5rem;">
+                        <span>Est. Profit:</span>
+                        <span id="recipeProfit" style="font-weight: bold; color: #166534;">₱0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteRecipe" onclick="deleteRecipe()"
+                    style="display: none; margin-right: auto;">
+                    Remove Recipe
+                </button>
+                <button class="btn btn-secondary" onclick="closeRecipeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modifier Modal -->
+    <div class="modal" id="modifierModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="modifierModalTitle">Add Modifier Group</h2>
+                <button class="modal-close" onclick="closeModifierModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="modifierForm">
+                    <input type="hidden" id="modifierId">
+
+                    <div class="form-group">
+                        <label for="modifierName">Group Name *</label>
+                        <input type="text" id="modifierName" class="form-control"
+                            placeholder="e.g. Size, Toppings, Sugar Level" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Selection Type</label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label class="radio-card" style="flex: 1; cursor: pointer;">
+                                <input type="radio" name="modifierType" value="single" checked
+                                    onchange="updateModifierTypeUI()">
+                                <div
+                                    style="padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 8px; text-align: center;">
+                                    <i class="ph ph-check-circle"
+                                        style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--primary);"></i>
+                                    <div style="font-weight: 600;">Single Select</div>
+                                    <small style="color: var(--gray-500);">Radio buttons (Only one)</small>
+                                </div>
+                            </label>
+                            <label class="radio-card" style="flex: 1; cursor: pointer;">
+                                <input type="radio" name="modifierType" value="multiple"
+                                    onchange="updateModifierTypeUI()">
+                                <div
+                                    style="padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 8px; text-align: center;">
+                                    <i class="ph ph-checks"
+                                        style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--success);"></i>
+                                    <div style="font-weight: 600;">Multi Select</div>
+                                    <small style="color: var(--gray-500);">Checkboxes (Choose many)</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="maxSelectionDev" style="display: none;">
+                        <label for="modifierMaxSelections">Max Selections (Optional)</label>
+                        <input type="number" id="modifierMaxSelections" class="form-control" min="0"
+                            placeholder="Leave empty for unlimited">
+                    </div>
+
+                    <div style="margin-top: 1.5rem; border-top: 1px dashed var(--gray-300); padding-top: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="margin: 0;">Options / Variants</label>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addModifierOptionRow()">+
+                                Add Option</button>
+                        </div>
+
+                        <div id="modifierOptionsList" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <!-- Dynamic Rows -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteModifier" onclick="deleteModifier()"
+                    style="display: none; margin-right: auto;">Delete</button>
+                <button class="btn btn-secondary" onclick="closeModifierModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveModifier()">Save Modifier</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="js/email-service.js"></script>
+    <script type="module" src="js/offline-db.js?v=4.1"></script>
+    <script src="js/mobile-stability.js"></script>
+    <script src="js/auth.js?v=4.1"></script>
+    <script src="js/utils.js?v=4.1"></script>
+    <script src="js/admin/dashboard-charts.js?v=4.1"></script>
+    <script src="js/admin.js?v=4.1"></script>
+    <script src="js/admin/time-range.js?v=4.1"></script>
+    <script src="js/admin/products.js?v=4.4"></script>
+    <script src="js/admin/recipes.js?v=4.4"></script>
+    <script src="js/admin/modifiers.js?v=4.4"></script>
+    <script src="js/admin/inventory.js?v=4.1"></script>
+    <script src="js/admin/sales.js?v=4.1"></script>
+    <script src="js/admin/daily-collections.js?v=4.1"></script>
+    <script src="js/admin/expenses.js?v=4.1"></script>
+    <script src="js/admin/salaries.js?v=4.4"></script>
+    <script src="js/admin/deliveries.js?v=4.1"></script>
+    <script src="js/admin/reports.js?v=4.1"></script>
+    <script src="js/admin/users.js?v=4.4"></script>
+    <script src="js/admin/collectibles.js?v=4.1"></script>
+    <script src="js/admin/settings.js?v=4.1"></script>
+    <script src="js/admin/store-switcher.js?v=4.1"></script>
+    <script src="js/admin/notifications.js?v=4.1"></script>
+    <script src="js/admin/item-sales.js?v=4.3"></script>
+    <script src="js/tawk-to.js"></script>
+    <script src="js/pull-to-refresh.js?v=4.1"></script>
+</body>
+
+</html>

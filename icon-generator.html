@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f0f0f0;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e0e7ff;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 200px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .icon-item {
+            text-align: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .icon-item img {
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .icon-item p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 PWA Icon Generator</h1>
+        <p style="text-align: center; color: #666;">Generate all required icon sizes for your PWA</p>
+
+        <div class="upload-area" id="uploadArea">
+            <p>📁 Click to upload or drag & drop your base icon</p>
+            <p style="font-size: 14px; color: #999;">Recommended: 512x512px PNG image</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="preview" id="preview"></div>
+
+        <button id="generateBtn" disabled>Generate All Icons</button>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+        </div>
+
+        <div class="icon-grid" id="iconGrid"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const generateBtn = document.getElementById('generateBtn');
+        const progress = document.getElementById('progress');
+        const progressFill = document.getElementById('progressFill');
+        const iconGrid = document.getElementById('iconGrid');
+
+        const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let baseImage = null;
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    baseImage = img;
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Base Icon">`;
+                    generateBtn.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Generate icons
+        generateBtn.addEventListener('click', async () => {
+            if (!baseImage) return;
+
+            generateBtn.disabled = true;
+            progress.style.display = 'block';
+            iconGrid.innerHTML = '';
+
+            for (let i = 0; i < iconSizes.length; i++) {
+                const size = iconSizes[i];
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Draw resized image
+                ctx.drawImage(baseImage, 0, 0, size, size);
+
+                // Convert to blob and download
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const url = URL.createObjectURL(blob);
+
+                // Create download link
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.click();
+
+                // Show preview
+                const iconItem = document.createElement('div');
+                iconItem.className = 'icon-item';
+                iconItem.innerHTML = `
+                    <img src="${url}" alt="${size}x${size}">
+                    <p>${size}x${size}</p>
+                `;
+                iconGrid.appendChild(iconItem);
+
+                // Update progress
+                const percent = Math.round(((i + 1) / iconSizes.length) * 100);
+                progressFill.style.width = percent + '%';
+                progressFill.textContent = percent + '%';
+
+                // Small delay for visual feedback
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            alert('✅ All icons generated! Check your downloads folder.\n\nMove all downloaded icons to the "icons" folder in your project.');
+            generateBtn.disabled = false;
+        });
+    </script>
+</body>
+
+</html>

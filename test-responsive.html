@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Design Test - POS System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .device-preview {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .device {
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f9fafb;
+        }
+        .device.desktop {
+            width: 100%;
+            max-width: 1200px;
+        }
+        .device.tablet {
+            width: 100%;
+            max-width: 900px;
+        }
+        .device.mobile {
+            width: 100%;
+            max-width: 375px;
+        }
+        .device h3 {
+            margin: 0 0 10px 0;
+            color: #6366f1;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+        }
+        .test-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .test-links a {
+            padding: 10px 20px;
+            background: #6366f1;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .test-links a:hover {
+            background: #4f46e5;
+        }
+        @media (max-width: 768px) {
+            .device-preview {
+                flex-direction: column;
+            }
+            .test-links {
+                flex-direction: column;
+            }
+            .test-links a {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🛒 POS System - Responsive Design Test</h1>
+        <p>This page demonstrates the responsive features implemented for the admin dashboard and cashier interface.</p>
+
+        <div class="test-section">
+            <h2>📊 Admin Dashboard Responsive Features</h2>
+            <div class="device-preview">
+                <div class="device desktop">
+                    <h3>Desktop (1200px+)</h3>
+                    <ul class="feature-list">
+                        <li>Fixed sidebar navigation (260px width)</li>
+                        <li>Full stats grid (4 columns)</li>
+                        <li>Horizontal table layout</li>
+                        <li>Full-width main content area</li>
+                    </ul>
+                </div>
+                <div class="device tablet">
+                    <h3>Tablet (900px - 1024px)</h3>
+                    <ul class="feature-list">
+                        <li>Slide-out sidebar with toggle button</li>
+                        <li>Stats grid (2 columns)</li>
+                        <li>Responsive table with horizontal scroll</li>
+                        <li>Overlay when sidebar is open</li>
+                    </ul>
+                </div>
+                <div class="device mobile">
+                    <h3>Mobile (≤768px)</h3>
+                    <ul class="feature-list">
+                        <li>Slide-out sidebar (280px width)</li>
+                        <li>Single column stats grid</li>
+                        <li>Compact table with horizontal scroll</li>
+                        <li>Mobile-optimized buttons and forms</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>💰 Cashier Interface Responsive Features</h2>
+            <div class="device-preview">
+                <div class="device desktop">
+                    <h3>Desktop (1200px+)</h3>
+                    <ul class="feature-list">
+                        <li>Side-by-side layout (products + cart)</li>
+                        <li>Fixed cart sidebar (400px width)</li>
+                        <li>Large product grid (auto-fill)</li>
+                        <li>Full checkout modal</li>
+                    </ul>
+                </div>
+                <div class="device tablet">
+                    <h3>Tablet (900px - 1024px)</h3>
+                    <ul class="feature-list">
+                        <li>Stacked layout (products above, cart below)</li>
+                        <li>Full-width cart (50vh max height)</li>
+                        <li>Medium product grid</li>
+                        <li>Responsive modal</li>
+                    </ul>
+                </div>
+                <div class="device mobile">
+                    <h3>Mobile (≤768px)</h3>
+                    <ul class="feature-list">
+                        <li>Collapsible bottom cart drawer</li>
+                        <li>Tap to expand/collapse cart</li>
+                        <li>Small product grid (2 columns on small screens)</li>
+                        <li>Mobile-optimized checkout flow</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Key Responsive Features Implemented</h2>
+            <ul class="feature-list">
+                <li><strong>Mobile-First Navigation:</strong> Slide-out sidebars with toggle buttons</li>
+                <li><strong>Flexible Grids:</strong> Stats and product grids adapt to screen size</li>
+                <li><strong>Touch-Friendly:</strong> Larger tap targets on mobile devices</li>
+                <li><strong>Horizontal Scrolling:</strong> Tables maintain usability on small screens</li>
+                <li><strong>Smart Overlays:</strong> Backdrop overlays for better mobile UX</li>
+                <li><strong>Progressive Enhancement:</strong> Features gracefully degrade</li>
+                <li><strong>Viewport Optimization:</strong> Proper meta tags and scaling</li>
+                <li><strong>Performance:</strong> CSS transitions and smooth animations</li>
+            </ul>
+        </div>
+
+        <div class="test-links">
+            <a href="admin.html" target="_blank">🔧 Test Admin Dashboard</a>
+            <a href="cashier.html" target="_blank">💰 Test Cashier Interface</a>
+            <a href="index.html" target="_blank">🏠 Test Login Page</a>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Testing Instructions</h2>
+            <ol>
+                <li><strong>Desktop Testing:</strong> Open links in new tabs and resize browser window</li>
+                <li><strong>Tablet Testing:</strong> Use browser developer tools to simulate tablet dimensions</li>
+                <li><strong>Mobile Testing:</strong> Use device emulation or actual mobile devices</li>
+                <li><strong>Key Interactions:</strong> Test menu toggles, cart expansion, and form submissions</li>
+                <li><strong>Orientation:</strong> Test both portrait and landscape modes</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive testing features
+        document.addEventListener('DOMContentLoaded', function() {
+            // Highlight current viewport size
+            function updateViewportInfo() {
+                const width = window.innerWidth;
+                let deviceType = 'Desktop';
+                if (width <= 768) deviceType = 'Mobile';
+                else if (width <= 1024) deviceType = 'Tablet';
+                
+                console.log(`Current viewport: ${width}px (${deviceType})`);
+            }
+            
+            updateViewportInfo();
+            window.addEventListener('resize', updateViewportInfo);
+        });
+    </script>
+</body>
+</html>

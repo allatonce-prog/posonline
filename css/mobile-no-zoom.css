@@ -1,0 +1,74 @@
+/* MOBILE STABILITY & SCROLL FIX */
+
+@media (max-width: 1024px) {
+
+    /* 1. RESET ROOT - The only way to guarantee natural scroll on Android */
+    html,
+    body {
+        position: relative !important;
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        margin: 0;
+        padding: 0;
+        -webkit-overflow-scrolling: touch;
+        touch-action: auto !important;
+    }
+
+    /* 2. LAYOUT - Must be flow-based */
+    .admin-layout,
+    .cashier-layout,
+    .admin-main,
+    .cashier-main {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow: visible !important;
+        touch-action: auto !important;
+    }
+
+    /* 3. CENTER CONTENT SCROLL FIX */
+    /* Remove any user-select or touch-action that might block swipes */
+    .admin-content,
+    .tabs,
+    .tab-content,
+    .data-table,
+    .table-container,
+    .stat-card,
+    tr,
+    td,
+    div {
+        touch-action: auto !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        pointer-events: auto !important;
+    }
+
+    /* 4. FIXED ELEMENTS */
+    .admin-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1000 !important;
+    }
+
+    /* 5. PREVENT DOUBLE-TAP ZOOM WITHOUT BLOCKING SCROLL */
+    button,
+    .btn,
+    .nav-item {
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+    }
+
+    /* 6. OVERLAY FIX */
+    .overlay {
+        pointer-events: none !important;
+    }
+
+    .overlay.active {
+        pointer-events: auto !important;
+    }
+}

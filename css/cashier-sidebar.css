@@ -1,0 +1,758 @@
+/* Cashier Sidebar Navigation */
+.sidebar-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: var(--transition);
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.cashier-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 320px;
+    height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    box-shadow: 10px 0 50px rgba(0, 0, 0, 0.05);
+    z-index: 1001;
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--gray-200);
+}
+
+.cashier-sidebar.open {
+    left: 0;
+}
+
+.sidebar-header {
+    background: transparent;
+    color: #000000;
+    padding: 1.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: #000000;
+    text-transform: uppercase;
+}
+
+.sidebar-close {
+    background: var(--gray-100);
+    border: none;
+    color: var(--gray-500);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: var(--transition-smooth);
+}
+
+.sidebar-close:hover {
+    background: var(--gray-200);
+    color: var(--primary);
+    transform: rotate(90deg);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1.5rem 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.15rem 2rem;
+    color: var(--gray-600);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+    position: relative;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sidebar-item i {
+    font-size: 1.4rem;
+    color: var(--gray-400);
+    transition: var(--transition-smooth);
+}
+
+.sidebar-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+    color: var(--primary);
+}
+
+.sidebar-item:hover i {
+    color: var(--primary);
+    transform: translateX(4px);
+}
+
+.sidebar-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+    color: var(--primary);
+}
+
+.sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 32px;
+    background: var(--primary);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 0 10px rgba(99, 102, 241, 0.4);
+}
+
+.sidebar-item.active i {
+    color: var(--primary);
+}
+
+.sidebar-item.logout-item {
+    color: #ef4444 !important;
+    font-weight: 600;
+}
+
+.sidebar-item.logout-item:hover {
+    background: rgba(239, 68, 68, 0.05);
+    border-left-color: #ef4444;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Collectibles Styles */
+.collectibles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.collectible-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    transition: var(--transition-smooth);
+}
+
+.collectible-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    border-color: var(--primary-light);
+}
+
+.collectible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.collectible-customer {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--gray-900);
+    letter-spacing: -0.0125em;
+}
+
+.collectible-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.03em;
+}
+
+.collectible-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.collectible-details>div {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.collectible-status {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.collectible-status.pending {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.collectible-status.partial {
+    background: #f3f4f6;
+    color: #1f2937;
+    border: 1px solid #9ca3af;
+}
+
+.collectible-status.paid {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+/* Tab buttons */
+.collectibles-tab-btn {
+    background: white;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-600);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.collectibles-tab-btn:hover {
+    background: var(--light);
+    border-color: var(--gray-400);
+}
+
+.collectibles-tab-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+@media (max-width: 600px) {
+    .cashier-sidebar {
+        width: 280px;
+    }
+
+    .collectibles-summary {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ============================================
+   DARK MODE STYLES FOR SIDEBAR
+   ============================================ */
+
+body.dark-mode .cashier-sidebar {
+    background: #0f172a;
+    border-right-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .sidebar-header {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+}
+
+body.dark-mode .sidebar-header h3 {
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.6) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--white);
+}
+
+body.dark-mode .sidebar-close {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gray-400);
+}
+
+body.dark-mode .sidebar-nav {
+    background: transparent;
+}
+
+body.dark-mode .sidebar-item {
+    color: var(--gray-400);
+}
+
+body.dark-mode .sidebar-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-light);
+}
+
+body.dark-mode .sidebar-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%);
+    color: var(--primary-light);
+}
+
+body.dark-mode .sidebar-item i {
+    color: var(--text-light);
+}
+
+body.dark-mode .sidebar-item.active i {
+    color: var(--primary);
+}
+
+body.dark-mode .collectible-card {
+    background: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+body.dark-mode .collectible-customer,
+body.dark-mode .collectible-amount {
+    color: var(--text-light);
+}
+
+body.dark-mode .collectible-details {
+    color: var(--gray-500);
+}
+
+body.dark-mode .collectible-header {
+    border-bottom-color: var(--gray-300);
+}
+
+body.dark-mode .collectibles-tab-btn {
+    background: var(--gray-100);
+    border-color: var(--gray-300);
+    color: var(--text-light);
+}
+
+body.dark-mode .collectibles-tab-btn:hover {
+    background: var(--gray-200);
+}
+
+body.dark-mode .collectibles-tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+body.dark-mode .collectible-status.pending {
+    background: var(--gray-200);
+    color: var(--text-light);
+    border-color: var(--gray-400);
+}
+
+body.dark-mode .collectible-status.partial {
+    background: var(--gray-200);
+    color: var(--text-light);
+    border-color: var(--gray-400);
+}
+
+body.dark-mode .collectible-status.paid {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-color: #10b981;
+}
+
+/* ============================================
+   MODIFIER STOCK TRACKER — FULL VIEW
+   ============================================ */
+
+/* Group card */
+.cst-group {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cst-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.9rem;
+    background: var(--gray-50);
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--dark);
+}
+
+.cst-option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--gray-100);
+}
+
+.cst-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: white;
+    gap: 0.5rem;
+    transition: background 0.15s;
+}
+
+.cst-option-row:hover {
+    background: var(--gray-50);
+}
+
+.cst-row-out {
+    background: rgba(239, 68, 68, 0.04) !important;
+}
+
+.cst-row-low {
+    background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.cst-option-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.cst-icon-ok {
+    color: #10b981;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cst-icon-low {
+    color: #f59e0b;
+    font-size: 1rem;
+    flex-shrink: 0;
+    animation: cashierPulse 1.8s ease-in-out infinite;
+}
+
+.cst-icon-out {
+    color: #ef4444;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cst-stock-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.cst-badge-ok {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.cst-badge-low {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+}
+
+.cst-badge-out {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.cst-badge-warn {
+    background: rgba(99, 102, 241, 0.08);
+    color: #6366f1;
+}
+
+/* Dark mode */
+body.dark-mode .cst-group {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .cst-group-header {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-light);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .cst-option-list {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark-mode .cst-option-row {
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--gray-300);
+}
+
+body.dark-mode .cst-option-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Animations */
+@keyframes cashierSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes cashierPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.3);
+    }
+}
+
+.sidebar-stock-tracker {
+    margin: 0 0.75rem 0.25rem;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.sidebar-stock-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-700);
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.sidebar-stock-header:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+#stockTrackerPanel {
+    border-top: 1px solid var(--gray-200);
+    padding: 0.5rem 0.75rem 0.75rem;
+}
+
+/* Dark mode for stock tracker */
+body.dark-mode .sidebar-stock-tracker {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark-mode .sidebar-stock-header {
+    color: var(--gray-400);
+}
+
+body.dark-mode .sidebar-stock-header:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-light);
+}
+
+body.dark-mode #stockTrackerPanel {
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Spinner animation */
+@keyframes cashierSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulsing low-stock dot */
+@keyframes cashierPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.4);
+    }
+}
+
+/* ============================================
+   CASHIER INVENTORY VIEW  —  cinv-*
+   ============================================ */
+
+.cinv-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.15s;
+}
+
+.cinv-row:last-child {
+    border-bottom: none;
+}
+
+.cinv-row:hover {
+    background: var(--gray-50);
+    border-radius: 8px;
+    padding-left: 4px;
+}
+
+.cinv-product-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.cinv-img-placeholder {
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border-radius: 8px;
+}
+
+.cinv-product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cinv-product-name {
+    font-weight: 600;
+    font-size: 0.87rem;
+    color: var(--dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cinv-product-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 2px;
+    flex-wrap: wrap;
+}
+
+.cinv-cat-badge {
+    font-size: 0.7rem;
+    background: var(--gray-100);
+    color: var(--gray-500);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.cinv-mode-label {
+    font-size: 0.68rem;
+    background: rgba(99, 102, 241, 0.08);
+    color: #6366f1;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.cinv-stock-badge {
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.22rem 0.55rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.cinv-badge-ok {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.cinv-badge-low {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+}
+
+.cinv-badge-out {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.cinv-icon-ok {
+    color: #10b981;
+}
+
+.cinv-icon-low {
+    color: #f59e0b;
+    animation: cashierPulse 1.8s ease-in-out infinite;
+}
+
+.cinv-icon-out {
+    color: #ef4444;
+}
+
+/* Dark mode */
+body.dark-mode .cinv-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .cinv-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark-mode .cinv-product-name {
+    color: var(--text-light);
+}
+
+body.dark-mode .cinv-img-placeholder {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .cinv-cat-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--gray-400);
+}

@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Cashier - POS System</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/cashier.css">
+    <link rel="stylesheet" href="css/cashier-sidebar.css">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+</head>
+
+<body>
+    <!-- Decorative Background Elements -->
+    <div class="bg-decorative">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="cashier-header">
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleCashierSidebar()">
+            <i class="ph ph-list"></i>
+        </button>
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; margin-left: 1rem;">
+            <h1 id="currentPageTitle"
+                style="margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: white;">New Sale
+            </h1>
+            <p id="cashierStoreName"
+                style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin: 0.25rem 0 0 0; font-weight: 500;">📍
+                Store Name</p>
+        </div>
+        <div class="cashier-user">
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+                <i class="ph ph-moon" id="themeIcon"></i>
+            </button>
+            <span id="cashierName" style="font-weight: 600; font-size: 0.95rem;">Cashier</span>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="cashier-sidebar" id="cashierSidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <button class="sidebar-close" onclick="toggleCashierSidebar()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-item active" data-view="pos"
+                onclick="switchView('pos'); toggleCashierSidebar();">
+                <i class="ph ph-shopping-cart"></i>
+                <span>New Sale</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="sales" onclick="switchView('sales'); toggleCashierSidebar();">
+                <i class="ph ph-receipt"></i>
+                <span>My Sales</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="expenses"
+                onclick="switchView('expenses'); toggleCashierSidebar();">
+                <i class="ph ph-wallet"></i>
+                <span>Expenses</span>
+            </a>
+            <a href="#" class="sidebar-item" data-view="collectibles"
+                onclick="switchView('collectibles'); toggleCashierSidebar();">
+                <i class="ph ph-coins"></i>
+                <span>Collectibles</span>
+            </a>
+
+            <!-- Modifier Stock Tracker Tab -->
+            <a href="#" class="sidebar-item" data-view="modifierStock"
+                onclick="switchView('modifierStock'); toggleCashierSidebar();">
+                <i class="ph ph-stack"></i>
+                <span>Modifier Stock</span>
+            </a>
+
+            <!-- Recipes Stock Tab -->
+            <a href="#" class="sidebar-item" data-view="recipes"
+                onclick="switchView('recipes'); toggleCashierSidebar();">
+                <i class="ph ph-cooking-pot"></i>
+                <span>Recipes</span>
+            </a>
+
+            <!-- Inventory Tab -->
+            <a href="#" class="sidebar-item" data-view="inventory"
+                onclick="switchView('inventory'); toggleCashierSidebar();">
+                <i class="ph ph-warehouse"></i>
+                <span>Inventory</span>
+            </a>
+
+            <div
+                style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin: 1rem 0;">
+            </div>
+
+            <a href="#" class="sidebar-item" onclick="resetAppCache(); toggleCashierSidebar();" style="color: #fbbf24;">
+                <i class="ph ph-wrench"></i>
+                <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                    <span>System Maintenance</span>
+                    <small style="font-size: 0.7rem; opacity: 0.8;">Clear Cache & Update App</small>
+                </div>
+            </a>
+
+            <div style="margin-top: auto; border-top: 1px solid rgba(0,0,0,0.05); padding: 0.5rem 0;"></div>
+
+            <a href="#" class="sidebar-item logout-item" onclick="auth.logout()"
+                style="color: #ef4444; margin-top: auto; border-bottom: none;">
+                <i class="ph ph-sign-out"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleCashierSidebar()"></div>
+
+    <div class="cashier-layout">
+        <!-- Main Content -->
+        <main class="cashier-main">
+
+            <!-- POS View -->
+            <div id="posView">
+                <!-- Controls -->
+                <div class="cashier-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search products by name or SKU...">
+                    </div>
+
+                    <!-- Layout Menu Trigger (The 3 dots) -->
+                    <div class="layout-dropdown">
+                        <button class="btn-layout-trigger" onclick="toggleLayoutMenu(event)"
+                            title="Product Grid Layout">
+                            <i class="ph ph-dots-three-outline-vertical" style="font-size: 1.5rem;"></i>
+                        </button>
+
+                        <div id="layoutMenu" class="layout-menu">
+                            <div class="layout-menu-header">Display Density</div>
+                            <div class="grid-switcher">
+                                <button class="grid-btn"
+                                    onclick="updateGridLayout('auto-fill', '180px'); toggleLayoutMenu(event)"
+                                    data-cols="standard">
+                                    <i class="ph ph-grid-four"></i> Standard
+                                </button>
+                                <button class="grid-btn"
+                                    onclick="updateGridLayout('auto-fill', '150px'); toggleLayoutMenu(event)"
+                                    data-cols="compact">
+                                    <i class="ph ph-grid-nine"></i> Compact
+                                </button>
+                                <button class="grid-btn" onclick="updateGridLayout(3, '80px'); toggleLayoutMenu(event)"
+                                    data-cols="3">
+                                    <i class="ph ph-columns"></i> 3 Per Row
+                                </button>
+                                <button class="grid-btn" onclick="updateGridLayout(4, '60px'); toggleLayoutMenu(event)"
+                                    data-cols="4">
+                                    <i class="ph ph-rows"></i> 4 Per Row
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-filter" id="categoryFilter">
+                        <button class="filter-btn active" data-category="all">All</button>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">📦</div>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your search or filter</p>
+                </div>
+            </div>
+
+            <!-- Sales View -->
+            <div id="salesView" style="display: none;">
+                <div class="sales-filters">
+                    <button class="sales-filter-btn active" onclick="filterSales('today')">Today</button>
+                    <button class="sales-filter-btn" onclick="filterSales('yesterday')">Yesterday</button>
+                </div>
+
+                <div class="sales-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sales</div>
+                        <div class="stat-value" id="salesTotalAmount">₱0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Transactions</div>
+                        <div class="stat-value" id="salesTotalCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Net Profit</div>
+                        <div class="stat-value" id="salesNetProfit">₱0.00</div>
+                    </div>
+                </div>
+
+                <div class="sales-list" id="salesList">
+                    <!-- Sales will be loaded here -->
+                    <div class="loading-spinner">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Sale Breakdown Modal -->
+            <div id="saleBreakdownModal" class="modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;">
+                <div style="background:var(--card-bg, #fff); border-radius:20px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.3); position:relative; animation: slideUpModal 0.3s cubic-bezier(0.34,1.56,0.64,1);">
+                    <!-- Modal Header -->
+                    <div id="saleBreakdownHeader" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%); padding:1.5rem; border-radius:20px 20px 0 0; color:white; text-align:center;">
+                        <div style="font-size:2.5rem; margin-bottom:0.5rem;">🧾</div>
+                        <h3 style="margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-0.01em;">Transaction Details</h3>
+                        <p id="saleBreakdownId" style="margin:0.25rem 0 0; font-size:0.85rem; opacity:0.85;"></p>
+                        <p id="saleBreakdownDate" style="margin:0.1rem 0 0; font-size:0.8rem; opacity:0.7;"></p>
+                        <div id="saleBreakdownVoidedBadge" style="display:none; margin-top:0.75rem;">
+                            <span style="background:rgba(239,68,68,0.9); color:white; border-radius:20px; padding:0.3rem 1rem; font-size:0.85rem; font-weight:700;">⚠️ VOIDED</span>
+                        </div>
+                    </div>
+
+                    <!-- Close Button -->
+                    <button onclick="closeSaleBreakdownModal()" style="position:absolute; top:1rem; right:1rem; background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; font-weight:700;">×</button>
+
+                    <!-- Modal Body -->
+                    <div style="padding:1.25rem;">
+                        <!-- Items List -->
+                        <div style="margin-bottom:1rem;">
+                            <h4 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--gray-500, #6b7280); margin:0 0 0.75rem; font-weight:600;">Items Ordered</h4>
+                            <div id="saleBreakdownItems" style="background:var(--light, #f9fafb); border-radius:12px; padding:0.75rem 1rem;"></div>
+                        </div>
+
+                        <!-- Totals -->
+                        <div style="background:var(--light, #f9fafb); border-radius:12px; padding:1rem; margin-bottom:1rem;">
+                            <div id="saleBreakdownTotals"></div>
+                        </div>
+
+                        <!-- Payment Info -->
+                        <div id="saleBreakdownPaymentInfo" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.08) 100%); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:1rem; margin-bottom:1rem;"></div>
+
+                        <!-- Void Reason -->
+                        <div id="saleBreakdownVoidReason" style="display:none; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:0.75rem 1rem; margin-bottom:1rem; color:#dc2626; font-size:0.9rem;"></div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="padding:0 1.25rem 1.25rem; display:flex; gap:0.75rem;">
+                        <button onclick="closeSaleBreakdownModal()" class="btn btn-secondary" style="flex:1; border-radius:12px; padding:0.85rem;">Close</button>
+                        <button id="saleBreakdownReprintBtn" class="btn btn-primary" style="flex:1; border-radius:12px; padding:0.85rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:none;">
+                            <i class="ph ph-printer"></i> Reprint
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses View -->
+            <div id="expensesView" style="display: none;">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h2>Record Expense</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-2">
+                            <label for="expenseAmount">Amount</label>
+                            <input type="number" id="expenseAmount" class="form-control" placeholder="0.00" min="0"
+                                step="0.01">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="expenseReason">Reason / Description</label>
+                            <input type="text" id="expenseReason" class="form-control"
+                                placeholder="e.g. Lunch, Transportation, Supplies">
+                        </div>
+                        <button class="btn btn-primary btn-block" onclick="submitExpense()">Submit Expense</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h2 id="expensesTitle">Today's Expenses</h2>
+                            <span class="badge badge-warning" id="todayExpensesTotal"
+                                style="font-size: 1rem;">₱0.00</span>
+                        </div>
+                        <div class="sales-filters" style="margin-bottom: 0;">
+                            <button class="sales-filter-btn active" onclick="loadExpenses('today')">Today</button>
+                            <button class="sales-filter-btn" onclick="loadExpenses('yesterday')">Yesterday</button>
+                            <button class="sales-filter-btn" onclick="loadExpenses('history')">History</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="expensesList" class="sales-list" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Expenses list -->
+                            <div class="loading-spinner">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collectibles View -->
+            <div id="collectiblesView" style="display: none;">
+                <div class="card" style="border-top: none; border-radius: 0;">
+                    <div class="card-body" style="padding-top: var(--spacing-md);">
+                        <!-- 1. ANALYTICS (Analytics First) -->
+
+
+                        <!-- 2. BUTTONS (Actions & Tabs) -->
+                        <div class="collectibles-toolbar mb-2"
+                            style="display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                            <div class="action-group" style="display: flex; gap: 0.5rem; flex: 1;">
+                                <button class="btn btn-primary" onclick="showAddCollectibleModal()"
+                                    style="padding: 0.65rem 1rem;">
+                                    <i class="ph ph-plus"></i> Add
+                                </button>
+                                <button class="btn btn-secondary" onclick="showAddCollectibleModal(true)"
+                                    style="padding: 0.65rem 0.75rem;">
+                                    <i class="ph ph-note-pencil"></i> Manual
+                                </button>
+                            </div>
+
+                            <div class="filter-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn collectibles-tab-btn active btn-sm"
+                                    onclick="switchCollectiblesTab('active')" data-tab="active">
+                                    Active
+                                </button>
+                                <button class="btn collectibles-tab-btn btn-sm"
+                                    onclick="switchCollectiblesTab('archives')" data-tab="archives">
+                                    Archives
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. SEARCH -->
+                        <div class="search-box mb-3">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="collectiblesSearchInput" placeholder="Search by customer name...">
+                        </div>
+
+                        <!-- 4. LIST (Handled by JS load) -->
+                        <div id="activeCollectiblesList" class="collectibles-list">
+                            <div class="loading-spinner">Loading collectibles...</div>
+                        </div>
+
+                        <!-- Archives -->
+                        <div id="archivesCollectiblesList" class="collectibles-list" style="display: none;">
+                            <div class="loading-spinner">Loading archives...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== MODIFIER STOCK VIEW ====== -->
+            <div id="modifierStockView" style="display:none;padding-bottom:2rem;">
+
+                <!-- Header -->
+                <div
+                    style="background:linear-gradient(135deg,var(--primary) 0%,#4f46e5 100%);padding:1.5rem 1.25rem 1rem;color:white;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h2 style="margin:0;font-size:1.2rem;font-weight:800;">Modifier Stock</h2>
+                            <p style="margin:0.25rem 0 0;font-size:0.82rem;opacity:0.8;">Live ingredient stock linked to
+                                modifiers</p>
+                        </div>
+                        <button onclick="loadCashierStockTracker()"
+                            style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;">
+                            <i class="ph ph-arrow-clockwise"></i>
+                        </button>
+                    </div>
+
+                    <!-- Summary badges -->
+                    <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap;">
+                        <div
+                            style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-x-circle" style="font-size:0.9rem;"></i>
+                            <span id="cstCountOut">0</span> Out
+                        </div>
+                        <div
+                            style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-warning" style="font-size:0.9rem;"></i>
+                            <span id="cstCountLow">0</span> Low
+                        </div>
+                        <div
+                            style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-check-circle" style="font-size:0.9rem;"></i>
+                            <span id="cstCountOk">0</span> OK
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div id="modifierStockList" style="padding:1rem 0.75rem;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <!-- ====== RECIPES STOCK VIEW (read-only) ====== -->
+            <div id="recipesView" style="display:none;padding-bottom:2rem;">
+
+                <!-- Header -->
+                <div
+                    style="background:linear-gradient(135deg,#059669 0%,#0d9488 100%);padding:1.5rem 1.25rem 1rem;color:white;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h2 style="margin:0;font-size:1.2rem;font-weight:800;">Recipes</h2>
+                            <p style="margin:0.25rem 0 0;font-size:0.82rem;opacity:0.8;">Ingredient stock for active
+                                product recipes</p>
+                        </div>
+                        <button onclick="loadCashierRecipes()"
+                            style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;">
+                            <i class="ph ph-arrow-clockwise"></i>
+                        </button>
+                    </div>
+
+                    <!-- Summary badges -->
+                    <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap;">
+                        <div
+                            style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-x-circle" style="font-size:0.9rem;"></i>
+                            <span id="recipesCountOut">0</span> Out
+                        </div>
+                        <div
+                            style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-warning" style="font-size:0.9rem;"></i>
+                            <span id="recipesCountLow">0</span> Low
+                        </div>
+                        <div
+                            style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;">
+                            <i class="ph ph-check-circle" style="font-size:0.9rem;"></i>
+                            <span id="recipesCountOk">0</span> OK
+                        </div>
+                    </div>
+
+                    <!-- Read-only notice -->
+                    <div
+                        style="margin-top:0.75rem;background:rgba(0,0,0,0.15);border-radius:8px;padding:0.4rem 0.75rem;font-size:0.76rem;display:flex;align-items:center;gap:0.35rem;opacity:0.9;">
+                        <i class="ph ph-eye"></i> View only — contact admin to update stock
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div id="recipesStockList" style="padding:1rem 0.75rem;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <!-- ====== INVENTORY VIEW (read-only) ====== -->
+            <div id="inventoryView" style="display:none;padding-bottom:2rem;">
+
+                <!-- Header -->
+                <div
+                    style="background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%);padding:1.5rem 1.25rem 1rem;color:white;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h2 style="margin:0;font-size:1.2rem;font-weight:800;">Inventory</h2>
+                            <p style="margin:0.25rem 0 0;font-size:0.82rem;opacity:0.8;">
+                                <span id="cashierInventoryCount">0</span> active products
+                            </p>
+                        </div>
+                        <button onclick="loadCashierInventory()"
+                            style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;">
+                            <i class="ph ph-arrow-clockwise"></i>
+                        </button>
+                    </div>
+
+                    <!-- Summary badges -->
+                    <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap;">
+                        <div style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;cursor:pointer;"
+                            onclick="filterCashierInventory('','out')">
+                            <i class="ph ph-x-circle" style="font-size:0.9rem;"></i>
+                            <span id="cinvCountOut">0</span> Out
+                        </div>
+                        <div style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;cursor:pointer;"
+                            onclick="filterCashierInventory('','low')">
+                            <i class="ph ph-warning" style="font-size:0.9rem;"></i>
+                            <span id="cinvCountLow">0</span> Low
+                        </div>
+                        <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;cursor:pointer;"
+                            onclick="filterCashierInventory('','ok')">
+                            <i class="ph ph-check-circle" style="font-size:0.9rem;"></i>
+                            <span id="cinvCountOk">0</span> OK
+                        </div>
+                    </div>
+
+                    <!-- Read-only notice -->
+                    <div
+                        style="margin-top:0.75rem;background:rgba(0,0,0,0.15);border-radius:8px;padding:0.4rem 0.75rem;font-size:0.76rem;display:flex;align-items:center;gap:0.35rem;opacity:0.9;">
+                        <i class="ph ph-eye"></i> View only &mdash; contact admin to update stock
+                    </div>
+                </div>
+
+                <!-- Search + Filter bar -->
+                <div
+                    style="display:flex;gap:0.5rem;padding:0.75rem;background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
+                    <div style="flex:1;position:relative;">
+                        <i class="ph ph-magnifying-glass"
+                            style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:1rem;"></i>
+                        <input id="cinvSearch" type="text" placeholder="Search products..."
+                            oninput="filterCashierInventory(this.value, document.getElementById('cinvStatusFilter').value)"
+                            style="width:100%;padding:0.45rem 0.5rem 0.45rem 2rem;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;background:white;">
+                    </div>
+                    <select id="cinvStatusFilter"
+                        onchange="filterCashierInventory(document.getElementById('cinvSearch').value, this.value)"
+                        style="border:1px solid var(--gray-200);border-radius:8px;padding:0.45rem 0.5rem;font-size:0.82rem;background:white;color:var(--dark);flex-shrink:0;">
+                        <option value="all">All</option>
+                        <option value="out">Out</option>
+                        <option value="low">Low</option>
+                        <option value="ok">OK</option>
+                    </select>
+                </div>
+
+                <!-- Product list -->
+                <div id="cashierInventoryList" style="padding:0.5rem 0.75rem 1rem;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Cart Sidebar (Only visible in POS View) -->
+        <aside class="cart-sidebar" id="cartSidebar">
+            <div class="cart-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <h2>Cart</h2>
+                    <div class="cart-count" id="cartCount">0</div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showHeldOrders()" title="Recall Held Orders"
+                        style="border: none; padding: 4px 8px; font-size: 1.2rem;">
+                        📂 <span id="heldOrdersCount" class="badge badge-sm badge-danger"
+                            style="display:none; margin-left:2px;">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="cart-items" id="cartItems">
+                <div class="cart-empty">
+                    <div class="cart-empty-icon">🛒</div>
+                    <p>Your cart is empty</p>
+                </div>
+            </div>
+
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <!-- Tax removed
+                <div class="summary-row">
+                    <span>Tax (10%):</span>
+                    <span id="tax">$0.00</span>
+                </div>
+                -->
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="total">$0.00</span>
+                </div>
+
+                <div class="cart-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="clearCart()" style="flex: 1;">
+                        Clear
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="holdOrder()" style="flex: 1;">
+                        ⏸️ Hold
+                    </button>
+                    <button class="btn btn-primary btn-lg" onclick="checkout()" style="flex: 2;">
+                        Checkout
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Cart Floating Bar (Only visible in POS View) -->
+        <div class="mobile-cart-bar" id="mobileCartBar">
+            <div class="mobile-cart-left">
+                <div class="mobile-cart-icon-wrapper">
+                    <span class="mobile-cart-icon">🛒</span>
+                    <span class="mobile-cart-badge" id="mobileCartCount">0</span>
+                </div>
+                <div class="mobile-cart-info">
+                    <span class="mobile-cart-label">Total</span>
+                    <span class="mobile-cart-total" id="mobileTotal">$0.00</span>
+                </div>
+            </div>
+            <button class="btn btn-primary mobile-view-cart-btn" onclick="toggleMobileCart()">
+                View Cart
+            </button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Checkout</h2>
+                <button class="modal-close" onclick="closeCheckoutModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method</label>
+                    <select id="paymentMethod" class="form-control">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="mobile">Mobile Payment</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="cashPaymentGroup">
+                    <label for="amountReceived">Amount Received</label>
+                    <input type="number" id="amountReceived" step="0.01" min="0" placeholder="0.00">
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong id="checkoutTotal">$0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between" style="margin-top: 0.25rem;">
+                            <span>Change:</span>
+                            <strong id="change" style="color: var(--success);">$0.00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerName">Customer Name (Optional)</label>
+                    <input type="text" id="customerName" placeholder="Enter customer name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+                <button class="btn btn-success" onclick="completeTransaction()">Complete Sale</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="transactionDetailsModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Transaction Details</h2>
+                <button class="modal-close" onclick="closeTransactionModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="transactionDetailsContent" class="receipt-preview">
+                    <!-- Details will be injected here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTransactionModal()">Close</button>
+                <button class="btn btn-primary" id="reprintBtn">🖨️ Reprint</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="heldOrdersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📂 Held Orders</h2>
+                <button class="modal-close" onclick="closeHeldOrdersModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="heldOrdersList" class="held-orders-list">
+                    <!-- List will be injected here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeHeldOrdersModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modifiers Modal -->
+    <div class="modal" id="modifiersModal" onclick="closeModifiersModal()">
+        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modifiersModalTitle">Select Modifiers</h2>
+                <button class="modal-close" onclick="closeModifiersModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="modifierSearch" placeholder="Search extras..." class="form-control"
+                    style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--gray-300); width: 100%;">
+                <div id="modifiersList"
+                    style="display: flex; flex-direction: column; gap: 1rem; max-height: 60vh; overflow-y: auto;">
+                    <!-- Modifiers will be injected here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModifiersModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveModifiersToCart()">Apply Modifiers</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Collectible Modal -->
+    <div class="modal" id="addCollectibleModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Add Collectible</h2>
+                <button class="modal-close" onclick="closeAddCollectibleModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="collectibleCustomer">Customer Name *</label>
+                    <input type="text" id="collectibleCustomer" placeholder="Enter customer name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Products *</label>
+                    <div style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); overflow: hidden;">
+                        <!-- Search box -->
+                        <div
+                            style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200); background: var(--light);">
+                            <input type="text" id="collectibleProductSearch" placeholder="Search products..."
+                                style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-size: 0.9rem;">
+                        </div>
+
+                        <!-- Product list with checkboxes -->
+                        <div id="collectibleProductList" style="background: white;">
+                            <!-- Products will be loaded here -->
+                        </div>
+
+                        <!-- Show More/Less button -->
+                        <div id="collectibleShowMoreContainer"
+                            style="padding: 0.5rem; border-top: 1px solid var(--gray-200); background: white; text-align: center; display: none;">
+                            <button type="button" onclick="toggleCollectibleProductList()"
+                                style="background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; padding: 0.5rem; font-size: 0.9rem;">
+                                <span id="collectibleShowMoreText">Show More</span> <i class="ph ph-caret-down"
+                                    id="collectibleShowMoreIcon"></i>
+                            </button>
+                        </div>
+
+                        <!-- Add button -->
+                        <div style="padding: 0.75rem; border-top: 1px solid var(--gray-200); background: var(--light);">
+                            <button type="button" class="btn btn-primary" onclick="addCheckedProductsToCollectible()"
+                                style="width: 100%;">
+                                <i class="ph ph-plus"></i> Add Selected Products
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="padding-top: 0.5rem; border-top: 1px dashed var(--gray-300);">
+                    <label>Add Custom Amount / Balance</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <input type="text" id="customItemDesc" class="form-control" placeholder="Description"
+                            style="flex: 2; min-width: 140px;">
+                        <div style="display: flex; gap: 0.5rem; flex: 1;">
+                            <input type="number" id="customItemAmount" class="form-control" placeholder="Amount"
+                                step="0.01" style="width: 100%; min-width: 80px;">
+                            <button type="button" class="btn btn-secondary"
+                                onclick="addCustomCollectibleItem()">Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Selected Items</label>
+                    <div id="collectibleSelectedItems"
+                        style="min-height: 100px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 1rem;">
+                        <p style="text-align: center; color: var(--gray-500);">No items selected</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="collectibleNotes">Notes (Optional)</label>
+                    <textarea id="collectibleNotes" rows="3" placeholder="Add any notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddCollectibleModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCollectible()">Save Collectible</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collect Payment Modal -->
+    <div class="modal" id="collectPaymentModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Collect Payment</h2>
+                <button class="modal-close" onclick="closeCollectPaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background: var(--light); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                    <div style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">Customer</div>
+                    <div style="font-weight: 600; font-size: 1.1rem;" id="paymentCustomerName"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600);">Total Amount</div>
+                        <div style="font-weight: 700; font-size: 1.25rem;" id="paymentTotalAmount">₱0.00</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600);">Balance</div>
+                        <div style="font-weight: 700; font-size: 1.25rem; color: var(--danger);" id="paymentBalance">
+                            ₱0.00</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentAmount">Payment Amount *</label>
+                    <input type="number" id="paymentAmount" placeholder="Enter amount" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentNotes">Notes (Optional)</label>
+                    <textarea id="paymentNotes" rows="2" placeholder="Add payment notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCollectPaymentModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="savePayment()">Collect Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Area (Hidden by default, shown while printing) -->
+    <div id="receipt-printable" style="display: none;"></div>
+
+    <script type="module" src="js/offline-db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/mobile-stability.js"></script>
+    <script src="js/admin/settings.js"></script>
+    <script src="js/collectibles-payment.js"></script>
+    <script src="js/cashier.js"></script>
+    <script src="js/cashier-sales.js"></script>
+    <script src="js/cashier-expenses.js"></script>
+    <script src="js/cashier-collectibles.js"></script>
+    <script src="js/cashier-stock-tracker.js"></script>
+    <script>
+        // Apply custom settings to cashier page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply settings from localStorage
+            // getSettings() is async, so we use getSettingsSync() for immediate display
+            if (typeof getSettingsSync === 'function') {
+                const settings = getSettingsSync();
+
+                // Update header title
+                const headerTitle = document.getElementById('cashierHeaderTitle');
+                if (headerTitle) {
+                    const icon = settings.systemIcon || '🛒';
+                    const name = settings.systemName || 'POS System';
+                    headerTitle.textContent = `${icon} ${name}`;
+                }
+
+                // Update page title
+                if (settings.systemName) {
+                    document.title = `Cashier - ${settings.systemName}`;
+                }
+            }
+
+            // Sidebar toggle function
+            window.toggleCashierSidebar = function () {
+                const sidebar = document.getElementById('cashierSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const isOpening = !sidebar.classList.contains('open');
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+
+                // Refresh stock tracker every time sidebar opens
+                if (isOpening && typeof loadCashierStockTracker === 'function') {
+                    loadCashierStockTracker();
+                }
+            };
+
+            // Stock tracker accordion toggle
+            window.toggleStockTrackerPanel = function () {
+                const panel = document.getElementById('stockTrackerPanel');
+                const caret = document.getElementById('stockTrackerCaret');
+                const isOpen = panel.style.display !== 'none';
+                panel.style.display = isOpen ? 'none' : 'block';
+                caret.style.transform = isOpen ? '' : 'rotate(180deg)';
+                if (!isOpen && typeof loadCashierStockTracker === 'function') {
+                    loadCashierStockTracker();
+                }
+            };
+
+            // Collectibles functionality
+            let collectibleSelectedItems = [];
+            let collectibleProducts = [];
+            let isManualCollectibleMode = false; // Track if in manual entry mode
+
+            window.addToExistingCollectible = async function (customerName) {
+                const modal = document.getElementById('addCollectibleModal');
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+                document.body.classList.add('modal-open');
+
+                // Pre-fill and lock customer name
+                const nameInput = document.getElementById('collectibleCustomer');
+                nameInput.value = customerName;
+                nameInput.readOnly = true;
+                nameInput.style.backgroundColor = 'var(--gray-100)';
+
+                // Set modal title context (optional UI enhancement)
+                const header = modal.querySelector('.modal-header h2');
+                if (header) header.textContent = `Add to ${customerName}'s Tab`;
+
+                // Reset other fields
+                document.getElementById('collectibleNotes').value = '';
+                document.getElementById('collectibleProductSearch').value = '';
+                collectibleSelectedItems = [];
+                isCollectibleListExpanded = false;
+
+                // Load products
+                await loadCollectibleProducts();
+                updateCollectibleSelectedItems();
+
+                // Uncheck all checkboxes
+                document.querySelectorAll('.collectible-product-checkbox').forEach(cb => cb.checked = false);
+            };
+
+            window.showAddCollectibleModal = async function (manualOnly = false) {
+                const modal = document.getElementById('addCollectibleModal');
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+                document.body.classList.add('modal-open');
+
+                // Set manual mode flag
+                isManualCollectibleMode = manualOnly;
+
+                // Reset header title
+                const header = modal.querySelector('.modal-header h2');
+                if (header) header.textContent = manualOnly ? 'Manual Entry (Old Record)' : 'Add Collectible';
+
+                // Reset form and unlock customer name
+                const nameInput = document.getElementById('collectibleCustomer');
+                nameInput.value = '';
+                nameInput.readOnly = false;
+                nameInput.style.backgroundColor = '';
+
+                document.getElementById('collectibleNotes').value = '';
+                document.getElementById('collectibleProductSearch').value = '';
+                collectibleSelectedItems = [];
+                isCollectibleListExpanded = false; // Reset to collapsed state
+
+                // Toggle product search visibility based on mode
+                const productSection = document.getElementById('collectibleProductList').parentElement;
+                if (manualOnly) {
+                    productSection.style.display = 'none';
+                    // Auto-focus description if name is filled, or name if not
+                    setTimeout(() => nameInput.focus(), 100);
+                } else {
+                    productSection.style.display = 'block';
+                    // Load products
+                    await loadCollectibleProducts();
+                }
+
+                updateCollectibleSelectedItems();
+
+                // Uncheck all checkboxes
+                document.querySelectorAll('.collectible-product-checkbox').forEach(cb => cb.checked = false);
+            };
+
+            window.closeAddCollectibleModal = function () {
+                const modal = document.getElementById('addCollectibleModal');
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            };
+
+            async function loadCollectibleProducts() {
+                const user = auth.getCurrentUser();
+                if (!user) return;
+
+                const allProducts = await db.getAll('products');
+                collectibleProducts = allProducts.filter(p =>
+                    p.storeId === user.storeId &&
+                    p.stock > 0 &&
+                    !p.isIngredient
+                );
+
+                renderCollectibleProductsCheckboxes(collectibleProducts);
+            }
+
+            let isCollectibleListExpanded = false;
+            let currentCollectibleProducts = [];
+
+            function renderCollectibleProductsCheckboxes(productsToShow = collectibleProducts) {
+                const list = document.getElementById('collectibleProductList');
+                const showMoreContainer = document.getElementById('collectibleShowMoreContainer');
+
+                if (!list) return;
+
+                // Store current products for toggle
+                currentCollectibleProducts = productsToShow;
+
+                if (productsToShow.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: var(--gray-500); padding: 1.5rem;">No products available</p>';
+                    if (showMoreContainer) showMoreContainer.style.display = 'none';
+                    return;
+                }
+
+                // Determine how many to show
+                const limit = isCollectibleListExpanded ? productsToShow.length : 3;
+                const productsToRender = productsToShow.slice(0, limit);
+
+                list.innerHTML = productsToRender.map(product => `
+                    <label style="display: flex; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.2s;"
+                           onmouseover="this.style.background='var(--light)'"
+                           onmouseout="this.style.background='white'">
+                        <input type="checkbox"
+                               class="collectible-product-checkbox"
+                               data-product-id="${product.id}"
+                               style="width: 18px; height: 18px; margin-right: 0.75rem; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--dark);">${escapeHtml(product.name)}</div>
+                            <div style="font-size: 0.85rem; color: var(--gray-500);">
+                                ${formatCurrency(product.price)} • Stock: ${product.stock}
+                            </div>
+                        </div>
+                    </label>
+                `).join('');
+
+                // Show/hide "Show More" button
+                if (showMoreContainer) {
+                    if (productsToShow.length > 3) {
+                        showMoreContainer.style.display = 'block';
+                        updateShowMoreButton();
+                    } else {
+                        showMoreContainer.style.display = 'none';
+                    }
+                }
+            }
+
+            function updateShowMoreButton() {
+                const textEl = document.getElementById('collectibleShowMoreText');
+                const iconEl = document.getElementById('collectibleShowMoreIcon');
+
+                if (isCollectibleListExpanded) {
+                    if (textEl) textEl.textContent = 'Show Less';
+                    if (iconEl) iconEl.className = 'ph ph-caret-up';
+                } else {
+                    if (textEl) textEl.textContent = 'Show More';
+                    if (iconEl) iconEl.className = 'ph ph-caret-down';
+                }
+            }
+
+            window.toggleCollectibleProductList = function () {
+                isCollectibleListExpanded = !isCollectibleListExpanded;
+                renderCollectibleProductsCheckboxes(currentCollectibleProducts);
+            };
+
+            // Search products
+            document.addEventListener('DOMContentLoaded', () => {
+                const searchInput = document.getElementById('collectibleProductSearch');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        const query = e.target.value.toLowerCase();
+                        const filtered = collectibleProducts.filter(p =>
+                            p.name.toLowerCase().includes(query) ||
+                            (p.sku && p.sku.toLowerCase().includes(query))
+                        );
+                        renderCollectibleProductsCheckboxes(filtered);
+                    });
+                }
+            });
+
+            window.addCheckedProductsToCollectible = function () {
+                const checkboxes = document.querySelectorAll('.collectible-product-checkbox:checked');
+
+                if (checkboxes.length === 0) {
+                    showToast('Please select at least one product', 'warning');
+                    return;
+                }
+
+                let addedCount = 0;
+                checkboxes.forEach(checkbox => {
+                    const productId = checkbox.getAttribute('data-product-id');
+                    const product = collectibleProducts.find(p => p.id === productId);
+
+                    if (product) {
+                        const existing = collectibleSelectedItems.find(item => item.productId === productId);
+                        if (!existing) {
+                            collectibleSelectedItems.push({
+                                productId: product.id,
+                                name: product.name,
+                                price: product.price,
+                                quantity: 1,
+                                total: product.price,
+                                maxStock: product.stock,
+                                alternativePrices: product.alternativePrices || []
+                            });
+                            addedCount++;
+                        }
+                    }
+
+                    // Uncheck the checkbox
+                    checkbox.checked = false;
+                });
+
+                if (addedCount > 0) {
+                    showToast(`Added ${addedCount} product${addedCount > 1 ? 's' : ''}`, 'success');
+                    updateCollectibleSelectedItems();
+                }
+            };
+
+            window.addCustomCollectibleItem = function () {
+                const descInput = document.getElementById('customItemDesc');
+                const amountInput = document.getElementById('customItemAmount');
+
+                const desc = descInput.value.trim() || 'Balance Forwarded';
+                const amount = parseFloat(amountInput.value);
+
+                if (isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid amount', 'warning');
+                    return;
+                }
+
+                // Add as a custom item
+                collectibleSelectedItems.push({
+                    productId: 'manual_' + Date.now(),
+                    name: desc,
+                    price: amount,
+                    quantity: 1,
+                    total: amount,
+                    maxStock: 999999,
+                    isManual: true,
+                    alternativePrices: []
+                });
+
+                updateCollectibleSelectedItems();
+
+                // Reset inputs
+                descInput.value = '';
+                amountInput.value = '';
+                showToast('Custom amount added', 'success');
+            };
+
+            window.addToCollectible = function (productId) {
+                console.log('addToCollectible called with productId:', productId);
+                console.log('collectibleProducts:', collectibleProducts);
+
+                const product = collectibleProducts.find(p => p.id === productId);
+                console.log('Found product:', product);
+
+                if (!product) {
+                    console.error('Product not found!');
+                    showToast('Product not found', 'error');
+                    return;
+                }
+
+                const existing = collectibleSelectedItems.find(item => item.productId === productId);
+                if (existing) {
+                    if (existing.quantity < product.stock) {
+                        existing.quantity++;
+                        existing.total = existing.quantity * existing.price;
+                    } else {
+                        showToast('Not enough stock', 'warning');
+                        return;
+                    }
+                } else {
+                    collectibleSelectedItems.push({
+                        productId: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        total: product.price,
+                        maxStock: product.stock,
+                        alternativePrices: product.alternativePrices || []
+                    });
+                }
+
+                console.log('collectibleSelectedItems after add:', collectibleSelectedItems);
+                updateCollectibleSelectedItems();
+            };
+
+            window.removeFromCollectible = function (productId) {
+                collectibleSelectedItems = collectibleSelectedItems.filter(item => item.productId !== productId);
+                updateCollectibleSelectedItems();
+            };
+
+            window.updateCollectibleQuantity = function (productId, change) {
+                const item = collectibleSelectedItems.find(i => i.productId === productId);
+                if (!item) return;
+
+                const newQty = item.quantity + change;
+                if (newQty <= 0) {
+                    removeFromCollectible(productId);
+                    return;
+                }
+
+                if (newQty > item.maxStock) {
+                    showToast('Not enough stock', 'warning');
+                    return;
+                }
+
+                item.quantity = newQty;
+                item.total = item.quantity * item.price;
+                updateCollectibleSelectedItems();
+            };
+
+            function updateCollectibleSelectedItems() {
+                console.log('updateCollectibleSelectedItems called');
+                console.log('Current items:', collectibleSelectedItems);
+
+                const container = document.getElementById('collectibleSelectedItems');
+                console.log('Container element:', container);
+
+                if (collectibleSelectedItems.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--gray-500);">No items selected</p>';
+                    return;
+                }
+
+                const totalAmount = collectibleSelectedItems.reduce((sum, item) => sum + item.total, 0);
+
+                container.innerHTML = `
+                    ${collectibleSelectedItems.map(item => `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--gray-200);">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
+                                <div style="font-size: 0.85rem; color: var(--gray-500); display: flex; align-items: center;">
+                                    ${formatCurrency(item.price)} each
+                                    ${item.alternativePrices && item.alternativePrices.length > 0 ?
+                        `<button onclick="showCollectiblePriceSelector('${item.productId}')" style="background: none; border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; padding: 0 4px; margin-left: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+                                            <i class="ph ph-tag"></i> Price
+                                        </button>`
+                        : ''}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="updateCollectibleQuantity('${item.productId}', -1)" style="width: 30px; height: 30px; padding: 0;">-</button>
+                                <span style="min-width: 30px; text-align: center; font-weight: 600;">${item.quantity}</span>
+                                <button class="btn btn-sm" onclick="updateCollectibleQuantity('${item.productId}', 1)" style="width: 30px; height: 30px; padding: 0;">+</button>
+                                <span style="min-width: 80px; text-align: right; font-weight: 600;">${formatCurrency(item.total)}</span>
+                                <button class="btn btn-sm btn-danger" onclick="removeFromCollectible('${item.productId}')" style="width: 30px; height: 30px; padding: 0;">×</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--gray-300); display: flex; justify-content: space-between; align-items: center;">
+                        <strong>Total Amount:</strong>
+                        <strong style="font-size: 1.25rem; color: var(--primary);">${formatCurrency(totalAmount)}</strong>
+                    </div>
+                `;
+            }
+
+            // Collectible Price Selection
+            window.showCollectiblePriceSelector = function (productId) {
+                const item = collectibleSelectedItems.find(i => i.productId === productId);
+                if (!item || !item.alternativePrices || item.alternativePrices.length === 0) return;
+
+                // Create modal if not exists (reuse ID but ensure unique context if needed, or just create a new one)
+                // We'll create a specific one for collectibles to avoid conflict with main POS
+                let modal = document.getElementById('collectiblePriceSelectorModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'collectiblePriceSelectorModal';
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="max-width: 400px;">
+                            <div class="modal-header">
+                                <h2>Select Price</h2>
+                                <button class="modal-close" onclick="closeCollectiblePriceSelector()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="collectiblePriceOptionsList" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    modal.addEventListener('click', (e) => {
+                        if (e.target.id === 'collectiblePriceSelectorModal') closeCollectiblePriceSelector();
+                    });
+                }
+
+                const list = document.getElementById('collectiblePriceOptionsList');
+                list.innerHTML = '';
+
+                // Get base price from products list to ensure we have the original default
+                const productMaster = collectibleProducts.find(p => p.id === productId);
+                const basePrice = productMaster ? productMaster.price : item.price;
+                const currentPrice = item.price;
+
+                // Base Price Button
+                const baseBtn = document.createElement('button');
+                baseBtn.className = 'btn btn-outline-primary';
+                baseBtn.style.display = 'flex';
+                baseBtn.style.justifyContent = 'space-between';
+                baseBtn.style.alignItems = 'center';
+                baseBtn.style.padding = '1rem';
+                if (basePrice === currentPrice) {
+                    baseBtn.className = 'btn btn-primary';
+                    baseBtn.style.color = 'white';
+                }
+
+                baseBtn.innerHTML = `<span>Default Price</span> <strong>${formatCurrency(basePrice)}</strong>`;
+                baseBtn.onclick = () => selectCollectibleItemPrice(productId, basePrice);
+                list.appendChild(baseBtn);
+
+                // Alternative Prices
+                item.alternativePrices.forEach(alt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-outline-secondary';
+                    btn.style.display = 'flex';
+                    btn.style.justifyContent = 'space-between';
+                    btn.style.alignItems = 'center';
+                    btn.style.padding = '1rem';
+
+                    if (alt.price === currentPrice) {
+                        btn.className = 'btn btn-primary';
+                        btn.style.color = 'white';
+                    }
+
+                    btn.innerHTML = `<span>${escapeHtml(alt.name)}</span> <strong>${formatCurrency(alt.price)}</strong>`;
+                    btn.onclick = () => selectCollectibleItemPrice(productId, alt.price);
+                    list.appendChild(btn);
+                });
+
+                modal.classList.add('active'); // Use class to show
+                modal.style.display = 'flex'; // Ensure display flex is set
+            };
+
+            window.closeCollectiblePriceSelector = function () {
+                const modal = document.getElementById('collectiblePriceSelectorModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                    modal.style.display = 'none';
+                }
+            };
+
+            window.selectCollectibleItemPrice = function (productId, price) {
+                const item = collectibleSelectedItems.find(i => i.productId === productId);
+                if (item) {
+                    item.price = parseFloat(price);
+                    item.total = item.quantity * item.price;
+                    updateCollectibleSelectedItems();
+                    showToast('Price updated', 'success');
+                }
+                closeCollectiblePriceSelector();
+            };
+
+            window.saveCollectible = async function () {
+                const customerName = document.getElementById('collectibleCustomer').value.trim();
+                const notes = document.getElementById('collectibleNotes').value.trim();
+
+                if (!customerName) {
+                    showToast('Please enter customer name', 'warning');
+                    return;
+                }
+
+                if (collectibleSelectedItems.length === 0) {
+                    showToast('Please select at least one product', 'warning');
+                    return;
+                }
+
+                showLoading('Saving collectible...');
+
+                try {
+                    const user = auth.getCurrentUser();
+
+                    // Add date timestamps to new items for better tracking
+                    const currentTimestamp = new Date().toISOString();
+                    const itemsToSave = collectibleSelectedItems.map(item => ({
+                        ...item,
+                        dateAdded: currentTimestamp
+                    }));
+
+                    const newItemsTotal = itemsToSave.reduce((sum, item) => sum + item.total, 0);
+
+                    // Check for existing pending collectible for this customer
+                    const allCollectibles = await db.getAll('collectibles');
+                    const existingCollectible = allCollectibles.find(c =>
+                        c.storeId === user.storeId &&
+                        c.customerName.toLowerCase() === customerName.toLowerCase() &&
+                        c.status !== 'paid'
+                    );
+
+                    if (existingCollectible) {
+                        // MERGE with existing record
+                        console.log('Merging with existing collectible:', existingCollectible.id);
+
+                        // Update fields
+                        // Ensure items array exists
+                        const currentItems = Array.isArray(existingCollectible.items) ? existingCollectible.items : [];
+                        existingCollectible.items = [...currentItems, ...itemsToSave];
+
+                        // Ensure totalAmount is treated as a number
+                        const currentTotal = Number(existingCollectible.totalAmount) || 0;
+                        existingCollectible.totalAmount = currentTotal + newItemsTotal;
+
+                        existingCollectible.updatedAt = currentTimestamp;
+
+                        // Append notes if any
+                        if (notes) {
+                            existingCollectible.notes = (existingCollectible.notes ? existingCollectible.notes + ' | ' : '') + notes;
+                        }
+
+                        // Determine new status (unlikely to change from pending/partial to paid here, but good practice)
+                        if (existingCollectible.paidAmount >= existingCollectible.totalAmount) {
+                            existingCollectible.status = 'paid';
+                        } else {
+                            // If it was partial/pending, it remains so, or switches from partial to pending if we are strict, 
+                            // but 'pending' usually just means not paid. 
+                            // Let's ensure it stays 'unpaid' logic-wise if balance > 0.
+                            // The current logic seems to use 'paid' vs others. 
+                            // If we add debt, it definitely is NOT paid.
+                            existingCollectible.status = 'pending';
+                        }
+
+                        await db.update('collectibles', existingCollectible);
+                        showToast('Added to existing customer balance', 'info');
+
+                    } else {
+                        // CREATE NEW record
+                        // For manual entries, backdate to Jan 1st of current year
+                        let createdDate;
+                        if (isManualCollectibleMode) {
+                            const currentYear = new Date().getFullYear();
+                            createdDate = new Date(currentYear, 0, 1); // January 1st
+                        } else {
+                            createdDate = new Date();
+                        }
+
+                        const collectible = {
+                            customerName: customerName,
+                            items: itemsToSave,
+                            totalAmount: newItemsTotal,
+                            paidAmount: 0,
+                            status: 'pending',
+                            notes: notes,
+                            cashier: user.username,
+                            cashierName: user.name || user.username,
+                            storeId: user.storeId,
+                            createdAt: createdDate.toISOString(),
+                            updatedAt: currentTimestamp,
+                            isLegacy: isManualCollectibleMode // Flag for manual/historical entries
+                        };
+
+                        await db.add('collectibles', collectible);
+                        showToast('New collectible created', 'success');
+                    }
+
+                    // Stock Deduction - Common for both cases
+                    for (const item of collectibleSelectedItems) {
+                        const product = await db.get('products', item.productId);
+                        if (product) {
+                            product.stock -= item.quantity;
+                            await db.update('products', {
+                                id: item.productId,
+                                stock: product.stock
+                            });
+
+                            await db.add('stockMovements', {
+                                productId: item.productId,
+                                productName: item.name,
+                                type: 'out',
+                                quantity: item.quantity,
+                                reason: `Collectible - ${customerName}`,
+                                date: new Date().toISOString(),
+                                user: user.username,
+                                storeId: user.storeId
+                            });
+                        }
+                    }
+
+                    hideLoading();
+                    closeAddCollectibleModal();
+                    if (typeof loadCollectibles === 'function') {
+                        loadCollectibles();
+                    }
+
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error saving collectible:', error);
+                    showToast('Error saving collectible: ' + error.message, 'error');
+                }
+            };
+
+
+            let currentArchivesPage = 1;
+            const ARCHIVES_ITEMS_PER_PAGE = 2;
+
+            window.changeArchivesPage = function (page) {
+                currentArchivesPage = page;
+                loadCollectibles();
+            };
+
+            window.loadCollectibles = async function () {
+                const activeList = document.getElementById('activeCollectiblesList');
+                const archivesList = document.getElementById('archivesCollectiblesList');
+
+                if (!activeList || !archivesList) return;
+
+                const targetList = currentCollectiblesTab === 'active' ? activeList : archivesList;
+                targetList.innerHTML = '<div class="loading-spinner">Loading...</div>';
+
+                try {
+                    const user = auth.getCurrentUser();
+                    if (!user) return;
+
+                    const allCollectibles = await db.getAll('collectibles');
+                    const storeCollectibles = allCollectibles.filter(c => c.storeId === user.storeId);
+
+                    // Separate active (unpaid) and archives (paid)
+                    const activeCollectibles = storeCollectibles
+                        .filter(c => c.status !== 'paid')
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                    const archivedCollectibles = storeCollectibles
+                        .filter(c => c.status === 'paid')
+                        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+
+                    // Update summary stats (only for active)
+                    const totalAmount = activeCollectibles.reduce((sum, c) => sum + (c.totalAmount - (c.paidAmount || 0)), 0);
+                    const unpaidCount = activeCollectibles.filter(c => c.paidAmount === 0 || !c.paidAmount).length;
+
+                    const totalEl = document.getElementById('totalCollectibles');
+                    const pendingEl = document.getElementById('pendingCollectibles');
+
+                    if (totalEl) totalEl.textContent = formatCurrency(totalAmount);
+                    if (pendingEl) pendingEl.textContent = unpaidCount;
+
+                    // Handle Pagination for Archives
+                    let collectibles = [];
+                    let paginationHtml = '';
+
+                    if (currentCollectiblesTab === 'active') {
+                        collectibles = activeCollectibles;
+                    } else {
+                        // Archives - apply pagination
+                        const totalPages = Math.ceil(archivedCollectibles.length / ARCHIVES_ITEMS_PER_PAGE);
+
+                        // Ensure current page is valid
+                        if (currentArchivesPage < 1) currentArchivesPage = 1;
+                        if (currentArchivesPage > totalPages && totalPages > 0) currentArchivesPage = totalPages;
+
+                        const start = (currentArchivesPage - 1) * ARCHIVES_ITEMS_PER_PAGE;
+                        collectibles = archivedCollectibles.slice(start, start + ARCHIVES_ITEMS_PER_PAGE);
+
+                        if (totalPages > 1) {
+                            paginationHtml = `
+                                <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="changeArchivesPage(${currentArchivesPage - 1})" 
+                                            ${currentArchivesPage === 1 ? 'disabled' : ''}>
+                                        <i class="ph ph-caret-left"></i> Previous
+                                    </button>
+                                    <span style="font-size: 0.9rem; color: var(--gray-600); font-weight: 500;">
+                                        Page ${currentArchivesPage} of ${totalPages}
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="changeArchivesPage(${currentArchivesPage + 1})" 
+                                            ${currentArchivesPage === totalPages ? 'disabled' : ''}>
+                                        Next <i class="ph ph-caret-right"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    if (collectibles.length === 0) {
+                        targetList.innerHTML = `
+                            <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                                <p>No ${currentCollectiblesTab === 'active' ? 'active collectibles' : 'archives'} yet</p>
+                                <p style="font-size: 0.9rem;">${currentCollectiblesTab === 'active' ? 'Add your first collectible to get started' : 'Paid collectibles will appear here'}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    targetList.innerHTML = collectibles.map(c => {
+                        const balance = c.totalAmount - (c.paidAmount || 0);
+                        const statusClass = c.status === 'paid' ? 'paid' : (c.paidAmount > 0 ? 'partial' : 'pending');
+                        const statusText = c.status === 'paid' ? 'Paid' : (c.paidAmount > 0 ? 'Partial' : 'Unpaid');
+
+                        return `
+                            <div class="collectible-card" onclick="viewCollectibleDetails('${c.id}', event)" style="cursor: pointer;">
+                                <div class="collectible-header">
+                                    <div>
+                                        <div class="collectible-customer">${escapeHtml(c.customerName)}</div>
+                                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                            ${new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </div>
+                                    </div>
+                                    <div class="collectible-amount">${formatCurrency(balance)}</div>
+                                </div>
+                                <div class="collectible-details">
+                                    <div><strong>${c.items.length}</strong> item${c.items.length !== 1 ? 's' : ''}</div>
+                                    <div>Total: <strong>${formatCurrency(c.totalAmount)}</strong></div>
+                                    ${c.paidAmount > 0 ? `<div>Paid: <strong>${formatCurrency(c.paidAmount)}</strong></div>` : ''}
+                                </div>
+                                ${c.notes ? `<div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--light); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--gray-700);">${escapeHtml(c.notes)}</div>` : ''}
+                                <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="collectible-status ${statusClass}">${statusText}</span>
+                                    ${c.status !== 'paid' ? `
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); addToExistingCollectible('${c.customerName}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                                <i class="ph ph-plus"></i> Add Items
+                                            </button>
+                                            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showCollectPaymentModal('${c.id}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                                <i class="ph ph-currency-circle-dollar"></i> Collect
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('') + paginationHtml;
+
+                } catch (error) {
+                    console.error('Error loading collectibles:', error);
+                    targetList.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--danger);">
+                            <p>Error loading collectibles</p>
+                            <p style="font-size: 0.9rem;">${error.message}</p>
+                        </div>
+                    `;
+                }
+            };
+
+            // Sales View Functions - now loaded from external js/cashier-sales.js
+
+            // View switching function
+            // Switch View Function (optimized for mobile stability)
+            window.switchView = function (view) {
+                console.log('Switching to view:', view);
+
+                // Cleanup before switching (prevent memory leaks)
+                if (window.mobileStability) {
+                    window.mobileStability.cleanupForTabSwitch();
+                }
+
+                // Clear any active intervals/timeouts
+                if (window.activeViewIntervals) {
+                    window.activeViewIntervals.forEach(id => clearInterval(id));
+                    window.activeViewIntervals = [];
+                }
+
+                // Define page titles
+                const pageTitles = {
+                    'pos': 'New Sale',
+                    'sales': 'My Sales',
+                    'expenses': 'Expenses',
+                    'collectibles': 'Collectibles',
+                    'modifierStock': 'Modifier Stock',
+                    'recipes': 'Recipes',
+                    'inventory': 'Inventory'
+                };
+
+                try {
+                    // Hide all views
+                    const views = ['posView', 'salesView', 'expensesView', 'collectiblesView', 'modifierStockView', 'recipesView', 'inventoryView'];
+                    views.forEach(v => {
+                        const element = document.getElementById(v);
+                        if (element) {
+                            element.style.display = 'none';
+                            // Clear scroll position for hidden views to save memory
+                            if (v !== view + 'View') {
+                                const scrollTop = element.scrollTop;
+                                if (scrollTop > 0) {
+                                    element.dataset.scrollTop = scrollTop;
+                                }
+                            }
+                        }
+                    });
+
+                    // Show selected view
+                    const selectedView = document.getElementById(view + 'View');
+                    if (selectedView) {
+                        selectedView.style.display = 'block';
+                        // Restore scroll position if exists
+                        const savedScroll = selectedView.dataset.scrollTop;
+                        if (savedScroll) {
+                            requestAnimationFrame(() => {
+                                selectedView.scrollTop = parseInt(savedScroll);
+                            });
+                        }
+                    } else {
+                        console.error('View not found:', view + 'View');
+                        showToast('View not available', 'error');
+                        return;
+                    }
+
+                    // Update page title in header
+                    const pageTitleElement = document.getElementById('currentPageTitle');
+                    if (pageTitleElement && pageTitles[view]) {
+                        pageTitleElement.textContent = pageTitles[view];
+                    }
+
+                    // Update sidebar active states
+                    const sidebarItems = document.querySelectorAll('.sidebar-item');
+                    sidebarItems.forEach(item => {
+                        item.classList.remove('active');
+                        if (item.getAttribute('data-view') === view) {
+                            item.classList.add('active');
+                        }
+                    });
+
+                    // Handle cart sidebar visibility (only show in POS view)
+                    const cartSidebar = document.getElementById('cartSidebar');
+                    const mobileCartBar = document.getElementById('mobileCartBar');
+
+                    if (view === 'pos') {
+                        if (cartSidebar) cartSidebar.style.display = 'flex';
+                        if (mobileCartBar) mobileCartBar.style.display = 'flex';
+                    } else {
+                        if (cartSidebar) cartSidebar.style.display = 'none';
+                        if (mobileCartBar) mobileCartBar.style.display = 'none';
+                    }
+
+                    // Load data for specific views with error handling
+                    console.log('Loading data for view:', view);
+
+                    const loadViewData = () => {
+                        try {
+                            if (view === 'sales' && typeof loadSales === 'function') {
+                                console.log('Calling loadSales...');
+                                loadSales();
+                            } else if (view === 'sales') {
+                                console.error('loadSales function not found!');
+                                selectedView.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 2rem;">
+                                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                                        <h3>Error Loading Sales</h3>
+                                        <p>The sales module failed to load.</p>
+                                        <button class="btn btn-primary" onclick="window.location.reload()">Reload Page</button>
+                                    </div>
+                                `;
+                            } else if (view === 'expenses' && typeof loadExpenses === 'function') {
+                                loadExpenses('today');
+                            } else if (view === 'collectibles' && typeof loadCollectibles === 'function') {
+                                loadCollectibles();
+                            } else if (view === 'modifierStock' && typeof loadCashierStockTracker === 'function') {
+                                loadCashierStockTracker();
+                            } else if (view === 'recipes' && typeof loadCashierRecipes === 'function') {
+                                loadCashierRecipes();
+                            } else if (view === 'inventory' && typeof loadCashierInventory === 'function') {
+                                loadCashierInventory();
+                            }
+                        } catch (error) {
+                            console.error('Error loading view data:', error);
+                            showToast('Error loading view. Please try again.', 'error');
+
+                            // Show error state
+                            if (selectedView) {
+                                selectedView.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 2rem;">
+                                        <i class="ph ph-warning-circle" style="font-size: 4rem; margin-bottom: 1rem; color: var(--warning);"></i>
+                                        <h3>Failed to Load</h3>
+                                        <p style="margin-bottom: 1rem;">An error occurred: ${error.message}</p>
+                                        <button class="btn btn-primary" onclick="switchView('${view}')">Try Again</button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    };
+
+                    // Use requestIdleCallback for better mobile performance
+                    if (window.requestIdleCallback && view !== 'pos') {
+                        requestIdleCallback(loadViewData, { timeout: 1000 });
+                    } else {
+                        loadViewData();
+                    }
+
+                } catch (error) {
+                    console.error('Critical error in switchView:', error);
+                    showToast('Error switching view. Reloading...', 'error');
+
+                    // Critical error - reload page after short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            };
+        });
+        // View switching function
+        // ... (existing code) ...
+
+        // EXPLICITLY DEFINE viewCollectibleDetails HERE to avoid ReferenceError
+        window.viewCollectibleDetails = async function (id, event) {
+            if (event) event.stopPropagation();
+
+            try {
+                const collectible = await db.get('collectibles', id);
+                if (!collectible) {
+                    showToast('Collectible not found', 'error');
+                    return;
+                }
+
+                // Create modal content
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.style.zIndex = '10000';
+
+                const balance = collectible.totalAmount - (collectible.paidAmount || 0);
+                const statusClass = collectible.status === 'paid' ? 'badge-success' : (collectible.paidAmount > 0 ? 'badge-warning' : 'badge-danger');
+                const statusText = collectible.status === 'paid' ? 'Paid' : (collectible.paidAmount > 0 ? 'Partial' : 'Unpaid');
+
+                modal.innerHTML = `
+                        <div class="modal-content" style="max-width: 500px;">
+                            <div class="modal-header">
+                                <h2>Collectible Details</h2>
+                                <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <div style="text-align: center; margin-bottom: 1.5rem;">
+                                    <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">${escapeHtml(collectible.customerName)}</div>
+                                    <div style="color: var(--gray-500); font-size: 0.9rem;">
+                                        Created on ${new Date(collectible.createdAt).toLocaleString()}
+                                    </div>
+                                    <div style="margin-top: 0.5rem;">
+                                         <span class="badge ${statusClass}">${statusText}</span>
+                                    </div>
+                                </div>
+
+                                <div style="background: var(--light); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--gray-600);">Total Amount</span>
+                                        <span style="font-weight: 600;">${formatCurrency(collectible.totalAmount)}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--gray-600);">Paid Amount</span>
+                                        <span style="font-weight: 600; color: var(--success);">${formatCurrency(collectible.paidAmount || 0)}</span>
+                                    </div>
+                                    <div style="border-top: 1px dashed var(--gray-300); margin: 0.5rem 0;"></div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 1.1rem;">
+                                        <span style="font-weight: 600;">Balance</span>
+                                        <span style="font-weight: 700; color: ${balance > 0 ? 'var(--danger)' : 'var(--success)'};">${formatCurrency(balance)}</span>
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--gray-200); padding-bottom: 0.5rem;">Items</h4>
+                                <div style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;">
+                                    ${collectible.items.map(item => `
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                            <div>
+                                                <div>${escapeHtml(item.name)}</div>
+                                                <div style="font-size: 0.8rem; color: var(--gray-500);">
+                                                    ${item.quantity} x ${formatCurrency(item.price)}
+                                                </div>
+                                            </div>
+                                            <div style="font-weight: 500;">
+                                                ${formatCurrency(item.total)}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+
+                                ${collectible.notes ? `
+                                    <div style="margin-top: 1rem;">
+                                        <h4 style="font-size: 0.9rem; margin-bottom: 0.25rem;">Notes</h4>
+                                        <div style="background: #fff; border: 1px solid var(--gray-200); padding: 0.75rem; border-radius: 4px; font-size: 0.9rem; color: var(--gray-700);">
+                                            ${escapeHtml(collectible.notes)}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--gray-500); text-align: right;">
+                                    Processed by: ${collectible.cashierName || collectible.cashier}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                            </div>
+                        </div>
+                    `;
+
+                document.body.appendChild(modal);
+
+            } catch (error) {
+                console.error('Error viewing collectible:', error);
+                showToast('Error loading details', 'error');
+            }
+        };
+    </script>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('cashierTheme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                updateThemeIcon();
+            }
+        });
+
+        // Toggle theme function
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+
+            // Toggle dark mode class
+            body.classList.toggle('dark-mode');
+
+            // Save preference
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('cashierTheme', isDark ? 'dark' : 'light');
+
+            // Update icon with animation
+            updateThemeIcon();
+        }
+
+
+        // Update theme icon
+        function updateThemeIcon() {
+            const themeIcon = document.getElementById('themeIcon');
+            const isDark = document.body.classList.contains('dark-mode');
+
+            if (themeIcon) {
+                // Add rotation animation
+                themeIcon.style.transform = 'rotate(360deg)';
+
+                setTimeout(() => {
+                    if (isDark) {
+                        themeIcon.className = 'ph ph-sun';
+                    } else {
+                        themeIcon.className = 'ph ph-moon';
+                    }
+                    themeIcon.style.transform = 'rotate(0deg)';
+                }, 150);
+            }
+        }
+    </script>
+
+    <script src="js/cashier-inventory.js"></script>
+    <script src="js/cashier-recipes.js"></script>
+    <script src="js/cashier-sales.js"></script>
+    <script src="js/pull-to-refresh.js"></script>
+</body>
+
+</html>
