@@ -748,13 +748,16 @@ function checkout() {
     const total = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
     document.getElementById('checkoutTotal').textContent = formatCurrency(total);
 
-    // Reset form
+    // Reset form to single payment mode
     document.getElementById('paymentMethod').value = 'cash';
     document.getElementById('customerName').value = '';
     document.getElementById('amountReceived').value = '';
     document.getElementById('change').textContent = formatCurrency(0);
+    document.getElementById('splitCashAmount').value = '';
+    document.getElementById('splitGcashAmount').value = '';
 
-    toggleCashPayment();
+    // Always start in single mode
+    setPaymentMode('single');
 }
 
 // Close checkout modal
@@ -764,59 +767,145 @@ function closeCheckoutModal() {
     document.body.classList.remove('modal-open');
 }
 
-// Toggle cash payment fields
+// ─── Payment Mode Management ──────────────────────────────────────────────────
+
+// Set payment mode: 'single' or 'split'
+function setPaymentMode(mode) {
+    const isSplit = mode === 'split';
+
+    // Toggle sections
+    document.getElementById('singlePaymentSection').style.display = isSplit ? 'none' : 'block';
+    document.getElementById('splitPaymentSection').style.display = isSplit ? 'block' : 'none';
+
+    // Update toggle button styles
+    const singleBtn = document.getElementById('modeBtnSingle');
+    const splitBtn  = document.getElementById('modeBtnSplit');
+
+    if (isSplit) {
+        singleBtn.style.cssText = 'flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--gray-300); background: transparent; color: var(--gray-600); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;';
+        splitBtn.style.cssText  = 'flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--primary); background: var(--primary); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;';
+        updateSplitPayment();
+    } else {
+        singleBtn.style.cssText = 'flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--primary); background: var(--primary); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;';
+        splitBtn.style.cssText  = 'flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--gray-300); background: transparent; color: var(--gray-600); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;';
+        toggleCashPayment();
+    }
+}
+
+// Toggle cash amount field visibility (single mode only)
 function toggleCashPayment() {
     const paymentMethod = document.getElementById('paymentMethod').value;
     const cashGroup = document.getElementById('cashPaymentGroup');
     cashGroup.style.display = paymentMethod === 'cash' ? 'block' : 'none';
 }
 
-// Calculate change
+// Calculate change (single cash mode)
 function calculateChange() {
-    const total = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
+    const total    = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
     const received = parseFloat(document.getElementById('amountReceived').value) || 0;
-    const change = received - total;
+    const change   = received - total;
 
     document.getElementById('change').textContent = formatCurrency(Math.max(0, change));
     document.getElementById('change').style.color = change >= 0 ? 'var(--success)' : 'var(--danger)';
 }
 
+// Update split payment summary
+function updateSplitPayment() {
+    const total     = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
+    const cashAmt   = parseFloat(document.getElementById('splitCashAmount').value)  || 0;
+    const gcashAmt  = parseFloat(document.getElementById('splitGcashAmount').value) || 0;
+    const covered   = cashAmt + gcashAmt;
+    const remaining = total - covered;
+    const change    = covered - total; // change comes from cash portion
+
+    // Update displayed values
+    document.getElementById('splitTotalCovered').textContent = formatCurrency(covered);
+    document.getElementById('splitRemaining').textContent    = formatCurrency(Math.max(0, remaining));
+    document.getElementById('splitChange').textContent       = formatCurrency(Math.max(0, change));
+
+    // Status message
+    const statusEl = document.getElementById('splitStatusMsg');
+    const btn      = document.getElementById('completeSaleBtn');
+
+    if (covered === 0) {
+        statusEl.style.display = 'none';
+        btn.disabled = false;
+    } else if (remaining > 0.009) {
+        statusEl.style.display  = 'block';
+        statusEl.style.background = 'rgba(239,68,68,0.1)';
+        statusEl.style.color      = 'var(--danger)';
+        statusEl.textContent      = `⚠️ Still need ${formatCurrency(remaining)} more`;
+        btn.disabled = true;
+    } else {
+        statusEl.style.display  = 'block';
+        statusEl.style.background = 'rgba(16,185,129,0.1)';
+        statusEl.style.color      = '#059669';
+        statusEl.textContent      = '✅ Payment complete!';
+        btn.disabled = false;
+    }
+}
+
 // Complete transaction
 async function completeTransaction() {
-    const paymentMethod = document.getElementById('paymentMethod').value;
-    const customerName = document.getElementById('customerName').value.trim();
-    const total = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
+    const customerName  = document.getElementById('customerName').value.trim();
+    const total         = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
+    const isSplitMode   = document.getElementById('splitPaymentSection').style.display !== 'none';
 
-    // Validate cash payment
-    if (paymentMethod === 'cash') {
-        const received = parseFloat(document.getElementById('amountReceived').value) || 0;
-        if (received < total) {
-            showToast('Insufficient amount received', 'error');
+    // ── Determine payment info ──
+    let paymentMethod, amountPaid, change, cashAmount, gcashAmount;
+
+    if (isSplitMode) {
+        cashAmount  = parseFloat(document.getElementById('splitCashAmount').value)  || 0;
+        gcashAmount = parseFloat(document.getElementById('splitGcashAmount').value) || 0;
+        amountPaid  = cashAmount + gcashAmount;
+
+        if (amountPaid < total - 0.009) {
+            showToast('Split payment does not cover the total', 'error');
             return;
+        }
+
+        paymentMethod = 'split';
+        change        = Math.max(0, amountPaid - total);
+    } else {
+        paymentMethod = document.getElementById('paymentMethod').value;
+
+        if (paymentMethod === 'cash') {
+            amountPaid = parseFloat(document.getElementById('amountReceived').value) || 0;
+            if (amountPaid < total) {
+                showToast('Insufficient amount received', 'error');
+                return;
+            }
+            change = amountPaid - total;
+        } else {
+            amountPaid = total;
+            change     = 0;
         }
     }
 
     showLoading('Processing transaction...');
 
     try {
-        // Create transaction
+        // ── Build transaction object ──
         const transaction = {
-            date: new Date().toISOString(),
-            cashier: auth.getCurrentUser().username,
-            cashierName: auth.getCurrentUser().name || auth.getCurrentUser().username,
+            date:         new Date().toISOString(),
+            cashier:      auth.getCurrentUser().username,
+            cashierName:  auth.getCurrentUser().name || auth.getCurrentUser().username,
             items: cart.map(item => ({
                 productId: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
+                name:      item.name,
+                price:     item.price,
+                quantity:  item.quantity,
                 modifiers: item.modifiers || [],
-                subtotal: (item.price + (item.modifiers ? item.modifiers.reduce((s, m) => s + (m.price * (m.quantity || 1)), 0) : 0)) * item.quantity
+                subtotal:  (item.price + (item.modifiers ? item.modifiers.reduce((s, m) => s + (m.price * (m.quantity || 1)), 0) : 0)) * item.quantity
             })),
-            subtotal: parseFloat(document.getElementById('subtotal').textContent.replace(/[₱,]/g, '')),
-            tax: 0,
-            total: total,
+            subtotal:      parseFloat(document.getElementById('subtotal').textContent.replace(/[₱,]/g, '')),
+            tax:           0,
+            total:         total,
+            amountPaid:    amountPaid,
+            change:        change,
             paymentMethod: paymentMethod,
-            customerName: customerName || 'Walk-in Customer'
+            customerName:  customerName || 'Walk-in Customer',
+            ...(isSplitMode && { cashAmount, gcashAmount })
         };
 
         // Save transaction
@@ -981,8 +1070,49 @@ async function completeTransaction() {
 
 // Print receipt
 function printTransactionReceipt(transaction, transactionId) {
-    // Get custom settings
     const settings = typeof getSettings === 'function' ? getSettings() : { systemName: 'POS System', systemDescription: 'Point of Sale Receipt' };
+
+    // Build payment lines for receipt
+    let paymentLines = '';
+    if (transaction.paymentMethod === 'split') {
+        paymentLines = `
+    <div class="receipt-item">
+      <span>Payment:</span>
+      <span>SPLIT</span>
+    </div>
+    <div class="receipt-item" style="font-size: 11px; padding-left: 12px;">
+      <span>💵 Cash:</span>
+      <span>${formatCurrency(transaction.cashAmount || 0)}</span>
+    </div>
+    <div class="receipt-item" style="font-size: 11px; padding-left: 12px;">
+      <span>📱 GCash:</span>
+      <span>${formatCurrency(transaction.gcashAmount || 0)}</span>
+    </div>
+    <div class="receipt-item">
+      <span>Change:</span>
+      <span>${formatCurrency(transaction.change || 0)}</span>
+    </div>`;
+    } else if (transaction.paymentMethod === 'cash') {
+        paymentLines = `
+    <div class="receipt-item">
+      <span>Payment:</span>
+      <span>CASH</span>
+    </div>
+    <div class="receipt-item">
+      <span>Amount Paid:</span>
+      <span>${formatCurrency(transaction.amountPaid || transaction.total)}</span>
+    </div>
+    <div class="receipt-item">
+      <span>Change:</span>
+      <span>${formatCurrency(transaction.change || 0)}</span>
+    </div>`;
+    } else {
+        paymentLines = `
+    <div class="receipt-item">
+      <span>Payment:</span>
+      <span>${transaction.paymentMethod.toUpperCase()}</span>
+    </div>`;
+    }
 
     const receiptHtml = `
     <div class="receipt-header">
@@ -1010,15 +1140,11 @@ function printTransactionReceipt(transaction, transactionId) {
       <span>Subtotal:</span>
       <span>${formatCurrency(transaction.subtotal)}</span>
     </div>
-    <!-- Tax removed from receipt -->
     <div class="receipt-item receipt-total">
       <span>TOTAL:</span>
       <span>${formatCurrency(transaction.total)}</span>
     </div>
-    <div class="receipt-item">
-      <span>Payment:</span>
-      <span>${transaction.paymentMethod.toUpperCase()}</span>
-    </div>
+    ${paymentLines}
     <div class="receipt-footer">
       <p>Thank you for your purchase!</p>
       <p>Please come again</p>
@@ -1059,10 +1185,10 @@ function setupEventListeners() {
         renderProducts(filtered);
     });
 
-    // Payment method change
+    // Payment method change (single mode)
     document.getElementById('paymentMethod').addEventListener('change', toggleCashPayment);
 
-    // Amount received change
+    // Amount received change (single cash mode)
     document.getElementById('amountReceived').addEventListener('input', calculateChange);
 
     // Close modal on outside click
@@ -1376,11 +1502,33 @@ function renderSalesList(sales) {
     }
 
     listContainer.innerHTML = sales.map(sale => {
-        const date = new Date(sale.date);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = date.toLocaleDateString();
+        const date      = new Date(sale.date);
+        const timeStr   = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr   = date.toLocaleDateString();
         const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
-        const isVoided = sale.status === 'voided';
+        const isVoided  = sale.status === 'voided';
+
+        // Build payment badge(s)
+        let paymentBadge = '';
+        if (sale.paymentMethod === 'split') {
+            paymentBadge = `
+                <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                        💵 ₱${(sale.cashAmount || 0).toFixed(2)}
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                        📱 ₱${(sale.gcashAmount || 0).toFixed(2)}
+                    </span>
+                </div>`;
+        } else if (sale.paymentMethod === 'cash') {
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💵 Cash</span>`;
+        } else if (sale.paymentMethod === 'mobile') {
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📱 GCash</span>`;
+        } else if (sale.paymentMethod === 'card') {
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💳 Card</span>`;
+        } else {
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: var(--light); color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">${sale.paymentMethod || 'Cash'}</span>`;
+        }
 
         return `
             <div class="sale-card ${isVoided ? 'voided' : ''}" onclick="viewTransactionDetails('${sale.id}')" style="cursor: pointer; ${isVoided ? 'opacity: 0.7; background-color: #f9f9f9; border: 1px solid #ddd;' : ''}">
@@ -1390,10 +1538,11 @@ function renderSalesList(sales) {
                         <span class="sale-date-small">${dateStr}</span>
                     </div>
                     ${isVoided
-                ? '<div class="badge badge-danger" style="font-size: 0.75rem; padding: 2px 6px;">VOIDED</div>'
-                : `<div class="sale-amount">${formatCurrency(sale.total)}</div>`
-            }
+                        ? '<div class="badge badge-danger" style="font-size: 0.75rem; padding: 2px 6px;">VOIDED</div>'
+                        : `<div class="sale-amount">${formatCurrency(sale.total)}</div>`
+                    }
                 </div>
+                ${!isVoided ? `<div style="padding: 0 0 0.4rem 0;">${paymentBadge}</div>` : ''}
                 <div class="sale-footer">
                     <div class="sale-items-count" style="${isVoided ? 'text-decoration: line-through; color: #888;' : ''}">
                         <span>🛍️</span> ${itemCount} items
@@ -1458,12 +1607,53 @@ window.viewTransactionDetails = function (transactionId) {
     const transaction = allSales.find(t => t.id === transactionId);
     if (!transaction) return;
 
-    const modal = document.getElementById('transactionDetailsModal');
-    const content = document.getElementById('transactionDetailsContent');
+    const modal      = document.getElementById('transactionDetailsModal');
+    const content    = document.getElementById('transactionDetailsContent');
     const reprintBtn = document.getElementById('reprintBtn');
+    const isVoided   = transaction.status === 'voided';
 
-    // Setup content
-    const isVoided = transaction.status === 'voided';
+    // Build payment info block
+    const isSplit = transaction.paymentMethod === 'split';
+    let paymentInfoHtml = '';
+
+    if (isSplit) {
+        paymentInfoHtml = `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
+                <span>Payment</span>
+                <span style="font-weight: 700; color: var(--dark);">SPLIT</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #059669;">💵 Cash</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.cashAmount || 0)}</div>
+                </div>
+                <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">📱 GCash</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.gcashAmount || 0)}</div>
+                </div>
+            </div>
+            ${transaction.change > 0 ? `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.4rem;">
+                <span>Change (Cash)</span>
+                <span style="color: var(--success); font-weight: 600;">${formatCurrency(transaction.change)}</span>
+            </div>` : ''}`;
+    } else if (transaction.paymentMethod === 'cash') {
+        paymentInfoHtml = `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
+                <span>Payment</span><span style="font-weight: 600;">💵 Cash</span>
+            </div>
+            ${transaction.change > 0 ? `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
+                <span>Change</span>
+                <span style="color: var(--success); font-weight: 600;">${formatCurrency(transaction.change)}</span>
+            </div>` : ''}`;
+    } else {
+        paymentInfoHtml = `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
+                <span>Payment</span>
+                <span style="font-weight: 600;">📱 ${(transaction.paymentMethod || 'Mobile').toUpperCase()}</span>
+            </div>`;
+    }
 
     content.innerHTML = `
         <div style="text-align: center; margin-bottom: 1rem;">
@@ -1474,7 +1664,7 @@ window.viewTransactionDetails = function (transactionId) {
             ${isVoided ? '<div class="badge badge-danger" style="display:inline-block; margin-top:0.5rem; font-size:1rem; padding:0.5rem 1rem;">VOIDED</div>' : ''}
             ${isVoided && transaction.voidReason ? `<p style="color: #dc3545; font-size: 0.9rem; margin-top: 0.25rem;">Reason: ${escapeHtml(transaction.voidReason)}</p>` : ''}
         </div>
-        
+
         <div style="background: var(--light); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
             ${transaction.items.map(item => `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
@@ -1485,29 +1675,25 @@ window.viewTransactionDetails = function (transactionId) {
                     <div style="font-weight: 600;">${formatCurrency(item.subtotal)}</div>
                 </div>
             `).join('')}
-            
+
             <hr style="border: 0; border-top: 1px dashed var(--gray-300); margin: 0.5rem 0;">
-            
+
             <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-top: 0.5rem;">
                 <span>Total</span>
                 <span>${formatCurrency(transaction.total)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; color: var(--gray-600); font-size: 0.9rem; margin-top: 0.25rem;">
-                <span>Payment (${transaction.paymentMethod})</span>
-                <span>${formatCurrency(transaction.total)}</span>
-            </div>
-             ${transaction.customerName ? `
-            <div style="display: flex; justify-content: space-between; color: var(--gray-600); font-size: 0.9rem; margin-top: 0.25rem;">
+
+            ${paymentInfoHtml}
+
+            ${transaction.customerName ? `
+            <div style="display: flex; justify-content: space-between; color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--gray-200);">
                 <span>Customer</span>
                 <span>${transaction.customerName}</span>
             </div>` : ''}
         </div>
     `;
 
-    // Setup Actions
     reprintBtn.onclick = () => printTransactionReceipt(transaction, transaction.id);
-
-    // Show modal
     modal.classList.add('active');
     document.body.classList.add('modal-open');
 }

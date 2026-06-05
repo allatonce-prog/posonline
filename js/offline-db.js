@@ -273,29 +273,43 @@ class OfflineDB {
         });
     }
 
-    async init() {
-        // Init Local DB
-        await this.local.init();
+    init() {
+        if (this._initPromise) return this._initPromise;
 
-        // Init Firestore
-        try {
-            this.firebaseApp = initializeApp(firebaseConfig);
-            this.firestore = getFirestore(this.firebaseApp);
-            console.log("🔥 Firebase Initialized");
-        } catch (e) {
-            console.error("Firebase Init Error:", e);
+        this._initPromise = (async () => {
+            // Init Local DB
+            await this.local.init();
+
+            // Init Firestore
+            try {
+                this.firebaseApp = initializeApp(firebaseConfig);
+                this.firestore = getFirestore(this.firebaseApp);
+                console.log("🔥 Firebase Initialized");
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+            }
+
+            // Initialize UI Status
+            this.injectStatusIndicator();
+            this.updateOnlineStatus(this.isOnline);
+
+            // Initial Sync (if online)
+            if (this.isOnline) {
+                this.syncPendingData();
+            }
+
+            this.isInitialized = true;
+        })();
+
+        return this._initPromise;
+    }
+
+    async ensureInitialized() {
+        if (this.isInitialized) return;
+        if (!this._initPromise) {
+            this.init();
         }
-
-        // Initialize UI Status
-        this.injectStatusIndicator();
-        this.updateOnlineStatus(this.isOnline);
-
-        // Initial Sync (if online)
-        if (this.isOnline) {
-            this.syncPendingData();
-        }
-
-        this.isInitialized = true;
+        await this._initPromise;
     }
 
     // -----------------------------------------------------
@@ -303,6 +317,7 @@ class OfflineDB {
     // -----------------------------------------------------
 
     async add(collectionName, data) {
+        await this.ensureInitialized();
         const id = data.id || 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const storeId = data.storeId || this.getCurrentStoreId();
 
@@ -339,6 +354,7 @@ class OfflineDB {
     }
 
     async get(collectionName, id) {
+        await this.ensureInitialized();
         // 1. Try Cloud First (if online)
         if (this.isOnline) {
             try {
@@ -360,6 +376,7 @@ class OfflineDB {
     }
 
     async getAll(collectionName, forceCloud = false) {
+        await this.ensureInitialized();
         // 1. Try Cloud First (if online)
         if (this.isOnline) {
             try {
@@ -395,6 +412,7 @@ class OfflineDB {
     }
 
     async getByIndex(collectionName, indexName, value) {
+        await this.ensureInitialized();
         // 1. Try Cloud First (if online)
         if (this.isOnline) {
             try {
@@ -427,6 +445,7 @@ class OfflineDB {
     }
 
     async getAllByIndex(collectionName, indexName, value, forceCloud = false) {
+        await this.ensureInitialized();
         // 1. Try Cloud First (if online)
         if (this.isOnline) {
             try {
@@ -462,6 +481,7 @@ class OfflineDB {
     }
 
     async update(collectionName, data) {
+        await this.ensureInitialized();
         if (!data.id) throw new Error("ID required for update");
 
         // Get existing to modify or overwrite
@@ -498,6 +518,7 @@ class OfflineDB {
 
     // Generic set method (for compatibility)
     async set(collectionName, id, data) {
+        await this.ensureInitialized();
         const record = {
             ...data,
             id: id,
@@ -525,6 +546,7 @@ class OfflineDB {
     }
 
     async remove(collectionName, id) {
+        await this.ensureInitialized();
         // 1. Delete Local
         await this.local.delete(collectionName, id);
 
@@ -553,6 +575,7 @@ class OfflineDB {
     // -----------------------------------------------------
 
     async syncPendingData() {
+        await this.ensureInitialized();
         console.log("🔄 Starting Sync...");
         const collections = ['products', 'transactions', 'ingredients', 'recipes', 'modifiers', 'salaries', 'salesTargets'];
         let syncCount = 0;
@@ -584,6 +607,7 @@ class OfflineDB {
     }
 
     async refreshCollectionFromCloud(collectionName, storeId) {
+        await this.ensureInitialized();
         try {
             console.log(`Refreshing ${collectionName} for store: ${storeId}`);
             const colRef = collection(this.firestore, collectionName);

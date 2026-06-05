@@ -13,9 +13,9 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css?v=3.8">
-    <link rel="stylesheet" href="css/admin.css?v=3.8">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=3.8">
+    <link rel="stylesheet" href="css/styles.css?v=4.5">
+    <link rel="stylesheet" href="css/admin.css?v=4.5">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=4.5">
     <link rel="stylesheet" href="css/recipes.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -24,7 +24,7 @@
     <!-- iOS Cache Buster - Force reload if old version detected -->
     <script>
         (function () {
-            const CURRENT_VERSION = '4.4';
+            const CURRENT_VERSION = '4.5';
             const storedVersion = localStorage.getItem('admin_js_version');
 
             // If version mismatch or first load, clear everything and reload
@@ -252,6 +252,24 @@
                             <div class="stat-info">
                                 <h3 id="todaySalesLabel">Today's Sales</h3>
                                 <div class="stat-value" id="todaySales">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 1A. CASH SALES -->
+                        <div class="stat-card">
+                            <div class="stat-icon success" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="ph ph-money"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayCashSalesLabel">Cash Payments (Today)</h3>
+                                <div class="stat-value" id="todayCashSales">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 1B. GCASH SALES -->
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="ph ph-device-mobile"></i></div>
+                            <div class="stat-info">
+                                <h3 id="todayGcashSalesLabel">GCash Payments (Today)</h3>
+                                <div class="stat-value" id="todayGcashSales">₱0.00</div>
                             </div>
                         </div>
 
@@ -1496,6 +1514,24 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label>Product Image</label>
+                        <div style="display: flex; gap: 1rem; align-items: center; background: var(--gray-50); border: 1px dashed var(--gray-300); border-radius: var(--radius-md); padding: 1rem;">
+                            <div id="productImagePreviewContainer" style="width: 80px; height: 80px; border-radius: var(--radius-md); background: var(--gray-200); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid var(--gray-300);">
+                                <i class="ph ph-image" id="productImagePlaceholderIcon" style="font-size: 2rem; color: var(--gray-400);"></i>
+                                <img id="productImagePreview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                                <input type="file" id="productImageFile" accept="image/*" style="display: none;" onchange="handleProductImageSelect(event)">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('productImageFile').click()">Choose Image</button>
+                                    <button type="button" class="btn btn-danger btn-sm" id="btnRemoveProductImage" onclick="removeProductImage()" style="display: none;">Remove</button>
+                                </div>
+                                <small class="form-text" style="color: var(--gray-500); font-size: 0.75rem;">Supports JPG, PNG. Max size 2MB.</small>
+                                <input type="hidden" id="productImageUrl" value="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="productDescription">Description</label>
                         <textarea id="productDescription" class="form-control"></textarea>
                     </div>
@@ -2117,13 +2153,13 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="js/email-service.js"></script>
-    <script type="module" src="js/offline-db.js?v=4.1"></script>
-    <script src="js/mobile-stability.js"></script>
-    <script src="js/auth.js?v=4.1"></script>
-    <script src="js/utils.js?v=4.1"></script>
-    <script src="js/admin/dashboard-charts.js?v=4.1"></script>
-    <script src="js/admin.js?v=4.1"></script>
-    <script src="js/admin/time-range.js?v=4.1"></script>
+    <script type="module" src="js/offline-db.js?v=4.5"></script>
+    <script src="js/mobile-stability.js?v=4.5"></script>
+    <script src="js/auth.js?v=4.5"></script>
+    <script src="js/utils.js?v=4.5"></script>
+    <script src="js/admin/dashboard-charts.js?v=4.5"></script>
+    <script src="js/admin.js?v=4.5"></script>
+    <script src="js/admin/time-range.js?v=4.5"></script>
     <script src="js/admin/products.js?v=4.4"></script>
     <script src="js/admin/recipes.js?v=4.4"></script>
     <script src="js/admin/modifiers.js?v=4.4"></script>

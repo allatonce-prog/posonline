@@ -13,10 +13,10 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/cashier.css">
-    <link rel="stylesheet" href="css/cashier-sidebar.css">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css">
+    <link rel="stylesheet" href="css/styles.css?v=4.5">
+    <link rel="stylesheet" href="css/cashier.css?v=4.5">
+    <link rel="stylesheet" href="css/cashier-sidebar.css?v=4.5">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=4.5">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
@@ -600,38 +600,105 @@
                 <button class="modal-close" onclick="closeCheckoutModal()">×</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="paymentMethod">Payment Method</label>
-                    <select id="paymentMethod" class="form-control">
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="mobile">Mobile Payment</option>
-                    </select>
+
+                <!-- Bill Total Display -->
+                <div style="background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 600;">Bill Total</span>
+                    <span id="checkoutTotal" style="color: white; font-size: 1.5rem; font-weight: 800;">₱0.00</span>
                 </div>
 
-                <div class="form-group" id="cashPaymentGroup">
-                    <label for="amountReceived">Amount Received</label>
-                    <input type="number" id="amountReceived" step="0.01" min="0" placeholder="0.00">
-                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
-                        <div class="d-flex justify-content-between">
-                            <span>Total:</span>
-                            <strong id="checkoutTotal">$0.00</strong>
-                        </div>
-                        <div class="d-flex justify-content-between" style="margin-top: 0.25rem;">
-                            <span>Change:</span>
-                            <strong id="change" style="color: var(--success);">$0.00</strong>
+                <!-- Payment Mode Toggle -->
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--gray-500);">Payment Mode</label>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+                        <button id="modeBtnSingle" onclick="setPaymentMode('single')"
+                            style="flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--primary); background: var(--primary); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
+                            Single
+                        </button>
+                        <button id="modeBtnSplit" onclick="setPaymentMode('split')"
+                            style="flex: 1; padding: 0.6rem; border-radius: 10px; border: 2px solid var(--gray-300); background: transparent; color: var(--gray-600); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
+                            Split (Cash + GCash)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== SINGLE PAYMENT SECTION ===== -->
+                <div id="singlePaymentSection">
+                    <div class="form-group">
+                        <label for="paymentMethod">Payment Method</label>
+                        <select id="paymentMethod" class="form-control" onchange="toggleCashPayment()">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="mobile">Mobile Payment (GCash)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="cashPaymentGroup">
+                        <label for="amountReceived">Amount Received</label>
+                        <input type="number" id="amountReceived" step="0.01" min="0" placeholder="0.00">
+                        <div style="background: var(--light); border-radius: 10px; padding: 0.75rem 1rem; margin-top: 0.5rem;">
+                            <div class="d-flex justify-content-between" style="font-size: 0.9rem; color: var(--gray-600);">
+                                <span>Change:</span>
+                                <strong id="change" style="color: var(--success);">₱0.00</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <!-- ===== SPLIT PAYMENT SECTION ===== -->
+                <div id="splitPaymentSection" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <!-- Cash -->
+                        <div style="background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 0.85rem;">
+                            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                                <span style="font-size: 1.1rem;">💵</span>
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em;">Cash</span>
+                            </div>
+                            <input type="number" id="splitCashAmount" step="0.01" min="0" placeholder="0.00"
+                                oninput="updateSplitPayment()"
+                                style="width: 100%; border: none; background: transparent; font-size: 1.1rem; font-weight: 700; color: var(--dark); outline: none; padding: 0;">
+                        </div>
+                        <!-- GCash -->
+                        <div style="background: rgba(99,102,241,0.07); border: 1.5px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 0.85rem;">
+                            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
+                                <span style="font-size: 1.1rem;">📱</span>
+                                <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em;">GCash</span>
+                            </div>
+                            <input type="number" id="splitGcashAmount" step="0.01" min="0" placeholder="0.00"
+                                oninput="updateSplitPayment()"
+                                style="width: 100%; border: none; background: transparent; font-size: 1.1rem; font-weight: 700; color: var(--dark); outline: none; padding: 0;">
+                        </div>
+                    </div>
+
+                    <!-- Split Summary -->
+                    <div id="splitSummaryBox" style="background: var(--light); border-radius: 12px; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600);">
+                            <span>Total Covered:</span>
+                            <strong id="splitTotalCovered" style="color: var(--dark);">₱0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600);">
+                            <span>Remaining:</span>
+                            <strong id="splitRemaining" style="color: var(--danger);">₱0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600);">
+                            <span>Change (from Cash):</span>
+                            <strong id="splitChange" style="color: var(--success);">₱0.00</strong>
+                        </div>
+                    </div>
+
+                    <!-- Status indicator -->
+                    <div id="splitStatusMsg" style="margin-top: 0.6rem; text-align: center; font-size: 0.85rem; font-weight: 600; padding: 0.4rem; border-radius: 8px; display: none;"></div>
+                </div>
+
+                <!-- Customer Name -->
+                <div class="form-group" style="margin-top: 1rem;">
                     <label for="customerName">Customer Name (Optional)</label>
                     <input type="text" id="customerName" placeholder="Enter customer name">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
-                <button class="btn btn-success" onclick="completeTransaction()">Complete Sale</button>
+                <button class="btn btn-success" id="completeSaleBtn" onclick="completeTransaction()">Complete Sale</button>
             </div>
         </div>
     </div>
@@ -821,11 +888,11 @@
     <!-- Printable Area (Hidden by default, shown while printing) -->
     <div id="receipt-printable" style="display: none;"></div>
 
-    <script type="module" src="js/offline-db.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/mobile-stability.js"></script>
-    <script src="js/admin/settings.js"></script>
+    <script type="module" src="js/offline-db.js?v=4.5"></script>
+    <script src="js/auth.js?v=4.5"></script>
+    <script src="js/utils.js?v=4.5"></script>
+    <script src="js/mobile-stability.js?v=4.5"></script>
+    <script src="js/admin/settings.js?v=4.5"></script>
     <script src="js/collectibles-payment.js"></script>
     <script src="js/cashier.js"></script>
     <script src="js/cashier-sales.js"></script>
@@ -1922,7 +1989,6 @@
 
     <script src="js/cashier-inventory.js"></script>
     <script src="js/cashier-recipes.js"></script>
-    <script src="js/cashier-sales.js"></script>
     <script src="js/pull-to-refresh.js"></script>
 </body>
 

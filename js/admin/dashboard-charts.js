@@ -292,10 +292,17 @@ function renderPaymentMethodChart(transactions) {
     const methodStats = {};
 
     validTransactions.forEach(t => {
-        const method = t.paymentMethod || 'Cash';
-        if (!methodStats[method]) methodStats[method] = 0;
-        methodStats[method] += (Number(t.total) || Number(t.amount) || 0); // Summing amounts
-        // Alternatively, we could count transactions: methodStats[method]++
+        if (t.paymentMethod === 'split') {
+            // Attribute each portion to its actual method
+            const cash  = Number(t.cashAmount)  || 0;
+            const gcash = Number(t.gcashAmount) || 0;
+            if (cash  > 0) { methodStats['Cash']  = (methodStats['Cash']  || 0) + cash; }
+            if (gcash > 0) { methodStats['GCash'] = (methodStats['GCash'] || 0) + gcash; }
+        } else {
+            const method = t.paymentMethod || 'Cash';
+            if (!methodStats[method]) methodStats[method] = 0;
+            methodStats[method] += (Number(t.total) || Number(t.amount) || 0);
+        }
     });
 
     const labels = Object.keys(methodStats);

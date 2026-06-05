@@ -2,6 +2,124 @@
 let editingProductId = null;
 const productsPaginator = new PaginationManager(5);
 
+// Cloudinary Configuration (Cloud Name and Upload Preset must be configured for unsigned uploads)
+const CLOUDINARY_CLOUD_NAME = '';
+const CLOUDINARY_UPLOAD_PRESET = '';
+const CLOUDINARY_API_KEY = '881294228193848';
+const CLOUDINARY_API_SECRET = 'Z2fnBZ15eDcmOvP9P_laQg43jOU';
+
+// Image Upload Helpers
+async function uploadToCloudinary(file) {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error('Cloudinary Cloud Name and Upload Preset are required for image uploads.');
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error?.message || 'Cloudinary upload failed');
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+}
+
+function resizeAndCompressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Export to base64 with jpeg compression
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedBase64);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+window.handleProductImageSelect = async function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Image size exceeds 2MB limit', 'warning');
+        return;
+    }
+
+    showLoading('Uploading image...');
+
+    try {
+        let imageUrl = '';
+        if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET) {
+            // Upload to Cloudinary
+            imageUrl = await uploadToCloudinary(file);
+        } else {
+            // Fallback to Base64 (Compressed jpeg to fit Firebase 1MB doc limit)
+            imageUrl = await resizeAndCompressImage(file);
+            showToast('Cloudinary not configured. Image compressed and saved locally.', 'info');
+        }
+
+        // Update UI
+        document.getElementById('productImageUrl').value = imageUrl;
+        const imgPreview = document.getElementById('productImagePreview');
+        imgPreview.src = imageUrl;
+        imgPreview.style.display = 'block';
+        document.getElementById('productImagePlaceholderIcon').style.display = 'none';
+        document.getElementById('btnRemoveProductImage').style.display = 'block';
+        hideLoading();
+        showToast('Image selected successfully', 'success');
+    } catch (error) {
+        hideLoading();
+        console.error('Image upload error:', error);
+        showToast('Error uploading image: ' + error.message, 'error');
+    }
+};
+
+window.removeProductImage = function () {
+    document.getElementById('productImageUrl').value = '';
+    document.getElementById('productImageFile').value = '';
+    const imgPreview = document.getElementById('productImagePreview');
+    imgPreview.src = '';
+    imgPreview.style.display = 'none';
+    document.getElementById('productImagePlaceholderIcon').style.display = 'block';
+    document.getElementById('btnRemoveProductImage').style.display = 'none';
+};
+
 // -----------------------------------------------
 // Stock Mode Toggle Helpers
 // -----------------------------------------------
@@ -400,6 +518,11 @@ function showAddProductModal() {
     document.getElementById('productForm').reset();
     document.getElementById('productId').value = '';
 
+    // Reset image
+    if (typeof removeProductImage === 'function') {
+        removeProductImage();
+    }
+
     // Reset alternative prices
     currentAlternativePrices = [];
     renderAlternativePrices();
@@ -471,6 +594,24 @@ async function editProduct(id) {
     document.getElementById('productExpiry').value = product.expiryDate || '';
     document.getElementById('productBatch').value = product.batchNumber || '';
     document.getElementById('productDescription').value = product.description || '';
+
+    // Load image
+    if (product.image) {
+        document.getElementById('productImageUrl').value = product.image;
+        const imgPreview = document.getElementById('productImagePreview');
+        if (imgPreview) {
+            imgPreview.src = product.image;
+            imgPreview.style.display = 'block';
+        }
+        const placeholderIcon = document.getElementById('productImagePlaceholderIcon');
+        if (placeholderIcon) placeholderIcon.style.display = 'none';
+        const removeBtn = document.getElementById('btnRemoveProductImage');
+        if (removeBtn) removeBtn.style.display = 'block';
+    } else {
+        if (typeof removeProductImage === 'function') {
+            removeProductImage();
+        }
+    }
 
     // Load alternative prices
     currentAlternativePrices = product.alternativePrices || [];
@@ -580,6 +721,7 @@ async function deleteCurrentProduct() {
 
 // Save product
 async function saveProduct() {
+    const image = document.getElementById('productImageUrl').value || null;
     const sku = document.getElementById('productSku').value.trim();
     const name = document.getElementById('productName').value.trim();
     const genericName = document.getElementById('productGenericName').value.trim();
@@ -638,6 +780,7 @@ async function saveProduct() {
             product.batchNumber = batchNumber;
             product.description = description;
             product.alternativePrices = currentAlternativePrices;
+            product.image = image;
 
             // Process Recipe Data
             let hasRecipe = false;
@@ -781,7 +924,7 @@ async function saveProduct() {
                 batchNumber,
                 description,
                 alternativePrices: currentAlternativePrices,
-                image: null,
+                image: image,
                 hasRecipe: hasRecipe,
                 createdAt: new Date().toISOString()
             });

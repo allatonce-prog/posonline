@@ -1421,7 +1421,7 @@ body.dark-mode .action-btn:hover {
 }
 
 /* Mobile adjustments */
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
     .toast.undo-toast {
         bottom: 90px;
         /* Above mobile cart bar */
@@ -1675,7 +1675,7 @@ body.dark-mode .toast.undo-toast {
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
     .cashier-layout {
         flex-direction: column;
         height: 100vh;
@@ -2191,7 +2191,7 @@ body.dark-mode .toast.undo-toast {
 
 
 /* Fix for Mobile Cart Alignment */
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
     .mobile-cart-left {
         display: flex;
         align-items: center;
@@ -2221,4 +2221,15 @@ body.dark-mode .toast.undo-toast {
 .modal {
     cursor: pointer;
     /* Suggests clicking outside closes it */
+}
+
+/* Tablet Landscape Width Optimization */
+@media (min-width: 1024px) and (max-width: 1200px) {
+    .right-panel {
+        width: 320px !important;
+        min-width: 320px !important;
+    }
+    .cashier-main > div:not(.right-panel) {
+        width: calc(100% - 320px) !important;
+    }
 }

@@ -141,6 +141,26 @@ async function loadDashboardWithRange(range) {
         const sales = rangeTransactions
             .filter(t => t.status !== 'voided')
             .reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
+
+        let cashSales = 0;
+        let gcashSales = 0;
+
+        rangeTransactions
+            .filter(t => t.status !== 'voided')
+            .forEach(t => {
+                const total = Number(t.total) || Number(t.amount) || 0;
+                const method = t.paymentMethod || 'cash';
+                const methodLower = method.toLowerCase();
+                if (methodLower === 'split') {
+                    cashSales += Number(t.cashAmount) || 0;
+                    gcashSales += Number(t.gcashAmount) || 0;
+                } else if (methodLower === 'mobile' || methodLower === 'gcash') {
+                    gcashSales += total;
+                } else {
+                    cashSales += total;
+                }
+            });
+
         const expensesTotal = rangeExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
         // Calculate deliveries for selected range
@@ -194,6 +214,8 @@ async function loadDashboardWithRange(range) {
 
         // Update stats (with null checks)
         const todaySalesEl = document.getElementById('todaySales');
+        const todayCashSalesEl = document.getElementById('todayCashSales');
+        const todayGcashSalesEl = document.getElementById('todayGcashSales');
         const todayExpensesDashEl = document.getElementById('todayExpensesDash');
         const todayCollectiblesEl = document.getElementById('todayCollectibles');
         const todayCollectedEl = document.getElementById('todayCollected');
@@ -205,6 +227,8 @@ async function loadDashboardWithRange(range) {
         updateStatLabels(range);
 
         if (todaySalesEl) todaySalesEl.textContent = formatCurrency(sales);
+        if (todayCashSalesEl) todayCashSalesEl.textContent = formatCurrency(cashSales);
+        if (todayGcashSalesEl) todayGcashSalesEl.textContent = formatCurrency(gcashSales);
         if (todayExpensesDashEl) todayExpensesDashEl.textContent = formatCurrency(expensesTotal);
         if (todayCollectiblesEl) todayCollectiblesEl.textContent = formatCurrency(collectiblesTotal);
         if (todayCollectedEl) todayCollectedEl.textContent = formatCurrency(collectedTotal);
@@ -334,6 +358,8 @@ function updateStatLabels(range) {
     const labels = {
         today: {
             sales: "Today's Sales",
+            cashSales: "Cash Payments (Today)",
+            gcashSales: "GCash Payments (Today)",
             expenses: "Today's Expenses",
             collectibles: "Today's Collectibles",
             collected: "Collections Today",
@@ -344,6 +370,8 @@ function updateStatLabels(range) {
         },
         week: {
             sales: "This Week's Sales",
+            cashSales: "Cash Payments (This Week)",
+            gcashSales: "GCash Payments (This Week)",
             expenses: "This Week's Expenses",
             collectibles: "This Week's Collectibles",
             collected: "Collections This Week",
@@ -354,6 +382,8 @@ function updateStatLabels(range) {
         },
         month: {
             sales: "This Month's Sales",
+            cashSales: "Cash Payments (This Month)",
+            gcashSales: "GCash Payments (This Month)",
             expenses: "This Month's Expenses",
             collectibles: "This Month's Collectibles",
             collected: "Collections This Month",
@@ -364,6 +394,8 @@ function updateStatLabels(range) {
         },
         custom: {
             sales: "Period Sales",
+            cashSales: "Cash Payments (Period)",
+            gcashSales: "GCash Payments (Period)",
             expenses: "Period Expenses",
             collectibles: "Period Collectibles",
             collected: "Collections (Period)",
@@ -382,6 +414,8 @@ function updateStatLabels(range) {
     };
 
     setLabel('todaySalesLabel', text.sales);
+    setLabel('todayCashSalesLabel', text.cashSales);
+    setLabel('todayGcashSalesLabel', text.gcashSales);
     setLabel('todayExpensesLabel', text.expenses);
     setLabel('todayCollectiblesLabel', text.collectibles);
     setLabel('todayCollectedLabel', text.collected);

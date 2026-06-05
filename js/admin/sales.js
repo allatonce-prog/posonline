@@ -134,8 +134,10 @@ async function loadSales() {
                     <div style="color: ${isVoided ? 'var(--gray-500)' : 'var(--success)'}; font-weight: 800; font-size: 1.15rem; ${isVoided ? 'text-decoration: line-through;' : ''} white-space: nowrap;">
                         ${formatCurrency(Number(transaction.total) || Number(transaction.amount) || 0)}
                     </div>
-                    <span class="badge ${isVoided ? 'badge-secondary' : 'badge-primary'}" style="font-size: 0.7rem; padding: 2px 6px; margin-top: 2px; display: inline-block;">
-                        ${escapeHtml(transaction.paymentMethod || 'Cash')}
+                    <span class="badge ${isVoided ? 'badge-secondary' : 'badge-primary'}" style="font-size: 0.7rem; padding: 2px 6px; margin-top: 2px; display: inline-flex; align-items: center; gap: 3px;">
+                        ${transaction.paymentMethod === 'split'
+                            ? '💵 Cash + 📱 GCash'
+                            : escapeHtml(transaction.paymentMethod || 'Cash')}
                     </span>
                 </div>
             </div>
@@ -227,7 +229,20 @@ async function viewTransaction(id) {
       </div>
       <div class="detail-item">
         <p style="font-weight: 800; color: var(--dark);">Payment</p>
-        <p>${escapeHtml(transaction.paymentMethod)}</p>
+        ${transaction.paymentMethod === 'split' ? `
+          <p style="font-weight: 600;">Split Payment</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.4rem;">
+            <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.4rem 0.6rem;">
+              <div style="font-size: 0.7rem; font-weight: 700; color: #059669;">💵 Cash</div>
+              <div style="font-size: 0.9rem; font-weight: 800;">${formatCurrency(transaction.cashAmount || 0)}</div>
+            </div>
+            <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0.4rem 0.6rem;">
+              <div style="font-size: 0.7rem; font-weight: 700; color: #6366f1;">📱 GCash</div>
+              <div style="font-size: 0.9rem; font-weight: 800;">${formatCurrency(transaction.gcashAmount || 0)}</div>
+            </div>
+          </div>
+          ${transaction.change > 0 ? `<p style="font-size: 0.8rem; color: var(--success); margin-top: 0.25rem;">Change: ${formatCurrency(transaction.change)}</p>` : ''}` : `
+          <p>${escapeHtml(transaction.paymentMethod)}</p>`}
       </div>
     </div>
 
@@ -385,7 +400,9 @@ async function exportSales() {
     'Subtotal': t.subtotal.toFixed(2),
     // 'Tax': t.tax.toFixed(2), // Removed
     'Total': t.total.toFixed(2),
-    'Payment Method': t.paymentMethod
+    'Payment Method': t.paymentMethod,
+    'Cash Amount': t.paymentMethod === 'split' ? (t.cashAmount || 0).toFixed(2) : (t.paymentMethod === 'cash' ? (t.total || 0).toFixed(2) : ''),
+    'GCash Amount': t.paymentMethod === 'split' ? (t.gcashAmount || 0).toFixed(2) : (t.paymentMethod === 'mobile' ? (t.total || 0).toFixed(2) : '')
   }));
 
   const filename = `sales_export_${new Date().toISOString().split('T')[0]}.csv`;
