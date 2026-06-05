@@ -92,6 +92,22 @@ window.filterSales = async function (filter, keepPage = false) {
         const totalAmount = transactions.reduce((sum, t) => sum + (t.total || t.amount || 0), 0);
         const totalCount = transactions.length;
 
+        let cashSales = 0;
+        let gcashSales = 0;
+        transactions.forEach(t => {
+            const total = Number(t.total) || Number(t.amount) || 0;
+            const method = t.paymentMethod || 'cash';
+            const methodLower = method.toLowerCase();
+            if (methodLower === 'split') {
+                cashSales += Number(t.cashAmount) || 0;
+                gcashSales += Number(t.gcashAmount) || 0;
+            } else if (methodLower === 'mobile' || methodLower === 'gcash') {
+                gcashSales += total;
+            } else {
+                cashSales += total;
+            }
+        });
+
         // Fetch expenses for this cashier
         const allExpenses = await db.getAll('expenses');
         let expenses = allExpenses.filter(exp =>
@@ -149,10 +165,14 @@ window.filterSales = async function (filter, keepPage = false) {
 
         // Update stats
         const totalAmountEl = document.getElementById('salesTotalAmount');
+        const salesCashReceivedEl = document.getElementById('salesCashReceived');
+        const salesGcashReceivedEl = document.getElementById('salesGcashReceived');
         const totalCountEl = document.getElementById('salesTotalCount');
         const netProfitEl = document.getElementById('salesNetProfit');
 
         if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalAmount);
+        if (salesCashReceivedEl) salesCashReceivedEl.textContent = formatCurrency(cashSales);
+        if (salesGcashReceivedEl) salesGcashReceivedEl.textContent = formatCurrency(gcashSales);
         if (totalCountEl) totalCountEl.textContent = totalCount;
         if (netProfitEl) {
             netProfitEl.textContent = formatCurrency(netProfit);
