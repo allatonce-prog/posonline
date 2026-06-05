@@ -3584,3 +3584,280 @@ textarea.form-control {
     border-color: #10b981;
     box-shadow: 0 2px 6px rgba(16,185,129,0.25);
 }
+
+/* ================================================================
+   iOS SAFE-AREA INSETS — All iPhones (notch / Dynamic Island)
+   ================================================================ */
+@media (max-width: 768px) {
+    /* Top safe area for notch/Dynamic Island */
+    .admin-header {
+        padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+        padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+        padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+
+    /* Sidebar padding at bottom for home indicator */
+    .admin-sidebar {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Modals: respect home indicator */
+    .modal-footer {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Modals use dynamic viewport height so keyboard doesn't clip */
+    .modal-content {
+        max-height: 90dvh;
+        overflow-y: auto;
+    }
+
+    .modal {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+/* ================================================================
+   IPHONE 13 PRO MAX AND LARGE IPHONE OPTIMIZATION
+   Logical pixels: 390–480px (iPhone 13 Pro Max=430px, 14 Plus=430px)
+   ================================================================ */
+@media (min-width: 390px) and (max-width: 480px) {
+
+    /* ── Stats Grid: 2-column layout (much better than 1-col) ── */
+    .stats-grid,
+    .inventory-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.875rem;
+    }
+
+    .stat-card {
+        padding: 1rem 0.875rem;
+        border-radius: 18px;
+        gap: 0.875rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        flex-shrink: 0;
+    }
+
+    .stat-icon i {
+        font-size: 22px;
+    }
+
+    .stat-value {
+        font-size: 1.35rem;
+        letter-spacing: -0.5px;
+    }
+
+    .stat-info h3 {
+        font-size: 0.68rem;
+    }
+
+    /* ── Nav items: Apple's 44px minimum tap target ── */
+    .nav-item {
+        min-height: 50px;
+        padding: 0.8rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 12px;
+        gap: 0.875rem;
+    }
+
+    .nav-icon {
+        font-size: 1.35rem;
+        min-width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Sidebar sizing for 430px screen ── */
+    .admin-sidebar {
+        width: min(300px, 85vw) !important;
+        left: min(-300px, -85vw);
+    }
+
+    .admin-sidebar.open {
+        left: 0 !important;
+    }
+
+    /* ── Admin content padding — thumb-reach zones ── */
+    .admin-content {
+        padding: 1rem !important;
+        padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* ── Table header: stack cleanly ── */
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .table-header h3 {
+        font-size: 1rem;
+    }
+
+    /* Table action buttons fill the row */
+    .table-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .table-actions .btn {
+        flex: 1;
+        min-width: 110px;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.875rem;
+        min-height: 44px;
+    }
+
+    /* Filter controls full width */
+    .filter-controls {
+        width: 100%;
+    }
+
+    .filter-controls .form-control,
+    .filter-controls select {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    /* ── Modals: tight but comfortable on large iPhone ── */
+    .modal-content {
+        max-width: 96vw;
+        max-height: 90dvh;
+        border-radius: 24px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-header {
+        padding: 1.25rem 1.25rem 1rem;
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 1;
+    }
+
+    .modal-body {
+        padding: 1rem 1.25rem;
+    }
+
+    .modal-footer {
+        flex-direction: row;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+        position: sticky;
+        bottom: 0;
+        background: inherit;
+    }
+
+    .modal-footer .btn {
+        flex: 1;
+        min-height: 48px;
+        font-size: 0.9rem;
+    }
+
+    /* ── All interactive buttons: 44px tap targets ── */
+    .btn {
+        min-height: 44px;
+    }
+
+    .btn-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* ── Charts grid: single column ── */
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+
+    .chart-card {
+        border-radius: 20px;
+        padding: 1.25rem;
+    }
+
+    .chart-body {
+        min-height: 260px;
+    }
+
+    /* ── Admin header: tighter for iPhone ── */
+    .admin-header {
+        padding: max(0.75rem, env(safe-area-inset-top, 0px)) 1rem 0.75rem;
+    }
+
+    .admin-header h2 {
+        font-size: 1.1rem;
+    }
+
+    /* ── Form groups: full width ── */
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.875rem;
+    }
+
+    .form-control,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select,
+    textarea {
+        min-height: 48px;
+        font-size: 16px; /* Prevents iOS zoom on focus */
+        border-radius: 12px;
+    }
+
+    /* ── Logo area: smaller on narrow sidebar ── */
+    .admin-logo {
+        padding: 1.75rem 1.25rem;
+    }
+
+    .admin-logo h1 {
+        font-size: 1.25rem;
+    }
+
+    /* ── User panel: compact ── */
+    .admin-user {
+        padding: 1rem;
+        margin: 0.75rem;
+    }
+
+    .user-details h3 {
+        font-size: 0.875rem;
+    }
+
+    /* ── Logout button: full tap target ── */
+    .sidebar-logout {
+        min-height: 48px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ================================================================
+   IPHONE 14 / 15 PRO MAX (≥430px wide, targeting the largest iPhones)
+   ================================================================ */
+@media (min-width: 430px) and (max-width: 480px) {
+
+    /* 3-column stats for the extra-wide large iPhone */
+    .stats-grid,
+    .inventory-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .admin-content {
+        padding: 1.25rem !important;
+    }
+
+    .modal-content {
+        max-width: 94vw;
+    }
+}
