@@ -78,6 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Setup navigation
     setupNavigation();
+
+    // Setup desktop sidebar collapse
+    setupDesktopSidebarCollapse();
 });
 
 // Setup mobile menu
@@ -230,6 +233,36 @@ async function switchTab(tab) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.tab === tab);
     });
+
+    // Update sidebar subtitle with smooth slide/fade animation
+    const sidebarSubTitle = document.getElementById('adminSidebarSubTitle');
+    if (sidebarSubTitle) {
+        sidebarSubTitle.classList.add('text-transitioning');
+        
+        setTimeout(() => {
+            const tabNames = {
+                dashboard: 'Dashboard',
+                products: 'Products',
+                recipes: 'Recipes',
+                modifiers: 'Modifiers',
+                inventory: 'Inventory',
+                history: 'History',
+                sales: 'Sales',
+                'item-sales': 'Item Sales',
+                collections: 'Collections',
+                collectibles: 'Collectibles',
+                expenses: 'Expenses',
+                salaries: 'Salaries',
+                deliveries: 'Deliveries',
+                reports: 'Reports',
+                users: 'Users',
+                settings: 'Settings'
+            };
+            const displayName = tabNames[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
+            sidebarSubTitle.textContent = `Admin ${displayName}`;
+            sidebarSubTitle.classList.remove('text-transitioning');
+        }, 150);
+    }
 
     // Update tabs with smooth transition
     const allTabs = document.querySelectorAll('.tabs');
@@ -485,3 +518,36 @@ window.viewTransactionFromDashboard = function (id) {
         }
     }, 100);
 };
+
+// Setup desktop sidebar collapse with persistence
+function setupDesktopSidebarCollapse() {
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const adminLayout = document.querySelector('.admin-layout');
+
+    if (!sidebarToggleBtn || !adminLayout) return;
+
+    // Load initial state from localStorage
+    const isCollapsed = localStorage.getItem('admin_sidebar_collapsed') === 'true';
+    if (isCollapsed) {
+        adminLayout.classList.add('sidebar-collapsed');
+    }
+
+    sidebarToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const collapsed = adminLayout.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('admin_sidebar_collapsed', collapsed);
+
+        // Dispatch window resize events smoothly during the 350ms transition
+        // to force Chart.js and other responsive elements to redraw dynamically.
+        const duration = 380; // slightly longer than 350ms CSS transition
+        const start = performance.now();
+        
+        function tick(now) {
+            window.dispatchEvent(new Event('resize'));
+            if (now - start < duration) {
+                requestAnimationFrame(tick);
+            }
+        }
+        requestAnimationFrame(tick);
+    });
+}

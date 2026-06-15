@@ -2,6 +2,11 @@
 let editingProductId = null;
 const productsPaginator = new PaginationManager(5);
 
+// Caches to avoid slow database fetches on search/filter/pagination
+let _productsCache = null;
+let _recipesCache = null;
+let _ingredientsCache = null;
+
 // Cloudinary Configuration (Cloud Name and Upload Preset must be configured for unsigned uploads)
 const CLOUDINARY_CLOUD_NAME = '';
 const CLOUDINARY_UPLOAD_PRESET = '';
@@ -211,13 +216,22 @@ async function populateCategoryList() {
 
 
 // Load products
-async function loadProducts() {
-    // Fetch all necessary data in parallel
-    const [allProducts, allRecipes, allIngredients] = await Promise.all([
-        db.getAll('products'),
-        db.getAll('recipes'),
-        db.getAll('ingredients')
-    ]);
+async function loadProducts(forceRefresh = true) {
+    if (forceRefresh || !_productsCache || !_recipesCache || !_ingredientsCache) {
+        // Fetch all necessary data in parallel
+        const [allProducts, allRecipes, allIngredients] = await Promise.all([
+            db.getAll('products'),
+            db.getAll('recipes'),
+            db.getAll('ingredients')
+        ]);
+        _productsCache = allProducts;
+        _recipesCache = allRecipes;
+        _ingredientsCache = allIngredients;
+    }
+
+    const allProducts = _productsCache;
+    const allRecipes = _recipesCache;
+    const allIngredients = _ingredientsCache;
 
     const tbody = document.getElementById('productsTable');
 
@@ -310,7 +324,7 @@ async function loadProducts() {
     if (productsPaginator && typeof productsPaginator.renderControls === 'function') {
         productsPaginator.renderControls('productsPaginationContainer', paginated.totalPages, (page) => {
             productsPaginator.setPage(page);
-            loadProducts();
+            loadProducts(false);
         });
     } else if (typeof renderPagination === 'function') {
         // Fallback to old pagination if class not working as expected
@@ -321,7 +335,7 @@ async function loadProducts() {
             'productsPaginationContainer',
             (page) => {
                 productsPaginator.currentPage = page;
-                loadProducts();
+                loadProducts(false);
             }
         );
     }
@@ -1057,14 +1071,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const productSearchInput = document.getElementById('productSearchInput');
     if (productSearchInput) {
         productSearchInput.addEventListener('input', () => {
-            loadProducts();
+            loadProducts(false);
         });
     }
 
     const productCategoryFilter = document.getElementById('productCategoryFilter');
     if (productCategoryFilter) {
         productCategoryFilter.addEventListener('change', () => {
-            loadProducts();
+            loadProducts(false);
         });
     }
 });

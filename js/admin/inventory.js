@@ -1,4 +1,7 @@
-// Inventory Management
+// Caches for inventory products and ingredients to avoid slow cloud database loads on every pagination/filtering action
+let _inventoryProductsCache = null;
+let _inventoryIngredientsCache = null;
+
 const inventoryPaginator = new PaginationManager(5);
 const movementsPaginator = new PaginationManager(5);
 const alertPaginator = new PaginationManager(5);
@@ -6,18 +9,21 @@ const alertPaginator = new PaginationManager(5);
 let currentAlertQuery = '';
 let currentAlertType = '';
 
-
 // Load inventory
-async function loadInventory() {
-    await loadInventoryProducts();
+async function loadInventory(forceRefresh = true) {
+    if (forceRefresh) {
+        _inventoryProductsCache = null;
+        _inventoryIngredientsCache = null;
+    }
+    await loadInventoryProducts(forceRefresh);
     // Stock movements now on separate tab
     await updateInventoryStats();
 }
 
 // Load inventory products table
-async function loadInventoryProducts() {
+async function loadInventoryProducts(forceRefresh = false) {
     // Delegate to filter function which now handles everything including pagination
-    return filterInventoryProducts('', 'all');
+    return filterInventoryProducts('', 'all', forceRefresh);
 }
 
 // Get stock status
@@ -36,26 +42,43 @@ function getStockClass(stock, lowStockThreshold) {
 
 // Update inventory statistics
 async function updateInventoryStats() {
-    const products = await db.getAll('products');
+    if (!_inventoryProductsCache || !_inventoryIngredientsCache) {
+        _inventoryProductsCache = await db.getAll('products');
+        _inventoryIngredientsCache = await db.getAll('ingredients');
+    }
+    const products = _inventoryProductsCache;
+    const ingredients = _inventoryIngredientsCache;
 
-    const totalProducts = products.length;
+    // Only keep stock-based products (exclude availability mode)
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+    
+    const combinedItems = [
+        ...stockProducts.map(p => ({
+            stock: Number(p.stock) || 0,
+            price: Number(p.price) || 0,
+            isIngredient: false
+        })),
+        ...ingredients.map(i => ({
+            stock: Number(i.stock) || 0,
+            price: Number(i.cost) || 0, // Using cost for ingredient valuation
+            isIngredient: true
+        }))
+    ];
+
+    const totalProducts = combinedItems.length;
     const lowStockThreshold = Number(getLowStockThreshold());
 
-    // Use Number() for safe comparison in case stock is stored as string
-    const lowStockItems = products.filter(p => {
-        if (p.stockMode === 'availability') return false; // Availability items cannot be low stock
-        const stock = Number(p.stock);
-        return stock <= lowStockThreshold && stock > 0;
+    const lowStockItems = combinedItems.filter(item => {
+        const threshold = item.isIngredient ? 10 : lowStockThreshold;
+        return item.stock <= threshold && item.stock > 0;
     }).length;
 
-    const outOfStockItems = products.filter(p => {
-        if (p.stockMode === 'availability') return p.isAvailable === false;
-        return Number(p.stock) === 0;
+    const outOfStockItems = combinedItems.filter(item => {
+        return item.stock === 0;
     }).length;
 
-    const totalStockValue = products.reduce((sum, p) => {
-        if (p.stockMode === 'availability') return sum; // Availability mode has 0 stock value
-        return sum + (Number(p.stock) * Number(p.price));
+    const totalStockValue = combinedItems.reduce((sum, item) => {
+        return sum + (item.stock * item.price);
     }, 0);
 
     const totalProductsEl = document.getElementById('totalProductsInventory');
@@ -293,105 +316,138 @@ function setupInventoryFilters() {
 }
 
 // Filter inventory products
-async function filterInventoryProducts(query, filter) {
+async function filterInventoryProducts(query, filter, forceRefresh = false) {
     // If no args provided (e.g. from event listener properly or reload), get from DOM
     if (query === undefined) query = document.getElementById('stockSearchInput')?.value.toLowerCase().trim() || '';
     if (filter === undefined) filter = document.getElementById('stockFilterSelect')?.value || 'all';
 
-    const products = await db.getAll('products');
+    if (forceRefresh || !_inventoryProductsCache || !_inventoryIngredientsCache) {
+        _inventoryProductsCache = await db.getAll('products');
+        _inventoryIngredientsCache = await db.getAll('ingredients');
+    }
+
+    const products = _inventoryProductsCache;
+    const ingredients = _inventoryIngredientsCache;
     const tbody = document.getElementById('inventoryProductsTable');
 
-    let filteredProducts = products;
+    // Filter products: only keep stock-based products (exclude availability mode)
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+
+    // Combine stockProducts and ingredients into a single array
+    const combinedItems = [
+        ...stockProducts.map(p => ({
+            id: p.id,
+            uniqueId: `product_${p.id}`,
+            name: p.name,
+            image: p.image,
+            sku: p.sku,
+            category: p.category || 'Product',
+            stock: Number(p.stock) || 0,
+            price: Number(p.price) || 0,
+            cost: Number(p.cost) || 0,
+            isIngredient: false,
+            description: p.description || ''
+        })),
+        ...ingredients.map(i => ({
+            id: i.id,
+            uniqueId: `ingredient_${i.id}`,
+            name: `[Ingredient] ${i.name}`,
+            image: null,
+            sku: `Unit: ${i.unit || 'pcs'}`,
+            category: 'Ingredient',
+            stock: Number(i.stock) || 0,
+            price: Number(i.cost) || 0, // Use cost as price for total value calculation
+            cost: Number(i.cost) || 0,
+            isIngredient: true,
+            description: ''
+        }))
+    ];
+
+    let filteredItems = combinedItems;
 
     // Apply text search
     if (query) {
-        filteredProducts = filteredProducts.filter(product =>
-            product.name.toLowerCase().includes(query) ||
-            product.sku.toLowerCase().includes(query) ||
-            (product.category && product.category.toLowerCase().includes(query))
+        filteredItems = filteredItems.filter(item =>
+            item.name.toLowerCase().includes(query) ||
+            item.sku.toLowerCase().includes(query) ||
+            item.category.toLowerCase().includes(query)
         );
     }
 
     // Apply stock filter
     if (filter !== 'all') {
         const lowStockThreshold = getLowStockThreshold();
-        filteredProducts = filteredProducts.filter(product => {
-            if (product.stockMode === 'availability') {
-                if (filter === 'out') return product.isAvailable === false;
-                if (filter === 'normal') return product.isAvailable !== false;
-                if (filter === 'low') return false; // Not applicable
-                return true;
-            } else {
-                if (filter === 'low') return product.stock <= lowStockThreshold && product.stock > 0;
-                if (filter === 'out') return product.stock === 0;
-                if (filter === 'normal') return product.stock > lowStockThreshold;
-                return true;
-            }
+        filteredItems = filteredItems.filter(item => {
+            const threshold = item.isIngredient ? 10 : lowStockThreshold;
+            if (filter === 'low') return item.stock <= threshold && item.stock > 0;
+            if (filter === 'out') return item.stock === 0;
+            if (filter === 'normal') return item.stock > threshold;
+            return true;
         });
     }
 
-    if (filteredProducts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="table-empty">No products found</td></tr>';
+    if (filteredItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="table-empty">No items found</td></tr>';
         const container = document.getElementById('inventoryPaginationContainer');
         if (container) container.innerHTML = '';
         return;
     }
 
     // Pagination
-    const paginated = inventoryPaginator.paginate(filteredProducts);
-    const displayProducts = paginated.data;
+    const paginated = inventoryPaginator.paginate(filteredItems);
+    const displayItems = paginated.data;
 
     const lowStockThreshold = getLowStockThreshold();
 
-    tbody.innerHTML = displayProducts.map(product => {
-        let quantityHtml, totalValueHtml, stockStatus, stockClass, actionsHtml;
+    tbody.innerHTML = displayItems.map(item => {
+        const totalValue = item.stock * item.price;
+        const threshold = item.isIngredient ? 10 : lowStockThreshold;
+        const stockStatus = getStockStatus(item.stock, threshold).toUpperCase();
+        const stockClass = getStockClass(item.stock, threshold);
+        const quantityHtml = `<span class="stock-quantity ${stockClass}">${item.stock}</span>`;
 
-        if (product.stockMode === 'availability') {
-            const avail = product.isAvailable !== false;
-            stockStatus = avail ? 'AVAILABLE' : 'OUT_OF_STOCK';
-            stockClass = avail ? 'normal' : 'out';
-            quantityHtml = `<span style="background-color: var(--${avail ? 'success' : 'danger'}); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">${avail ? 'Available' : 'N/A'}</span>`;
-            totalValueHtml = '-';
+        const inputId = `inline-qty-${item.uniqueId}`;
+        const editFn = item.isIngredient ? `editIngredient('${item.id}')` : `editProduct('${item.id}')`;
+        const deleteFn = item.isIngredient ? `deleteIngredient('${item.id}')` : `deleteProduct('${item.id}')`;
 
-            // Availability mode: Hide manual stock buttons
-            actionsHtml = `
-            <div class="inventory-actions">
-              <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')">✏️</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')">🗑️</button>
-            </div>
-            `;
-        } else {
-            const totalValue = product.stock * product.price;
-            totalValueHtml = formatCurrency(totalValue);
-            stockStatus = getStockStatus(product.stock, lowStockThreshold).toUpperCase();
-            stockClass = getStockClass(product.stock, lowStockThreshold);
-            quantityHtml = `<span class="stock-quantity ${stockClass}">${product.stock}</span>`;
+        const inlineAdjusterHtml = `
+        <div class="inline-stock-adjuster" style="display: inline-flex; align-items: center; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); overflow: hidden; background: white; margin-right: 0.5rem;">
+          <button class="btn-adjust minus" onclick="inlineStockAdjust('${item.uniqueId}', 'out', '${inputId}'); event.stopPropagation();" style="border: none; background: #fee2e2; color: #dc2626; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock Out">
+            <i class="ph ph-minus"></i>
+          </button>
+          <input id="${inputId}" type="number" value="1" min="1" onclick="event.stopPropagation();" style="width: 50px; height: 30px; text-align: center; border: none; border-left: 1px solid var(--gray-300); border-right: 1px solid var(--gray-300); font-weight: 600; -moz-appearance: textfield; font-size: 0.9rem;" />
+          <button class="btn-adjust plus" onclick="inlineStockAdjust('${item.uniqueId}', 'in', '${inputId}'); event.stopPropagation();" style="border: none; background: #dcfce7; color: #15803d; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock In">
+            <i class="ph ph-plus"></i>
+          </button>
+        </div>
+        `;
 
-            // Stock-based: Show regular action buttons
-            actionsHtml = `
-            <div class="inventory-actions">
-              <button class="btn btn-success btn-sm" onclick="quickStockIn('${product.id}')">+</button>
-              <button class="btn btn-warning btn-sm" onclick="quickStockOut('${product.id}')">-</button>
-              <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')">✏️</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')">🗑️</button>
-            </div>
-            `;
-        }
+        const actionsHtml = `
+        <div class="inventory-actions" style="display: flex; align-items: center; gap: 0.25rem; justify-content: flex-end;">
+          ${inlineAdjusterHtml}
+          <button class="btn btn-primary btn-sm" onclick="${editFn}; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Edit">
+            <i class="ph ph-pencil-simple" style="font-size: 1rem;"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="${deleteFn}; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Delete">
+            <i class="ph ph-trash" style="font-size: 1rem;"></i>
+          </button>
+        </div>
+        `;
 
         return `
       <tr>
         <td class="product-image-cell">
-          <div class="product-image-small">${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}">` : '📦'}</div>
+          <div class="product-image-small">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
         </td>
         <td>
-          <div style="font-weight: 600;">${escapeHtml(product.name)}</div>
-          <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(product.description || '')}</div>
+          <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
+          <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(item.description || '')}</div>
         </td>
-        <td>${escapeHtml(product.sku)}</td>
-        <td>${escapeHtml(product.category)}</td>
+        <td>${escapeHtml(item.sku)}</td>
+        <td>${escapeHtml(item.category)}</td>
         <td>${quantityHtml}</td>
-        <td>${formatCurrency(product.price)}</td>
-        <td>${totalValueHtml}</td>
+        <td>${formatCurrency(item.price)}</td>
+        <td>${formatCurrency(totalValue)}</td>
         <td>
           <span class="stock-status ${stockClass}">${stockStatus.replace('_', ' ')}</span>
         </td>
@@ -414,7 +470,7 @@ async function filterInventoryProducts(query, filter) {
 
     inventoryPaginator.renderControls('inventoryPaginationContainer', paginated.totalPages, (page) => {
         inventoryPaginator.setPage(page);
-        filterInventoryProducts(query, filter);
+        filterInventoryProducts(query, filter, false);
     });
 }
 
@@ -775,8 +831,11 @@ async function showStockInModal() {
     const products = await db.getAll('products');
     const ingredients = await db.getAll('ingredients');
 
+    // Only show stock-based items (exclude availability-only items)
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+
     _stockModalProducts = [
-        ...products.map(p => ({
+        ...stockProducts.map(p => ({
             id: `product_${p.id}`,
             name: p.name,
             stock: p.stock,
@@ -852,8 +911,11 @@ async function showStockOutModal() {
     const products = await db.getAll('products');
     const ingredients = await db.getAll('ingredients');
 
+    // Only show stock-based items (exclude availability-only items)
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+
     _stockModalProducts = [
-        ...products.map(p => ({
+        ...stockProducts.map(p => ({
             id: `product_${p.id}`,
             name: p.name,
             stock: p.stock,
@@ -1124,30 +1186,52 @@ async function showInventoryListModal(type) {
     showLoading('Loading list...');
     try {
         const products = await db.getAll('products');
-        const threshold = Number(getLowStockThreshold());
+        const ingredients = await db.getAll('ingredients');
+        const lowStockThreshold = Number(getLowStockThreshold());
+
+        // Keep stock-based products (exclude availability mode)
+        const stockProducts = products.filter(p => p.stockMode !== 'availability');
+
+        // Combine into standard items
+        const combinedItems = [
+            ...stockProducts.map(p => ({
+                id: `product_${p.id}`,
+                name: p.name,
+                sku: p.sku || 'N/A',
+                stock: Number(p.stock) || 0,
+                isIngredient: false
+            })),
+            ...ingredients.map(i => ({
+                id: `ingredient_${i.id}`,
+                name: `[Ingredient] ${i.name}`,
+                sku: `Unit: ${i.unit || 'pcs'}`,
+                stock: Number(i.stock) || 0,
+                isIngredient: true
+            }))
+        ];
 
         let filtered;
         let title;
         let iconClass;
 
         if (currentAlertType === 'low') {
-            filtered = products.filter(p => {
-                const stock = Number(p.stock);
-                return stock <= threshold && stock > 0;
+            filtered = combinedItems.filter(item => {
+                const threshold = item.isIngredient ? 10 : lowStockThreshold;
+                return item.stock <= threshold && item.stock > 0;
             });
             title = 'Low Stock Items';
             iconClass = 'ph-warning';
         } else {
-            filtered = products.filter(p => Number(p.stock) === 0);
+            filtered = combinedItems.filter(item => item.stock === 0);
             title = 'Out of Stock Items';
             iconClass = 'ph-warning-octagon';
         }
 
         // Apply Search
         if (currentAlertQuery) {
-            filtered = filtered.filter(p =>
-                p.name.toLowerCase().includes(currentAlertQuery) ||
-                p.sku.toLowerCase().includes(currentAlertQuery)
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(currentAlertQuery) ||
+                item.sku.toLowerCase().includes(currentAlertQuery)
             );
         }
 
@@ -1158,7 +1242,7 @@ async function showInventoryListModal(type) {
                         <i class="ph ${iconClass}" style="color: ${currentAlertType === 'low' ? 'var(--warning)' : 'var(--danger)'}; font-size: 1.5rem;"></i>
                         <h3 style="margin: 0;">${title}</h3>
                     </div>
-                    <span style="color: var(--gray-500); font-size: 0.85rem;">${filtered.length} products</span>
+                    <span style="color: var(--gray-500); font-size: 0.85rem;">${filtered.length} items</span>
                 </div>
                 
                 <div class="search-container">
@@ -1218,7 +1302,7 @@ async function showInventoryListModal(type) {
 // Helper to render rows for pagination
 function renderAlertTableRows(products) {
     if (products.length === 0) {
-        return '<tr><td colspan="3" class="table-empty">No products found</td></tr>';
+        return '<tr><td colspan="3" class="table-empty">No items found</td></tr>';
     }
 
     const paginated = alertPaginator.paginate(products);
@@ -1255,4 +1339,44 @@ function debounceAlertSearch(query) {
         showInventoryListModal();
     }, 300);
 }
+
+// Inline stock adjustment helper
+window.inlineStockAdjust = async function (productId, type, inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const qty = parseInt(input.value);
+    if (isNaN(qty) || qty <= 0) {
+        showToast('Please enter a valid quantity', 'warning');
+        return;
+    }
+
+    const isIngredient = productId.startsWith('ingredient_');
+    const dbId = productId.replace('product_', '').replace('ingredient_', '');
+    const collection = isIngredient ? 'ingredients' : 'products';
+    const item = await db.get(collection, dbId);
+    if (!item) {
+        showToast('Item not found', 'error');
+        return;
+    }
+
+    if (type === 'out' && item.stock < qty) {
+        showToast(`Insufficient stock. Available: ${item.stock}`, 'error');
+        return;
+    }
+
+    const actionText = type === 'in' ? 'stock in' : 'stock out';
+    const defaultReason = type === 'in' ? 'Manual stock addition' : 'Manual stock removal';
+    const reason = prompt(`Reason for ${actionText} of ${qty} units for ${item.name}:`, defaultReason);
+    if (reason === null) return; // Cancelled
+
+    // Prepend 'product_' or 'ingredient_' if not present so processStockOperation handles it correctly
+    let fullId = productId;
+    if (!productId.startsWith('product_') && !productId.startsWith('ingredient_')) {
+        fullId = `product_${productId}`;
+    }
+
+    await processStockOperation(fullId, qty, type, reason || defaultReason);
+    // Reset input to 1 after successful operation
+    input.value = 1;
+};
 

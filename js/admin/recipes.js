@@ -218,6 +218,9 @@ async function saveIngredient() {
 
         closeIngredientModal();
         await loadIngredientsData(); // Reload all to refresh UI
+        if (typeof loadInventory === 'function') {
+            await loadInventory();
+        }
 
     } catch (error) {
         console.error('Error saving ingredient:', error);
@@ -245,6 +248,9 @@ async function deleteIngredient(id) {
         await db.delete('ingredients', id);
         showToast('Ingredient deleted successfully', 'success');
         await loadIngredientsData();
+        if (typeof loadInventory === 'function') {
+            await loadInventory();
+        }
     } catch (error) {
         console.error('Error deleting ingredient:', error);
         showToast('Failed to delete ingredient', 'error');
@@ -252,4 +258,8 @@ async function deleteIngredient(id) {
         hideLoading();
     }
 }
+
+// Expose functions globally for the inventory tab access
+window.editIngredient = editIngredient;
+window.deleteIngredient = deleteIngredient;
 
