@@ -380,14 +380,14 @@ window.deleteCollectible = async function (id) {
     }
 };
 
-window.handleCollectiblesSearch = function () {
+window.handleCollectiblesSearch = debounce(function () {
     const input = document.getElementById('collectiblesSearchInput');
     if (input) {
         currentCollectiblesSearch = input.value.trim();
         currentCollectiblesPage = 1; // Reset to first page when searching
         renderCollectibles();
     }
-};
+}, 150);
 
 // Auto-bind search input if it exists
 document.addEventListener('DOMContentLoaded', () => {

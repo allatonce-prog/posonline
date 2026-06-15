@@ -166,4 +166,9 @@ window.filterCashierInventory = function (searchTerm, statusFilter) {
     if (countEl) countEl.textContent = filtered.length;
 };
 
+const debouncedFilterCashierInventoryInput = debounce((searchTerm, statusFilter) => {
+    window.filterCashierInventory(searchTerm, statusFilter);
+}, 150);
+
+window.filterCashierInventoryInput = debouncedFilterCashierInventoryInput;
 window.loadCashierInventory = loadCashierInventory;

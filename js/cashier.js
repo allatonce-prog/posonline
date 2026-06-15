@@ -281,16 +281,19 @@ function isProductAvailable(product) {
 // Render category filters
 function renderCategoryFilters() {
     const filterContainer = document.getElementById('categoryFilter');
+    if (!filterContainer) return;
     filterContainer.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     categories.forEach(category => {
         const btn = document.createElement('button');
         btn.className = 'filter-btn' + (category === 'all' ? ' active' : '');
         btn.textContent = category.charAt(0).toUpperCase() + category.slice(1);
         btn.dataset.category = category;
         btn.addEventListener('click', () => filterByCategory(category));
-        filterContainer.appendChild(btn);
+        fragment.appendChild(btn);
     });
+    filterContainer.appendChild(fragment);
 }
 
 // Filter by category
@@ -324,6 +327,7 @@ function renderProducts(productsToRender) {
     grid.innerHTML = '';
 
     const lowStockThreshold = getLowStockThreshold();
+    const fragment = document.createDocumentFragment();
 
     productsToRender.forEach(product => {
         const card = document.createElement('div');
@@ -364,8 +368,9 @@ function renderProducts(productsToRender) {
             );
         }
 
-        grid.appendChild(card);
+        fragment.appendChild(card);
     });
+    grid.appendChild(fragment);
 }
 
 // Add to cart
@@ -1158,31 +1163,33 @@ function printTransactionReceipt(transaction, transactionId) {
 function setupEventListeners() {
     // Real-time search - instant filtering on every keystroke
     const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-
+    
+    // Snappy visual feedback, debounced rendering
+    const debouncedSearch = debounce((query) => {
         if (!query) {
-            // Remove searching class
-            searchInput.classList.remove('searching');
-
-            // Get current category filter
             const activeFilter = document.querySelector('.filter-btn.active');
             const category = activeFilter ? activeFilter.dataset.category : 'all';
             filterByCategory(category);
             return;
         }
 
-        // Add searching class for visual feedback
-        searchInput.classList.add('searching');
-
-        // Real-time filtering - matches every letter
         const filtered = products.filter(product =>
             product.name.toLowerCase().includes(query) ||
-            product.sku.toLowerCase().includes(query) ||
+            (product.sku && product.sku.toLowerCase().includes(query)) ||
             (product.category && product.category.toLowerCase().includes(query))
         );
 
         renderProducts(filtered);
+    }, 150);
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query) {
+            searchInput.classList.add('searching');
+        } else {
+            searchInput.classList.remove('searching');
+        }
+        debouncedSearch(query);
     });
 
     // Payment method change (single mode)

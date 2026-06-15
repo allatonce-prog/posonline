@@ -13,10 +13,10 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css?v=4.8">
-    <link rel="stylesheet" href="css/cashier.css?v=4.8">
-    <link rel="stylesheet" href="css/cashier-sidebar.css?v=4.8">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=4.8">
+    <link rel="stylesheet" href="css/styles.css?v=5.0">
+    <link rel="stylesheet" href="css/cashier.css?v=5.0">
+    <link rel="stylesheet" href="css/cashier-sidebar.css?v=5.0">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=5.0">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
@@ -510,7 +510,7 @@
                         <i class="ph ph-magnifying-glass"
                             style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:1rem;"></i>
                         <input id="cinvSearch" type="text" placeholder="Search products..."
-                            oninput="filterCashierInventory(this.value, document.getElementById('cinvStatusFilter').value)"
+                            oninput="filterCashierInventoryInput(this.value, document.getElementById('cinvStatusFilter').value)"
                             style="width:100%;padding:0.45rem 0.5rem 0.45rem 2rem;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;background:white;">
                     </div>
                     <select id="cinvStatusFilter"
@@ -896,17 +896,17 @@
     <!-- Printable Area (Hidden by default, shown while printing) -->
     <div id="receipt-printable" style="display: none;"></div>
 
-    <script type="module" src="js/offline-db.js?v=4.5"></script>
-    <script src="js/auth.js?v=4.5"></script>
-    <script src="js/utils.js?v=4.5"></script>
-    <script src="js/mobile-stability.js?v=4.5"></script>
-    <script src="js/admin/settings.js?v=4.5"></script>
-    <script src="js/collectibles-payment.js"></script>
-    <script src="js/cashier.js"></script>
-    <script src="js/cashier-sales.js"></script>
-    <script src="js/cashier-expenses.js"></script>
-    <script src="js/cashier-collectibles.js"></script>
-    <script src="js/cashier-stock-tracker.js"></script>
+    <script type="module" src="js/offline-db.js?v=5.0"></script>
+    <script src="js/auth.js?v=5.0"></script>
+    <script src="js/utils.js?v=5.0"></script>
+    <script src="js/mobile-stability.js?v=5.0"></script>
+    <script src="js/admin/settings.js?v=5.0"></script>
+    <script src="js/collectibles-payment.js?v=5.0"></script>
+    <script src="js/cashier.js?v=5.0"></script>
+    <script src="js/cashier-sales.js?v=5.0"></script>
+    <script src="js/cashier-expenses.js?v=5.0"></script>
+    <script src="js/cashier-collectibles.js?v=5.0"></script>
+    <script src="js/cashier-stock-tracker.js?v=5.0"></script>
     <script>
         // Apply custom settings to cashier page
         document.addEventListener('DOMContentLoaded', () => {
@@ -1125,13 +1125,16 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const searchInput = document.getElementById('collectibleProductSearch');
                 if (searchInput) {
-                    searchInput.addEventListener('input', (e) => {
-                        const query = e.target.value.toLowerCase();
+                    const debouncedCollectibleSearch = debounce((query) => {
                         const filtered = collectibleProducts.filter(p =>
                             p.name.toLowerCase().includes(query) ||
                             (p.sku && p.sku.toLowerCase().includes(query))
                         );
                         renderCollectibleProductsCheckboxes(filtered);
+                    }, 150);
+
+                    searchInput.addEventListener('input', (e) => {
+                        debouncedCollectibleSearch(e.target.value.toLowerCase().trim());
                     });
                 }
             });
@@ -1995,9 +1998,9 @@
         }
     </script>
 
-    <script src="js/cashier-inventory.js"></script>
-    <script src="js/cashier-recipes.js"></script>
-    <script src="js/pull-to-refresh.js"></script>
+    <script src="js/cashier-inventory.js?v=5.0"></script>
+    <script src="js/cashier-recipes.js?v=5.0"></script>
+    <script src="js/pull-to-refresh.js?v=5.0"></script>
 </body>
 
 </html>

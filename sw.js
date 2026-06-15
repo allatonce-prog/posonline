@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v19';
+const CACHE_NAME = 'pos-system-v20';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,10 +7,23 @@ const urlsToCache = [
   './css/styles.css',
   './css/cashier.css',
   './css/admin.css',
+  './css/cashier-sidebar.css',
+  './css/mobile-no-zoom.css',
   './js/firebase-db.js',
+  './js/offline-db.js',
   './js/auth.js',
   './js/utils.js',
+  './js/mobile-stability.js',
+  './js/admin/settings.js',
+  './js/collectibles-payment.js',
   './js/cashier.js',
+  './js/cashier-sales.js',
+  './js/cashier-expenses.js',
+  './js/cashier-collectibles.js',
+  './js/cashier-stock-tracker.js',
+  './js/cashier-recipes.js',
+  './js/cashier-inventory.js',
+  './js/pull-to-refresh.js',
   './js/admin.js',
   './js/admin/products.js',
   './js/admin/inventory.js',
@@ -20,7 +33,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Installing v9...');
+  console.log('[ServiceWorker] Installing v20...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
