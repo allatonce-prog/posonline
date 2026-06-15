@@ -2447,4 +2447,23 @@ body.dark-mode .toast.undo-toast {
     .cart-items {
         padding: 2rem;
     }
+}
+
+/* Mobile Category Filter Horizontal Scroll */
+@media (max-width: 1024px) {
+    .category-filter {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+    }
+    .category-filter::-webkit-scrollbar {
+        display: none !important;
+    }
+    .category-filter .filter-btn {
+        flex-shrink: 0;
+    }
 }
