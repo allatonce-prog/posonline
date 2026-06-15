@@ -334,8 +334,8 @@ window.changeSalesPage = function (page) {
             font-weight: 800;
             margin-top: 0.5rem;
             padding-top: 0.5rem;
-            border-top: 2px solid rgba(99,102,241,0.2);
-            color: #6366f1;
+            border-top: 2px solid rgba(16,185,129,0.2);
+            color: var(--primary);
         }
         .sale-breakdown-row .label { color: var(--gray-600, #4b5563); }
         .sale-breakdown-row .value { font-weight: 600; }
@@ -382,7 +382,7 @@ window.viewTransactionDetails = async function (transactionId) {
             document.getElementById('saleBreakdownVoidedBadge').style.display = 'block';
             document.getElementById('saleBreakdownHeader').style.background = 'linear-gradient(135deg,#ef4444 0%,#dc2626 100%)';
         } else {
-            document.getElementById('saleBreakdownHeader').style.background = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)';
+            document.getElementById('saleBreakdownHeader').style.background = 'linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%)';
         }
 
         // Void reason
@@ -449,8 +449,8 @@ window.viewTransactionDetails = async function (transactionId) {
         const change = transaction.change || Math.max(0, amountPaid - total);
         document.getElementById('saleBreakdownPaymentInfo').innerHTML = `
             <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
-                <i class="ph ph-credit-card" style="font-size:1.1rem;color:#6366f1;"></i>
-                <span style="font-weight:700;font-size:0.95rem;color:#6366f1;">Payment Info</span>
+                <i class="ph ph-credit-card" style="font-size:1.1rem;color:var(--primary);"></i>
+                <span style="font-weight:700;font-size:0.95rem;color:var(--primary);">Payment Info</span>
             </div>
             <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
                 <span class="label">Method</span>

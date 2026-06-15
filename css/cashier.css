@@ -1,11 +1,17 @@
 /* Cashier Interface Styles */
 
 :root {
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --primary-light: #34d399;
+    --secondary: #059669;
+    --secondary-dark: #047857;
+
     /* Premium Design Tokens */
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(255, 255, 255, 0.3);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    --primary-glow: rgba(99, 102, 241, 0.3);
+    --glass-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.1);
+    --primary-glow: rgba(16, 185, 129, 0.15);
     --surface-light: #fdfdff;
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -85,7 +91,7 @@
 
 /* Header */
 .cashier-header {
-    background: rgba(99, 102, 241, 0.95) !important;
+    background: linear-gradient(90deg, #022c22 0%, #01120d 100%) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     color: var(--white);
@@ -93,12 +99,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     position: sticky;
     top: 0;
     z-index: 1000;
     flex-shrink: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .cashier-header h1 {
@@ -396,7 +402,7 @@ textarea:focus {
     outline: none;
     background: var(--white);
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
 body.dark-mode .card {
@@ -782,7 +788,7 @@ body.dark-mode .action-btn:hover {
 .search-box input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.01);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.01);
     transform: translateY(-1px);
 }
 
@@ -1273,7 +1279,7 @@ body.dark-mode .action-btn:hover {
 .qty-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
-    background: rgba(99, 102, 241, 0.05);
+    background: rgba(16, 185, 129, 0.05);
 }
 
 .qty-input {
@@ -1615,13 +1621,13 @@ body.dark-mode .toast.undo-toast {
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
 }
 
 .btn-checkout:hover {
     background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
 }
 
 .btn-clear {

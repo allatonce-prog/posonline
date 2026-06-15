@@ -13,10 +13,10 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css?v=4.7">
-    <link rel="stylesheet" href="css/cashier.css?v=4.7">
-    <link rel="stylesheet" href="css/cashier-sidebar.css?v=4.7">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=4.7">
+    <link rel="stylesheet" href="css/styles.css?v=4.8">
+    <link rel="stylesheet" href="css/cashier.css?v=4.8">
+    <link rel="stylesheet" href="css/cashier-sidebar.css?v=4.8">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=4.8">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
@@ -226,7 +226,7 @@
             <div id="saleBreakdownModal" class="modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;">
                 <div style="background:var(--card-bg, #fff); border-radius:20px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.3); position:relative; animation: slideUpModal 0.3s cubic-bezier(0.34,1.56,0.64,1);">
                     <!-- Modal Header -->
-                    <div id="saleBreakdownHeader" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%); padding:1.5rem; border-radius:20px 20px 0 0; color:white; text-align:center;">
+                    <div id="saleBreakdownHeader" style="background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%); padding:1.5rem; border-radius:20px 20px 0 0; color:white; text-align:center;">
                         <div style="font-size:2.5rem; margin-bottom:0.5rem;">🧾</div>
                         <h3 style="margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-0.01em;">Transaction Details</h3>
                         <p id="saleBreakdownId" style="margin:0.25rem 0 0; font-size:0.85rem; opacity:0.85;"></p>
@@ -253,7 +253,7 @@
                         </div>
 
                         <!-- Payment Info -->
-                        <div id="saleBreakdownPaymentInfo" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.08) 100%); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:1rem; margin-bottom:1rem;"></div>
+                        <div id="saleBreakdownPaymentInfo" style="background:linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(5,150,105,0.08) 100%); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:1rem; margin-bottom:1rem;"></div>
 
                         <!-- Void Reason -->
                         <div id="saleBreakdownVoidReason" style="display:none; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:0.75rem 1rem; margin-bottom:1rem; color:#dc2626; font-size:0.9rem;"></div>
@@ -262,7 +262,7 @@
                     <!-- Footer -->
                     <div style="padding:0 1.25rem 1.25rem; display:flex; gap:0.75rem;">
                         <button onclick="closeSaleBreakdownModal()" class="btn btn-secondary" style="flex:1; border-radius:12px; padding:0.85rem;">Close</button>
-                        <button id="saleBreakdownReprintBtn" class="btn btn-primary" style="flex:1; border-radius:12px; padding:0.85rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:none;">
+                        <button id="saleBreakdownReprintBtn" class="btn btn-primary" style="flex:1; border-radius:12px; padding:0.85rem; background:linear-gradient(135deg,var(--primary),var(--secondary)); border:none;">
                             <i class="ph ph-printer"></i> Reprint
                         </button>
                     </div>
@@ -369,7 +369,7 @@
 
                 <!-- Header -->
                 <div
-                    style="background:linear-gradient(135deg,var(--primary) 0%,#4f46e5 100%);padding:1.5rem 1.25rem 1rem;color:white;">
+                    style="background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);padding:1.5rem 1.25rem 1rem;color:white;">
                     <div style="display:flex;align-items:center;justify-content:space-between;">
                         <div>
                             <h2 style="margin:0;font-size:1.2rem;font-weight:800;">Modifier Stock</h2>
@@ -610,7 +610,7 @@
             <div class="modal-body">
 
                 <!-- Bill Total Display -->
-                <div style="background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 600;">Bill Total</span>
                     <span id="checkoutTotal" style="color: white; font-size: 1.5rem; font-weight: 800;">₱0.00</span>
                 </div>
@@ -667,7 +667,7 @@
                                 style="width: 100%; border: none; background: transparent; font-size: 1.1rem; font-weight: 700; color: var(--dark); outline: none; padding: 0;">
                         </div>
                         <!-- GCash -->
-                        <div style="background: rgba(99,102,241,0.07); border: 1.5px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 0.85rem;">
+                        <div style="background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 0.85rem;">
                             <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
                                 <span style="font-size: 1.1rem;">📱</span>
                                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em;">GCash</span>

@@ -199,7 +199,7 @@ async function renderCollectibles() {
                             <button class="btn btn-secondary" onclick="event.stopPropagation(); addToExistingCollectible('${c.customerName}')" style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600;">
                                 <i class="ph ph-plus-circle" style="font-size: 1.1rem;"></i> Add Items
                             </button>
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); showCollectPaymentModal('${c.id}')" style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); showCollectPaymentModal('${c.id}')" style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
                                 <i class="ph ph-keyboard" style="font-size: 1.1rem;"></i> Collect
                             </button>
                         ` : `

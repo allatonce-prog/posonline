@@ -1516,14 +1516,14 @@ function renderSalesList(sales) {
                     <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
                         💵 ₱${(sale.cashAmount || 0).toFixed(2)}
                     </span>
-                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
                         📱 ₱${(sale.gcashAmount || 0).toFixed(2)}
                     </span>
                 </div>`;
         } else if (sale.paymentMethod === 'cash') {
             paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💵 Cash</span>`;
         } else if (sale.paymentMethod === 'mobile') {
-            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📱 GCash</span>`;
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📱 GCash</span>`;
         } else if (sale.paymentMethod === 'card') {
             paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💳 Card</span>`;
         } else {
@@ -1627,7 +1627,7 @@ window.viewTransactionDetails = function (transactionId) {
                     <div style="font-size: 0.75rem; font-weight: 700; color: #059669;">💵 Cash</div>
                     <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.cashAmount || 0)}</div>
                 </div>
-                <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
+                <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
                     <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">📱 GCash</div>
                     <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.gcashAmount || 0)}</div>
                 </div>
