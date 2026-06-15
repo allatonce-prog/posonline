@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v20';
+const CACHE_NAME = 'pos-system-v21';
 const urlsToCache = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const urlsToCache = [
   './css/admin.css',
   './css/cashier-sidebar.css',
   './css/mobile-no-zoom.css',
+  './css/recipes.css',
   './js/firebase-db.js',
   './js/offline-db.js',
   './js/auth.js',
@@ -25,15 +26,28 @@ const urlsToCache = [
   './js/cashier-inventory.js',
   './js/pull-to-refresh.js',
   './js/admin.js',
+  './js/admin/dashboard-charts.js',
+  './js/admin/time-range.js',
   './js/admin/products.js',
+  './js/admin/recipes.js',
+  './js/admin/modifiers.js',
   './js/admin/inventory.js',
   './js/admin/sales.js',
-  './js/admin/reports.js'
+  './js/admin/daily-collections.js',
+  './js/admin/expenses.js',
+  './js/admin/salaries.js',
+  './js/admin/deliveries.js',
+  './js/admin/reports.js',
+  './js/admin/users.js',
+  './js/admin/collectibles.js',
+  './js/admin/store-switcher.js',
+  './js/admin/notifications.js',
+  './js/admin/item-sales.js'
 ];
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Installing v20...');
+  console.log('[ServiceWorker] Installing v21...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {

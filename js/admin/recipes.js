@@ -16,11 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Search Listener
     const searchInput = document.getElementById('ingredientSearchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', debounce((e) => {
             const term = e.target.value.toLowerCase();
             const filtered = allIngredients.filter(i => i.name.toLowerCase().includes(term));
             renderIngredientsList(filtered);
-        });
+        }, 150));
     }
 });
 
@@ -64,6 +64,8 @@ function renderIngredientsList(ingredients = allIngredients) {
 
     // Sort by name
     const sortedDetails = [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
+
+    const fragment = document.createDocumentFragment();
 
     sortedDetails.forEach(ing => {
         const totalValue = (parseFloat(ing.stock) * parseFloat(ing.cost)).toFixed(2);
@@ -124,8 +126,10 @@ function renderIngredientsList(ingredients = allIngredients) {
                 </div>
             </div>
         `;
-        listContainer.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    listContainer.appendChild(fragment);
 }
 
 // Ingredient Modal Functions

@@ -14,11 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Search Listener
     const searchInput = document.getElementById('modifierSearchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', debounce((e) => {
             const term = e.target.value.toLowerCase();
             const filtered = allModifiers.filter(m => m.name.toLowerCase().includes(term));
             renderModifiersList(filtered);
-        });
+        }, 150));
     }
 });
 
@@ -84,6 +84,8 @@ function renderModifiersList(modifiers = allModifiers) {
 
     // Sort by name
     const sortedModifiers = [...modifiers].sort((a, b) => a.name.localeCompare(b.name));
+
+    const fragment = document.createDocumentFragment();
 
     sortedModifiers.forEach(mod => {
         const optionCount = mod.options ? mod.options.length : 0;
@@ -153,8 +155,10 @@ function renderModifiersList(modifiers = allModifiers) {
                 ${optionsPreview}
             </div>
         `;
-        listContainer.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    listContainer.appendChild(fragment);
 }
 
 // UI Helpers for Modal

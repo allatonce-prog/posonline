@@ -1004,25 +1004,29 @@ document.addEventListener('DOMContentLoaded', () => {
     setupInventoryFilters();
 
     // Add search listeners for modals
-    document.getElementById('stockInSearch')?.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
+    document.getElementById('stockInSearch')?.addEventListener('input', debounce(() => {
+        const searchInput = document.getElementById('stockInSearch');
+        if (!searchInput) return;
+        const query = searchInput.value.toLowerCase().trim();
         const filtered = _stockModalProducts.filter(p => {
             const typeMatch = _stockInTypeFilter === 'all' || p.type === _stockInTypeFilter;
             const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
             return typeMatch && queryMatch;
         });
         renderSearchableOptions('stockInSelect', filtered);
-    });
+    }, 150));
 
-    document.getElementById('stockOutSearch')?.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
+    document.getElementById('stockOutSearch')?.addEventListener('input', debounce(() => {
+        const searchInput = document.getElementById('stockOutSearch');
+        if (!searchInput) return;
+        const query = searchInput.value.toLowerCase().trim();
         const filtered = _stockModalProducts.filter(p => {
             const typeMatch = _stockOutTypeFilter === 'all' || p.type === _stockOutTypeFilter;
             const queryMatch = !query || p.name.toLowerCase().includes(query) || p.meta.toLowerCase().includes(query);
             return typeMatch && queryMatch;
         });
         renderSearchableOptions('stockOutSelect', filtered);
-    });
+    }, 150));
 
     // Close searchable selects on outside click
     document.addEventListener('click', (e) => {

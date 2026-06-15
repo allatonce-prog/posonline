@@ -511,6 +511,13 @@ function populateCategoryFilter(products) {
         .filter(c => c && c.trim())
     )].sort();
 
+    // Check if categories did not change to avoid layout thrashing
+    const currentCategoriesString = categories.join('||');
+    if (categoryFilter.dataset.lastCategories === currentCategoriesString) {
+        return;
+    }
+    categoryFilter.dataset.lastCategories = currentCategoriesString;
+
     // Keep the current selection
     const currentValue = categoryFilter.value;
 
@@ -1070,9 +1077,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Product search and filter event listeners
     const productSearchInput = document.getElementById('productSearchInput');
     if (productSearchInput) {
-        productSearchInput.addEventListener('input', () => {
+        productSearchInput.addEventListener('input', debounce(() => {
             loadProducts(false);
-        });
+        }, 150));
     }
 
     const productCategoryFilter = document.getElementById('productCategoryFilter');
@@ -1178,6 +1185,8 @@ function renderRecipeIngredientRows() {
     if (emptyState) emptyState.style.display = 'none';
     listContainer.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
+
     currentRecipeIngredients.forEach((item, index) => {
         const row = document.createElement('div');
         row.style.cssText = `
@@ -1232,8 +1241,10 @@ function renderRecipeIngredientRows() {
                 <i class="ph ph-x"></i>
             </button>
         `;
-        listContainer.appendChild(row);
+        fragment.appendChild(row);
     });
+
+    listContainer.appendChild(fragment);
 
     updateRecipeTotals();
 }
