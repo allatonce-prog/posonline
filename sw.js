@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v21';
+const CACHE_NAME = 'pos-system-v22';
 const urlsToCache = [
   './',
   './index.html',
@@ -47,7 +47,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Installing v21...');
+  console.log('[ServiceWorker] Installing v22...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {

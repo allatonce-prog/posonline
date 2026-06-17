@@ -27,7 +27,7 @@
     <!-- iOS Cache Buster - Force reload if old version detected -->
     <script>
         (function () {
-            const CURRENT_VERSION = '4.14';
+            const CURRENT_VERSION = '4.16';
             const storedVersion = localStorage.getItem('admin_js_version');
 
             // If version mismatch or first load, clear everything and reload
@@ -89,74 +89,133 @@
             </div>
 
             <nav class="admin-nav">
-                <div class="nav-item active" data-tab="dashboard">
-                    <i class="ph ph-squares-four nav-icon"></i>
-                    <span>Dashboard</span>
-                </div>
-                <div class="nav-item" data-tab="products">
-                    <i class="ph ph-package nav-icon"></i>
-                    <span>Products</span>
-                </div>
-                <div class="nav-item" data-tab="recipes">
-                    <i class="ph ph-chef-hat nav-icon"></i>
-                    <span>Recipes</span>
-                </div>
-                <div class="nav-item" data-tab="modifiers">
-                    <i class="ph ph-list-plus nav-icon"></i>
-                    <span>Modifiers</span>
+                <!-- Overview -->
+                <div class="nav-section" id="section-overview">
+                    <div class="nav-section-header">
+                        <div class="section-title-wrap">
+                            <i class="ph ph-gauge section-icon"></i>
+                            <span>Overview</span>
+                        </div>
+                        <i class="ph ph-caret-down section-caret"></i>
+                    </div>
+                    <div class="nav-section-content">
+                        <div class="nav-item active" data-tab="dashboard">
+                            <i class="ph ph-squares-four nav-icon"></i>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="nav-item" data-tab="reports">
+                            <i class="ph ph-chart-line-up nav-icon"></i>
+                            <span>Reports</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="nav-item" data-tab="inventory">
-                    <i class="ph ph-clipboard-text nav-icon"></i>
-                    <span>Inventory</span>
+                <!-- Catalog -->
+                <div class="nav-section" id="section-catalog">
+                    <div class="nav-section-header">
+                        <div class="section-title-wrap">
+                            <i class="ph ph-folder-open section-icon"></i>
+                            <span>Catalog</span>
+                        </div>
+                        <i class="ph ph-caret-down section-caret"></i>
+                    </div>
+                    <div class="nav-section-content">
+                        <div class="nav-item" data-tab="products">
+                            <i class="ph ph-package nav-icon"></i>
+                            <span>Products</span>
+                        </div>
+                        <div class="nav-item" data-tab="recipes">
+                            <i class="ph ph-chef-hat nav-icon"></i>
+                            <span>Recipes</span>
+                        </div>
+                        <div class="nav-item" data-tab="modifiers">
+                            <i class="ph ph-list-plus nav-icon"></i>
+                            <span>Modifiers</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="nav-item" data-tab="history">
-                    <i class="ph ph-clock-counter-clockwise nav-icon"></i>
-                    <span>History</span>
+
+                <!-- Operations -->
+                <div class="nav-section" id="section-operations">
+                    <div class="nav-section-header">
+                        <div class="section-title-wrap">
+                            <i class="ph ph-arrows-left-right section-icon"></i>
+                            <span>Operations</span>
+                        </div>
+                        <i class="ph ph-caret-down section-caret"></i>
+                    </div>
+                    <div class="nav-section-content">
+                        <div class="nav-item" data-tab="inventory">
+                            <i class="ph ph-clipboard-text nav-icon"></i>
+                            <span>Inventory</span>
+                        </div>
+                        <div class="nav-item" data-tab="history">
+                            <i class="ph ph-clock-counter-clockwise nav-icon"></i>
+                            <span>History</span>
+                        </div>
+                        <div class="nav-item" data-tab="deliveries">
+                            <i class="ph ph-truck nav-icon"></i>
+                            <span>Deliveries</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="nav-item" data-tab="sales">
-                    <i class="ph ph-receipt nav-icon"></i>
-                    <span>Sales</span>
+
+                <!-- Finance -->
+                <div class="nav-section" id="section-finance">
+                    <div class="nav-section-header">
+                        <div class="section-title-wrap">
+                            <i class="ph ph-bank section-icon"></i>
+                            <span>Finance</span>
+                        </div>
+                        <i class="ph ph-caret-down section-caret"></i>
+                    </div>
+                    <div class="nav-section-content">
+                        <div class="nav-item" data-tab="sales">
+                            <i class="ph ph-receipt nav-icon"></i>
+                            <span>Sales</span>
+                        </div>
+                        <div class="nav-item" data-tab="item-sales">
+                            <i class="ph ph-chart-bar nav-icon"></i>
+                            <span>Item Sales</span>
+                        </div>
+                        <div class="nav-item" data-tab="collections">
+                            <i class="ph ph-hand-coins nav-icon"></i>
+                            <span>Collections</span>
+                        </div>
+                        <div class="nav-item" data-tab="collectibles">
+                            <i class="ph ph-coins nav-icon"></i>
+                            <span>Collectibles</span>
+                        </div>
+                        <div class="nav-item" data-tab="expenses">
+                            <i class="ph ph-money nav-icon"></i>
+                            <span>Expenses</span>
+                        </div>
+                        <div class="nav-item" data-tab="salaries">
+                            <i class="ph ph-wallet nav-icon"></i>
+                            <span>Salaries</span>
+                        </div>
+                    </div>
                 </div>
-                <!-- Item Sales Tab -->
-                <div class="nav-item" data-tab="item-sales">
-                    <i class="ph ph-chart-bar nav-icon"></i>
-                    <span>Item Sales</span>
-                </div>
-                <!-- Collections Tab (Payments) -->
-                <div class="nav-item" data-tab="collections">
-                    <i class="ph ph-hand-coins nav-icon"></i>
-                    <span>Collections</span>
-                </div>
-                <!-- Collectibles Tab (Accounts) -->
-                <div class="nav-item" data-tab="collectibles">
-                    <i class="ph ph-coins nav-icon"></i>
-                    <span>Collectibles</span>
-                </div>
-                <div class="nav-item" data-tab="expenses">
-                    <i class="ph ph-money nav-icon"></i>
-                    <span>Expenses</span>
-                </div>
-                <!-- Salaries Tab -->
-                <div class="nav-item" data-tab="salaries">
-                    <i class="ph ph-wallet nav-icon"></i>
-                    <span>Salaries</span>
-                </div>
-                <div class="nav-item" data-tab="deliveries">
-                    <i class="ph ph-truck nav-icon"></i>
-                    <span>Deliveries</span>
-                </div>
-                <div class="nav-item" data-tab="reports">
-                    <i class="ph ph-chart-line-up nav-icon"></i>
-                    <span>Reports</span>
-                </div>
-                <div class="nav-item" data-tab="users">
-                    <i class="ph ph-users nav-icon"></i>
-                    <span>Users</span>
-                </div>
-                <div class="nav-item" data-tab="settings">
-                    <i class="ph ph-gear nav-icon"></i>
-                    <span>Settings</span>
+
+                <!-- Management -->
+                <div class="nav-section" id="section-management">
+                    <div class="nav-section-header">
+                        <div class="section-title-wrap">
+                            <i class="ph ph-sliders section-icon"></i>
+                            <span>Management</span>
+                        </div>
+                        <i class="ph ph-caret-down section-caret"></i>
+                    </div>
+                    <div class="nav-section-content">
+                        <div class="nav-item" data-tab="users">
+                            <i class="ph ph-users nav-icon"></i>
+                            <span>Users</span>
+                        </div>
+                        <div class="nav-item" data-tab="settings">
+                            <i class="ph ph-gear nav-icon"></i>
+                            <span>Settings</span>
+                        </div>
+                    </div>
                 </div>
             </nav>
 
@@ -250,6 +309,31 @@
                         <div id="selectedRangeDisplay"
                             style="text-align: center; font-size: 0.9rem; color: var(--gray-600); font-weight: 500; margin-top: 0.75rem; padding: 0.5rem; background: var(--gray-100); border-radius: 8px;">
                             <!-- Will show selected date range -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Panel -->
+                    <div class="quick-actions-panel">
+                        <div class="quick-actions-title">
+                            <i class="ph ph-lightning"></i> Quick Actions
+                        </div>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" onclick="showStockInModal()">
+                                <i class="ph ph-download-simple" style="color: var(--primary);"></i>
+                                <span>Stock In</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="showAddExpenseModal()">
+                                <i class="ph ph-receipt" style="color: #ef4444;"></i>
+                                <span>Add Expense</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="showAddProductModal()">
+                                <i class="ph ph-plus" style="color: #6366f1;"></i>
+                                <span>Add Product</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="showAddDeliveryModal()">
+                                <i class="ph ph-truck" style="color: #f59e0b;"></i>
+                                <span>New Delivery</span>
+                            </button>
                         </div>
                     </div>
 
@@ -440,7 +524,13 @@
 
                                 <!-- Search -->
                                 <input type="text" id="itemSalesSearch" placeholder="Search product..."
-                                    class="form-control" style="max-width:180px;">
+                                    class="form-control" style="max-width:180px;height:36px;">
+                                <button class="btn btn-secondary" onclick="exportItemSales(event)" style="display: inline-flex; align-items: center; gap: 0.25rem; height: 36px; padding: 0 0.75rem;">
+                                    <i class="ph ph-file-csv" style="font-size: 1.1rem;"></i> CSV
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportItemSalesPDF(event)" style="display: inline-flex; align-items: center; gap: 0.25rem; height: 36px; padding: 0 0.75rem;">
+                                    <i class="ph ph-file-pdf" style="font-size: 1.1rem;"></i> PDF
+                                </button>
                             </div>
                         </div>
 
@@ -585,8 +675,11 @@
                                 <button class="btn btn-warning" onclick="showStockOutModal()">
                                     - Stock Out
                                 </button>
-                                <button class="btn btn-secondary" onclick="exportInventory()">
-                                    📊 Export
+                                <button class="btn btn-secondary" onclick="exportInventory(event)" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <i class="ph ph-file-csv" style="font-size: 1.1rem;"></i> CSV
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportInventoryPDF(event)" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    <i class="ph ph-file-pdf" style="font-size: 1.1rem;"></i> PDF
                                 </button>
                             </div>
                         </div>
@@ -715,10 +808,16 @@
                                     <option value="yesterday">Yesterday</option>
                                     <option value="last7days">Last 7 Days</option>
                                 </select>
-                                <select id="salesCashierFilter" class="form-control" style="max-width: 150px;"
+                                <select id="salesCashierFilter" class="form-control" style="max-width: 150px; margin-right: 0.5rem;"
                                     onchange="loadSales()">
                                     <option value="all">All Cashiers</option>
                                 </select>
+                                <button class="btn btn-secondary" onclick="exportSales(event)" style="display: inline-flex; align-items: center; gap: 0.25rem; height: 38px; padding: 0 0.75rem;">
+                                    <i class="ph ph-file-csv" style="font-size: 1.1rem;"></i> CSV
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportSalesPDF(event)" style="display: inline-flex; align-items: center; gap: 0.25rem; height: 38px; padding: 0 0.75rem;">
+                                    <i class="ph ph-file-pdf" style="font-size: 1.1rem;"></i> PDF
+                                </button>
                             </div>
                         </div>
                         <table class="data-table" style="border-collapse: separate; border-spacing: 0;">
@@ -2155,6 +2254,32 @@
                     style="display: none; margin-right: auto;">Delete</button>
                 <button class="btn btn-secondary" onclick="closeModifierModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveModifier()">Save Modifier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Expense Modal -->
+    <div class="modal" id="adminExpenseModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Record Expense</h2>
+                <button class="modal-close" onclick="closeAdminExpenseModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="adminExpenseForm" onsubmit="saveAdminExpense(event)">
+                    <div class="form-group">
+                        <label for="adminExpenseAmount">Amount (₱) *</label>
+                        <input type="number" id="adminExpenseAmount" class="form-control" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminExpenseReason">Reason / Description *</label>
+                        <input type="text" id="adminExpenseReason" class="form-control" placeholder="e.g. Electricity, Water, Supplies, Rent" required>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeAdminExpenseModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Expense</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

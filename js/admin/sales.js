@@ -391,9 +391,47 @@ function closeTransactionModal() {
   document.body.classList.remove('modal-open');
 }
 
-// Export sales to CSV
-async function exportSales() {
+// Helper to get filtered transactions
+async function getFilteredTransactions() {
   const transactions = await db.getAll('transactions');
+  const dateFilter = document.getElementById('salesFilter')?.value || 'today';
+  const cashierFilter = document.getElementById('salesCashierFilter')?.value || 'all';
+
+  let filteredTransactions = transactions.filter(t => t.type !== 'collectible_payment');
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (cashierFilter !== 'all') {
+    filteredTransactions = filteredTransactions.filter(t => t.cashier === cashierFilter);
+  }
+
+  if (dateFilter === 'today') {
+    filteredTransactions = filteredTransactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate >= today && tDate < new Date(today.getTime() + 86400000);
+    });
+  } else if (dateFilter === 'yesterday') {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    filteredTransactions = filteredTransactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate >= yesterday && tDate < today;
+    });
+  } else if (dateFilter === 'last7days') {
+    const last7Days = new Date(today);
+    last7Days.setDate(last7Days.getDate() - 7);
+    filteredTransactions = filteredTransactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate >= last7Days;
+    });
+  }
+  return filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// Export sales to CSV
+async function exportSales(event) {
+  if (event) event.stopPropagation();
+  const transactions = await getFilteredTransactions();
 
   if (transactions.length === 0) {
     showToast('No sales data to export', 'warning');
@@ -402,13 +440,12 @@ async function exportSales() {
 
   // Prepare data for export
   const exportData = transactions.map(t => ({
-    'Transaction ID': t.id,
+    'Transaction ID': formatTransactionId(t.id),
     'Date': formatDateTime(t.date),
     'Cashier': t.cashier,
     'Customer': t.customerName || 'Walk-in',
     'Items': t.items.length,
     'Subtotal': t.subtotal.toFixed(2),
-    // 'Tax': t.tax.toFixed(2), // Removed
     'Total': t.total.toFixed(2),
     'Payment Method': t.paymentMethod,
     'Cash Amount': t.paymentMethod === 'split' ? (t.cashAmount || 0).toFixed(2) : (t.paymentMethod === 'cash' ? (t.total || 0).toFixed(2) : ''),
@@ -418,6 +455,32 @@ async function exportSales() {
   const filename = `sales_export_${new Date().toISOString().split('T')[0]}.csv`;
   exportToCSV(exportData, filename);
 }
+
+// Export sales to PDF
+async function exportSalesPDF(event) {
+  if (event) event.stopPropagation();
+  const transactions = await getFilteredTransactions();
+
+  if (transactions.length === 0) {
+    showToast('No sales data to export', 'warning');
+    return;
+  }
+
+  const headers = ['Transaction ID', 'Date', 'Cashier', 'Customer', 'Items Count', 'Total', 'Payment Method'];
+  const rows = transactions.map(t => [
+    formatTransactionId(t.id),
+    formatDateTime(t.date),
+    t.cashier,
+    t.customerName || 'Walk-in',
+    t.items.length,
+    formatCurrency(t.total),
+    t.paymentMethod === 'split' ? 'Cash + GCash' : (t.paymentMethod || 'Cash')
+  ]);
+
+  const filename = `sales_export_${new Date().toISOString().split('T')[0]}.pdf`;
+  exportToPDF('Sales Report', headers, rows, filename);
+}
+
 
 // Close modal on outside click
 document.addEventListener('DOMContentLoaded', () => {

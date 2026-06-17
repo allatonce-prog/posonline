@@ -289,13 +289,13 @@ async function loadProducts(forceRefresh = true) {
 
         return `
       <tr onclick="editProduct('${product.id}')" style="cursor: pointer;">
-        <td data-label="SKU">${escapeHtml(product.sku)}</td>
+        <td data-label="SKU" class="editable-cell" data-field="sku" data-id="${product.id}" onclick="event.stopPropagation();">${escapeHtml(product.sku)}</td>
         <td data-label="Name" style="font-weight: 600; color: var(--dark);">
             ${escapeHtml(product.name)}
             ${product.hasRecipe ? '<span title="Recipe Product">🍔</span>' : ''}
         </td>
         <td data-label="Category">${escapeHtml(product.category || '-')}</td>
-        <td data-label="Price" style="font-weight: 500;">${formatCurrency(product.price)}</td>
+        <td data-label="Price" class="editable-cell" data-field="price" data-id="${product.id}" onclick="event.stopPropagation();" style="font-weight: 500;">${formatCurrency(product.price)}</td>
         <td data-label="Stock">${stockHtml}</td>
         <td data-label="Actions">
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
@@ -1307,4 +1307,103 @@ function updateRecipeTotals() {
         pInput.dataset.recipeListener = 'true';
     }
 }
+
+// Inline Table Editing for Products Tab
+document.addEventListener('DOMContentLoaded', () => {
+    const productsTable = document.getElementById('productsTable');
+    if (!productsTable) return;
+
+    productsTable.addEventListener('dblclick', async (e) => {
+        const cell = e.target.closest('.editable-cell');
+        if (!cell) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+
+        const field = cell.dataset.field;
+        const productId = cell.dataset.id;
+        if (!field || !productId) return;
+
+        // If already editing, ignore
+        if (cell.querySelector('input')) return;
+
+        const product = await db.get('products', productId);
+        if (!product) return;
+
+        const currentValue = product[field];
+        const input = document.createElement('input');
+        input.type = field === 'price' ? 'number' : 'text';
+        if (field === 'price') {
+            input.step = '0.01';
+            input.min = '0';
+        }
+        input.className = 'form-control inline-edit-input';
+        input.value = currentValue;
+        input.style.cssText = `
+            width: 100%;
+            padding: 4px 8px;
+            margin: 0;
+            font-size: inherit;
+            font-family: inherit;
+            font-weight: inherit;
+        `;
+
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+        input.select();
+
+        let saved = false;
+        const saveChanges = async () => {
+            if (saved) return;
+            saved = true;
+
+            let newValue = input.value.trim();
+            if (field === 'price') {
+                newValue = parseFloat(newValue);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('Please enter a valid price', 'warning');
+                    cell.innerHTML = formatCurrency(currentValue);
+                    return;
+                }
+            } else if (field === 'sku') {
+                if (!newValue) {
+                    showToast('SKU cannot be empty', 'warning');
+                    cell.innerHTML = escapeHtml(currentValue);
+                    return;
+                }
+            }
+
+            if (newValue !== currentValue) {
+                try {
+                    product[field] = newValue;
+                    if (field === 'price' && product.cost > 0) {
+                        product.markup = ((newValue - product.cost) / product.cost) * 100;
+                    }
+                    await db.update('products', product);
+                    showToast('Product updated successfully', 'success');
+                } catch (err) {
+                    showToast('Error saving product: ' + err.message, 'error');
+                }
+            }
+
+            // Reload table data
+            await loadProducts(true);
+        };
+
+        input.addEventListener('keydown', async (keyEvent) => {
+            if (keyEvent.key === 'Enter') {
+                await saveChanges();
+            } else if (keyEvent.key === 'Escape') {
+                saved = true;
+                cell.innerHTML = field === 'price' ? formatCurrency(currentValue) : escapeHtml(currentValue);
+            }
+        });
+
+        input.addEventListener('blur', async () => {
+            await saveChanges();
+        });
+    });
+});
+
 

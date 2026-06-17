@@ -524,3 +524,62 @@ function setupItemSalesSearch() {
 
 // Expose
 window.loadItemSales = loadItemSales;
+
+// Helper to get currently searched/filtered item sales dataset
+function getFilteredItemSales() {
+    let data = itemSalesCachedData || [];
+    if (itemSalesSearchTerm) {
+        const q = itemSalesSearchTerm.toLowerCase();
+        data = data.filter(p =>
+            p.name.toLowerCase().includes(q) ||
+            p.category.toLowerCase().includes(q)
+        );
+    }
+    return data;
+}
+
+// Export Item Sales to CSV
+function exportItemSales(event) {
+    if (event) event.stopPropagation();
+    const data = getFilteredItemSales();
+    if (data.length === 0) {
+        showToast('No item sales data to export', 'warning');
+        return;
+    }
+
+    const exportData = data.map((p, idx) => ({
+        'Rank': idx + 1,
+        'Product Name': p.name,
+        'Category': p.category,
+        'Units Sold': p.unitsSold,
+        'Revenue': p.revenue.toFixed(2),
+        'Monthly Target': p.targetQty !== null ? p.targetQty : 'N/A'
+    }));
+
+    const filename = `item_sales_export_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(exportData, filename);
+}
+
+// Export Item Sales to PDF
+function exportItemSalesPDF(event) {
+    if (event) event.stopPropagation();
+    const data = getFilteredItemSales();
+    if (data.length === 0) {
+        showToast('No item sales data to export', 'warning');
+        return;
+    }
+
+    const headers = ['Rank', 'Product Name', 'Category', 'Units Sold', 'Revenue', 'Monthly Target'];
+    const rows = data.map((p, idx) => [
+        idx + 1,
+        p.name,
+        p.category,
+        p.unitsSold,
+        formatCurrency(p.revenue),
+        p.targetQty !== null ? p.targetQty : 'N/A'
+    ]);
+
+    const filename = `item_sales_export_${new Date().toISOString().split('T')[0]}.pdf`;
+    exportToPDF('Item Sales Report', headers, rows, filename);
+}
+

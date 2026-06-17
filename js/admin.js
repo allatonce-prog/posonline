@@ -195,6 +195,32 @@ function setupNavigation() {
             z-index: 100 !important;
         `;
     });
+
+    // Setup collapsible section toggling dynamically (prevents inline handler errors)
+    const sectionHeaders = document.querySelectorAll('.nav-section-header');
+    sectionHeaders.forEach(header => {
+        const handleHeaderClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const section = header.closest('.nav-section');
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        };
+
+        header.addEventListener('click', handleHeaderClick);
+        header.addEventListener('touchend', handleHeaderClick, { passive: false });
+
+        header.style.cssText = `
+            cursor: pointer !important;
+            -webkit-tap-highlight-color: rgba(255,255,255,0.1) !important;
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 100 !important;
+        `;
+    });
 }
 
 // Switch tab (optimized for mobile stability and white screen prevention)
@@ -229,9 +255,16 @@ async function switchTab(tab) {
         console.warn('Chart cleanup failed:', e);
     }
 
-    // Update navigation
+    // Update navigation and auto-expand parent section
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.tab === tab);
+        const isActive = item.dataset.tab === tab;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+            const section = item.closest('.nav-section');
+            if (section) {
+                section.classList.remove('collapsed');
+            }
+        }
     });
 
     // Update sidebar subtitle with smooth slide/fade animation
@@ -555,3 +588,11 @@ function setupDesktopSidebarCollapse() {
         requestAnimationFrame(tick);
     });
 }
+
+// Toggle nav section accordion
+window.toggleNavSection = function(sectionId) {
+    const section = document.getElementById(`section-${sectionId}`);
+    if (section) {
+        section.classList.toggle('collapsed');
+    }
+};

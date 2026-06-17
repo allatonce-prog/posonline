@@ -219,3 +219,75 @@ window.viewExpenseDetails = async function (id) {
         showToast('Error loading details', 'error');
     }
 };
+
+// Admin Quick Action: Expense Modal Helpers
+window.showAddExpenseModal = function() {
+    const modal = document.getElementById('adminExpenseModal');
+    if (!modal) return;
+
+    document.getElementById('adminExpenseAmount').value = '';
+    document.getElementById('adminExpenseReason').value = '';
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+
+    // Attach click listener for outside click recovery
+    const handleOutsideClick = (e) => {
+        if (e.target === modal) {
+            window.closeAdminExpenseModal();
+            modal.removeEventListener('click', handleOutsideClick);
+        }
+    };
+    modal.addEventListener('click', handleOutsideClick);
+};
+
+window.closeAdminExpenseModal = function() {
+    const modal = document.getElementById('adminExpenseModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    document.body.classList.remove('modal-open');
+};
+
+window.saveAdminExpense = async function(e) {
+    if (e) e.preventDefault();
+    const amountVal = document.getElementById('adminExpenseAmount').value;
+    const reasonVal = document.getElementById('adminExpenseReason').value.trim();
+    const amount = parseFloat(amountVal);
+
+    if (isNaN(amount) || amount <= 0 || !reasonVal) {
+        showToast('Please fill in all fields correctly', 'warning');
+        return;
+    }
+
+    showLoading('Recording expense...');
+    try {
+        const user = auth.getCurrentUser();
+        const expense = {
+            date: new Date().toISOString(),
+            amount: amount,
+            reason: reasonVal,
+            cashier: user.username,
+            cashierName: user.name || user.username,
+            storeId: user.storeId
+        };
+
+        await db.add('expenses', expense);
+        hideLoading();
+        showToast('Expense recorded successfully', 'success');
+        window.closeAdminExpenseModal();
+
+        // Refresh metrics dynamically
+        if (typeof loadDashboard === 'function') {
+            await loadDashboard();
+        } else if (typeof loadDashboardWithRange === 'function') {
+            await loadDashboardWithRange((typeof currentTimeRange !== 'undefined') ? currentTimeRange : 'today');
+        }
+        
+        if (typeof loadExpenses === 'function') {
+            await loadExpenses();
+        }
+    } catch (error) {
+        hideLoading();
+        showToast('Error saving expense: ' + error.message, 'error');
+    }
+};

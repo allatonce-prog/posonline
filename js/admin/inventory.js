@@ -264,9 +264,106 @@ async function processStockOperation(productId, quantity, type, reason) {
 }
 
 // Export inventory
-function exportInventory() {
-    showToast('Export feature coming soon!', 'info');
+async function exportInventory(event) {
+    if (event) event.stopPropagation();
+    
+    const products = await db.getAll('products');
+    const ingredients = await db.getAll('ingredients');
+    
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+    const lowStockThreshold = getLowStockThreshold();
+    
+    const combinedItems = [
+        ...stockProducts.map(p => ({
+            name: p.name,
+            sku: p.sku || 'N/A',
+            category: p.category || 'Product',
+            stock: Number(p.stock) || 0,
+            price: Number(p.price) || 0,
+            totalValue: (Number(p.stock) || 0) * (Number(p.price) || 0),
+            status: getStockStatus(Number(p.stock) || 0, lowStockThreshold).toUpperCase()
+        })),
+        ...ingredients.map(i => ({
+            name: `[Ingredient] ${i.name}`,
+            sku: `Unit: ${i.unit || 'pcs'}`,
+            category: 'Ingredient',
+            stock: Number(i.stock) || 0,
+            price: Number(i.cost) || 0,
+            totalValue: (Number(i.stock) || 0) * (Number(i.cost) || 0),
+            status: getStockStatus(Number(i.stock) || 0, 10).toUpperCase()
+        }))
+    ];
+
+    if (combinedItems.length === 0) {
+        showToast('No inventory data to export', 'warning');
+        return;
+    }
+
+    const exportData = combinedItems.map(item => ({
+        'Item Name': item.name,
+        'SKU/Unit': item.sku,
+        'Category': item.category,
+        'Current Stock': item.stock,
+        'Unit Price': item.price.toFixed(2),
+        'Total Value': item.totalValue.toFixed(2),
+        'Status': item.status
+    }));
+
+    const filename = `inventory_export_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(exportData, filename);
 }
+
+// Export inventory to PDF
+async function exportInventoryPDF(event) {
+    if (event) event.stopPropagation();
+    
+    const products = await db.getAll('products');
+    const ingredients = await db.getAll('ingredients');
+    
+    const stockProducts = products.filter(p => p.stockMode !== 'availability');
+    const lowStockThreshold = getLowStockThreshold();
+    
+    const combinedItems = [
+        ...stockProducts.map(p => ({
+            name: p.name,
+            sku: p.sku || 'N/A',
+            category: p.category || 'Product',
+            stock: Number(p.stock) || 0,
+            price: Number(p.price) || 0,
+            totalValue: (Number(p.stock) || 0) * (Number(p.price) || 0),
+            status: getStockStatus(Number(p.stock) || 0, lowStockThreshold).toUpperCase()
+        })),
+        ...ingredients.map(i => ({
+            name: `[Ingredient] ${i.name}`,
+            sku: `Unit: ${i.unit || 'pcs'}`,
+            category: 'Ingredient',
+            stock: Number(i.stock) || 0,
+            price: Number(i.cost) || 0,
+            totalValue: (Number(i.stock) || 0) * (Number(i.cost) || 0),
+            status: getStockStatus(Number(i.stock) || 0, 10).toUpperCase()
+        }))
+    ];
+
+    if (combinedItems.length === 0) {
+        showToast('No inventory data to export', 'warning');
+        return;
+    }
+
+    const headers = ['Item Name', 'SKU/Unit', 'Category', 'Current Stock', 'Unit Price', 'Total Value', 'Status'];
+    const rows = combinedItems.map(item => [
+        item.name,
+        item.sku,
+        item.category,
+        item.stock,
+        formatCurrency(item.price),
+        formatCurrency(item.totalValue),
+        item.status
+    ]);
+
+    const filename = `inventory_export_${new Date().toISOString().split('T')[0]}.pdf`;
+    exportToPDF('Inventory Status Report', headers, rows, filename);
+}
+
 
 // Setup inventory filters
 function setupInventoryFilters() {
@@ -439,14 +536,14 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
         <td class="product-image-cell">
           <div class="product-image-small">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
         </td>
-        <td>
+        <td class="editable-cell" data-field="name" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">
           <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
           <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(item.description || '')}</div>
         </td>
-        <td>${escapeHtml(item.sku)}</td>
+        <td class="editable-cell" data-field="sku" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${escapeHtml(item.sku)}</td>
         <td>${escapeHtml(item.category)}</td>
-        <td>${quantityHtml}</td>
-        <td>${formatCurrency(item.price)}</td>
+        <td class="editable-cell" data-field="stock" data-unique-id="${item.uniqueId}" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${quantityHtml}</td>
+        <td class="editable-cell" data-field="price" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${formatCurrency(item.price)}</td>
         <td>${formatCurrency(totalValue)}</td>
         <td>
           <span class="stock-status ${stockClass}">${stockStatus.replace('_', ' ')}</span>
@@ -1383,4 +1480,159 @@ window.inlineStockAdjust = async function (productId, type, inputId) {
     // Reset input to 1 after successful operation
     input.value = 1;
 };
+
+// Inline Table Editing for Inventory Tab
+document.addEventListener('DOMContentLoaded', () => {
+    const inventoryTable = document.getElementById('inventoryProductsTable');
+    if (!inventoryTable) return;
+
+    inventoryTable.addEventListener('dblclick', async (e) => {
+        const cell = e.target.closest('.editable-cell');
+        if (!cell) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const field = cell.dataset.field;
+        const itemId = cell.dataset.id;
+        const itemType = cell.dataset.type; // 'product' or 'ingredient'
+        if (!field || !itemId || !itemType) return;
+
+        // If already editing, ignore
+        if (cell.querySelector('input')) return;
+
+        const collection = itemType === 'ingredient' ? 'ingredients' : 'products';
+        const item = await db.get(collection, itemId);
+        if (!item) return;
+
+        const originalHtml = cell.innerHTML;
+
+        // Determine input type and current value based on field type
+        let inputType = 'text';
+        let currentValue = '';
+
+        if (field === 'stock') {
+            inputType = 'number';
+            currentValue = Number(item.stock) || 0;
+        } else if (field === 'price') {
+            inputType = 'number';
+            currentValue = itemType === 'ingredient' ? (Number(item.cost) || 0) : (Number(item.price) || 0);
+        } else if (field === 'sku') {
+            currentValue = itemType === 'ingredient' ? (item.unit || 'pcs') : (item.sku || '');
+        } else if (field === 'name') {
+            currentValue = item.name || '';
+        }
+
+        const input = document.createElement('input');
+        input.type = inputType;
+        if (inputType === 'number') {
+            input.min = '0';
+            if (field === 'price') {
+                input.step = '0.01';
+            }
+        }
+        input.className = 'form-control inline-edit-input';
+        input.value = currentValue;
+        input.style.cssText = `
+            width: 100%;
+            padding: 4px 8px;
+            margin: 0;
+            font-size: inherit;
+            font-family: inherit;
+            font-weight: inherit;
+            text-align: ${inputType === 'number' ? 'center' : 'left'};
+        `;
+
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+        input.select();
+
+        let saved = false;
+        const saveChanges = async () => {
+            if (saved) return;
+            saved = true;
+
+            let newValue = input.value.trim();
+            if (field === 'stock') {
+                newValue = parseInt(newValue);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('Please enter a valid stock level', 'warning');
+                    cell.innerHTML = originalHtml;
+                    return;
+                }
+            } else if (field === 'price') {
+                newValue = parseFloat(newValue);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('Please enter a valid price', 'warning');
+                    cell.innerHTML = originalHtml;
+                    return;
+                }
+            } else if (field === 'sku' || field === 'name') {
+                if (!newValue) {
+                    showToast(`${field.toUpperCase()} cannot be empty`, 'warning');
+                    cell.innerHTML = originalHtml;
+                    return;
+                }
+            }
+
+            if (field === 'stock') {
+                const diff = newValue - (Number(item.stock) || 0);
+                if (diff !== 0) {
+                    try {
+                        const type = diff > 0 ? 'in' : 'out';
+                        const qty = Math.abs(diff);
+                        const fullId = `${itemType}_${itemId}`;
+                        const reason = 'Inline stock correction';
+                        await processStockOperation(fullId, qty, type, reason);
+                    } catch (err) {
+                        showToast('Error saving stock: ' + err.message, 'error');
+                        cell.innerHTML = originalHtml;
+                    }
+                } else {
+                    cell.innerHTML = originalHtml;
+                }
+            } else {
+                let dbField = field;
+                if (itemType === 'ingredient') {
+                    if (field === 'price') dbField = 'cost';
+                    else if (field === 'sku') dbField = 'unit';
+                }
+
+                if (item[dbField] !== newValue) {
+                    try {
+                        item[dbField] = newValue;
+                        if (itemType === 'product' && dbField === 'price' && item.cost > 0) {
+                            item.markup = ((newValue - item.cost) / item.cost) * 100;
+                        }
+                        await db.update(collection, item);
+                        showToast(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} updated successfully`, 'success');
+                    } catch (err) {
+                        showToast('Error saving changes: ' + err.message, 'error');
+                        cell.innerHTML = originalHtml;
+                    }
+                } else {
+                    cell.innerHTML = originalHtml;
+                }
+            }
+
+            // Reload table
+            await loadInventory(true);
+        };
+
+        input.addEventListener('keydown', async (keyEvent) => {
+            if (keyEvent.key === 'Enter') {
+                await saveChanges();
+            } else if (keyEvent.key === 'Escape') {
+                saved = true;
+                cell.innerHTML = originalHtml;
+            }
+        });
+
+        input.addEventListener('blur', async () => {
+            await saveChanges();
+        });
+    });
+});
+
 

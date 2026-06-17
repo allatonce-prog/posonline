@@ -292,6 +292,121 @@ function exportToCSV(data, filename) {
     showToast('Export successful', 'success');
 }
 
+// Export to PDF (Native browser printing as styled tables)
+function exportToPDF(title, headers, rows, filename) {
+    if (!rows || !rows.length) {
+        showToast('No data to export', 'warning');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert('Please allow popups to export to PDF');
+        return;
+    }
+
+    let headersHtml = headers.map(header => `<th>${escapeHtml(header)}</th>`).join('');
+    let rowsHtml = rows.map(row => {
+        return `<tr>${row.map(cell => `<td>${escapeHtml(String(cell ?? ''))}</td>`).join('')}</tr>`;
+    }).join('');
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                body {
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    padding: 40px 24px;
+                    color: #1f2937;
+                    background-color: #ffffff;
+                }
+                .header-container {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px solid #e5e7eb;
+                    padding-bottom: 16px;
+                    margin-bottom: 24px;
+                }
+                h1 {
+                    font-size: 24px;
+                    color: #064e3b;
+                    margin: 0;
+                }
+                .meta {
+                    font-size: 14px;
+                    color: #4b5563;
+                    text-align: right;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 16px;
+                    font-size: 12px;
+                }
+                th {
+                    background-color: #f3f4f6;
+                    color: #111827;
+                    font-weight: 600;
+                    text-align: left;
+                    padding: 10px 12px;
+                    border-bottom: 1px solid #d1d5db;
+                }
+                td {
+                    padding: 8px 12px;
+                    border-bottom: 1px solid #e5e7eb;
+                    color: #374151;
+                }
+                tr:nth-child(even) td {
+                    background-color: #f9fafb;
+                }
+                @media print {
+                    body {
+                        padding: 0;
+                    }
+                    @page {
+                        size: auto;
+                        margin: 15mm;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header-container">
+                <div>
+                    <h1>${title}</h1>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Arabikca Coffee POS System</p>
+                </div>
+                <div class="meta">
+                    <div>Date Generated: ${new Date().toLocaleDateString()}</div>
+                    <div>Time Generated: ${new Date().toLocaleTimeString()}</div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>${headersHtml}</tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() {
+                    setTimeout(() => {
+                        window.print();
+                        window.close();
+                    }, 500);
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+
 // Calculate percentage
 function calculatePercentage(value, total) {
     if (total === 0) return 0;
