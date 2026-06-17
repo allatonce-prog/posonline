@@ -626,6 +626,24 @@
       color: #ef4444;
     }
 
+    /* Progress Bar inside Status Modal */
+    .modal-progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      margin-top: 1.5rem;
+      overflow: hidden;
+    }
+
+    .modal-progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+      border-radius: 10px;
+      transition: width 1s linear;
+    }
+
     /* Typewriter Text */
     .typewriter-text {
       text-align: center;
@@ -809,7 +827,7 @@
       }
 
       .split-content-container {
-        flex-direction: column;
+        flex-direction: column-reverse;
         text-align: center;
         gap: 3rem;
       }
@@ -838,7 +856,50 @@
       }
 
       .login-container-card {
-        padding: 3rem 2rem;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 1.5rem 0.5rem !important;
+      }
+
+      .login-container-card h3 {
+        color: #ffffff !important;
+      }
+
+      .login-container-card .header-divider {
+        background: #34d399 !important;
+      }
+
+      .login-container-card .form-group input {
+        color: #ffffff !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.4) !important;
+      }
+
+      .login-container-card .form-group input::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+
+      .login-container-card .form-group input:focus {
+        border-bottom-color: #34d399 !important;
+      }
+
+      .login-container-card .input-icon-left,
+      .login-container-card .password-toggle-right {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+
+      .login-container-card .avatar-circle {
+        color: #ffffff !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+      }
+
+      .login-container-card .avatar-name {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+
+      .login-container-card #typewriterGreeting {
+        color: rgba(255, 255, 255, 0.8) !important;
       }
     }
 
@@ -888,8 +949,7 @@
       }
 
       .login-container-card {
-        padding: 2.25rem 1.25rem;
-        border-radius: 24px;
+        padding: 1rem 0 !important;
       }
 
       .login-card-header {
@@ -971,6 +1031,149 @@
       color: #34d399;
       transform: scale(1.05);
     }
+
+    /* Contact Modal CSS */
+    .contact-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 44, 34, 0.82);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      z-index: 2005;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .contact-modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .contact-modal-close {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      color: #ffffff;
+      font-size: 2.25rem;
+      cursor: pointer;
+      transition: transform 0.3s;
+      z-index: 2010;
+    }
+
+    .contact-modal-close:hover {
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    .contact-card-container {
+      width: 90%;
+      max-width: 450px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 32px;
+      padding: 3.5rem 2.5rem 2.5rem;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .contact-modal-overlay.show .contact-card-container {
+      transform: scale(1);
+    }
+
+    .contact-slides-viewport {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+      min-height: 200px;
+      padding: 1.5rem 0;
+    }
+
+    .contact-slides-track {
+      display: flex;
+      transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      width: 200%; /* 2 slides */
+    }
+
+    .contact-slide {
+      width: 50%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      padding: 0 1rem;
+    }
+
+    .contact-slide-icon {
+      font-size: 2.8rem;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(52, 211, 153, 0.15);
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .contact-slide-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 700;
+    }
+
+    .contact-slide-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #ffffff;
+      word-break: break-all;
+      letter-spacing: -0.5px;
+    }
+
+    .contact-dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.65rem;
+      margin-top: 2rem;
+    }
+
+    .contact-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .contact-dot.active {
+      background: #34d399;
+      border-color: #34d399;
+      transform: scale(1.25);
+    }
   </style>
 </head>
 
@@ -980,7 +1183,7 @@
     <nav class="nav-links">
       <a href="index.html" class="active">Home</a>
       <a href="about.html">About</a>
-      <a href="#">Contact</a>
+      <a href="#" id="contactLinkDesktop">Contact</a>
     </nav>
     <i class="ph ph-list hamburger-icon" id="mobileMenuBtn"></i>
   </header>
@@ -991,7 +1194,40 @@
     <div class="mobile-nav-links">
       <a href="index.html" class="active">Home</a>
       <a href="about.html">About</a>
-      <a href="#">Contact</a>
+      <a href="#" id="contactLinkMobile">Contact</a>
+    </div>
+  </div>
+
+  <!-- Contact Slideshow Modal Overlay HTML -->
+  <div class="contact-modal-overlay" id="contactModalOverlay">
+    <div class="contact-modal-close" id="contactModalCloseBtn"><i class="ph ph-x"></i></div>
+    <div class="contact-card-container">
+      <div class="contact-slides-viewport">
+        <div class="contact-slides-track" id="contactSlidesTrack">
+          <!-- Slide 1: Email -->
+          <div class="contact-slide">
+            <div class="contact-slide-icon">
+              <i class="ph ph-envelope-simple"></i>
+            </div>
+            <span class="contact-slide-label">Email Us</span>
+            <span class="contact-slide-value">jentechsolution@gmail.com</span>
+          </div>
+          <!-- Slide 2: Phone -->
+          <div class="contact-slide">
+            <div class="contact-slide-icon">
+              <i class="ph ph-phone"></i>
+            </div>
+            <span class="contact-slide-label">Call Us</span>
+            <span class="contact-slide-value">0977 098 9465</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dots indicator -->
+      <div class="contact-dots">
+        <span class="contact-dot active" data-slide="0"></span>
+        <span class="contact-dot" data-slide="1"></span>
+      </div>
     </div>
   </div>
 
@@ -1093,6 +1329,9 @@
       <div id="modalIcon" class="modal-icon"></div>
       <h3 id="modalTitle" class="modal-title"></h3>
       <p id="modalMessage" class="modal-message"></p>
+      <div class="modal-progress-bar-container" id="modalProgressContainer" style="display: none;">
+        <div class="modal-progress-bar" id="modalProgressBar"></div>
+      </div>
     </div>
   </div>
 
@@ -1121,6 +1360,103 @@
           mobileNavOverlay.classList.remove('show');
         });
       }
+
+      // Contact Modal and Slideshow Logic
+      const contactLinkDesktop = document.getElementById('contactLinkDesktop');
+      const contactLinkMobile = document.getElementById('contactLinkMobile');
+      const contactModalOverlay = document.getElementById('contactModalOverlay');
+      const contactModalCloseBtn = document.getElementById('contactModalCloseBtn');
+      const contactSlidesTrack = document.getElementById('contactSlidesTrack');
+      const contactDots = document.querySelectorAll('.contact-dot');
+
+      let currentSlide = 0;
+      let slideInterval;
+
+      function showContactModal() {
+        if (contactModalOverlay) {
+          contactModalOverlay.classList.add('show');
+          // Hide mobile menu if open
+          if (mobileNavOverlay) {
+            mobileNavOverlay.classList.remove('show');
+          }
+          startContactSlideshow(true);
+        }
+      }
+
+      function hideContactModal() {
+        if (contactModalOverlay) {
+          contactModalOverlay.classList.remove('show');
+          stopContactSlideshow();
+        }
+      }
+
+      function goToSlide(index) {
+        currentSlide = index;
+        if (contactSlidesTrack) {
+          contactSlidesTrack.style.transform = `translateX(-${index * 50}%)`;
+        }
+        contactDots.forEach((dot, idx) => {
+          if (idx === index) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+      }
+
+      function startContactSlideshow(resetToFirst = false) {
+        if (resetToFirst) {
+          goToSlide(0);
+        }
+        stopContactSlideshow();
+        slideInterval = setInterval(() => {
+          let nextSlide = (currentSlide + 1) % 2;
+          goToSlide(nextSlide);
+        }, 3500);
+      }
+
+      function stopContactSlideshow() {
+        if (slideInterval) {
+          clearInterval(slideInterval);
+        }
+      }
+
+      if (contactLinkDesktop) {
+        contactLinkDesktop.addEventListener('click', (e) => {
+          e.preventDefault();
+          showContactModal();
+        });
+      }
+
+      if (contactLinkMobile) {
+        contactLinkMobile.addEventListener('click', (e) => {
+          e.preventDefault();
+          showContactModal();
+        });
+      }
+
+      if (contactModalCloseBtn) {
+        contactModalCloseBtn.addEventListener('click', () => {
+          hideContactModal();
+        });
+      }
+
+      // Close modal on outside click
+      if (contactModalOverlay) {
+        contactModalOverlay.addEventListener('click', (e) => {
+          if (e.target === contactModalOverlay) {
+            hideContactModal();
+          }
+        });
+      }
+
+      // Dot navigation
+      contactDots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+          goToSlide(idx);
+          startContactSlideshow(false); // Reset timer on manual click
+        });
+      });
 
       // Password Toggle Logic
       const togglePassword = document.querySelector('#togglePassword');
@@ -1319,8 +1655,7 @@
         }
       });
 
-      // Show message function
-      // Show message function (Enhanced Modal)
+      // Show message function (Enhanced Modal with Progress Bar)
       function showMessage(message, type) {
         hideMessage();
 
@@ -1328,13 +1663,23 @@
         const iconContainer = document.getElementById('modalIcon');
         const title = document.getElementById('modalTitle');
         const msg = document.getElementById('modalMessage');
+        const progressContainer = document.getElementById('modalProgressContainer');
+        const progressBar = document.getElementById('modalProgressBar');
 
         if (type === 'success') {
           title.textContent = 'Welcome Back!';
-          msg.textContent = 'Logging you in...';
+          msg.textContent = message || 'Logging you in...';
           // Unlock Icon
           iconContainer.innerHTML = '<i class="ph ph-lock-key-open"></i>';
           iconContainer.className = 'modal-icon icon-success';
+          
+          if (progressContainer && progressBar) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            // Trigger reflow to restart transition
+            progressBar.offsetWidth;
+            progressBar.style.width = '100%';
+          }
         } else {
           // Error
           title.textContent = 'Access Denied';
@@ -1342,6 +1687,10 @@
           // Lock Icon (Closed)
           iconContainer.innerHTML = '<i class="ph ph-lock-key"></i>';
           iconContainer.className = 'modal-icon icon-error';
+
+          if (progressContainer) {
+            progressContainer.style.display = 'none';
+          }
 
           // Auto hide error after 2.5s
           setTimeout(() => {
@@ -1357,6 +1706,13 @@
       function hideMessage() {
         const modal = document.getElementById('statusModal');
         if (modal) modal.classList.remove('show');
+
+        const progressContainer = document.getElementById('modalProgressContainer');
+        const progressBar = document.getElementById('modalProgressBar');
+        if (progressContainer && progressBar) {
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+        }
 
         // Clear legacy (just in case)
         if (errorMessage) errorMessage.classList.remove('show');
