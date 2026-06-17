@@ -102,8 +102,10 @@ function updateRangeDisplay(range) {
 }
 
 // Load dashboard with selected time range
-async function loadDashboardWithRange(range) {
-    showLoading('Loading data...');
+async function loadDashboardWithRange(range, isSilent = false) {
+    if (!isSilent) {
+        showLoading('Loading data...');
+    }
 
     try {
         // Get date range
@@ -270,10 +272,14 @@ async function loadDashboardWithRange(range) {
             updateDashboardCharts(rangeTransactions, products);
         }
 
-        hideLoading();
+        if (!isSilent) {
+            hideLoading();
+        }
     } catch (error) {
         console.error('Error loading dashboard with range:', error);
-        hideLoading();
+        if (!isSilent) {
+            hideLoading();
+        }
         showToast('Error loading data: ' + error.message, 'error');
     }
 }
@@ -340,7 +346,7 @@ function startDashboardAutoRefresh() {
     dashboardRefreshInterval = setInterval(() => {
         if (currentTimeRange && document.getElementById('dashboard-tab')?.classList.contains('active')) {
             console.log('Auto-refreshing dashboard data...');
-            loadDashboardWithRange(currentTimeRange);
+            loadDashboardWithRange(currentTimeRange, true);
         }
     }, 30000); // 30 seconds
 }

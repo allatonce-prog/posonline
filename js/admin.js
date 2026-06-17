@@ -397,7 +397,10 @@ async function loadTabContent(tab) {
         case 'dashboard':
             // Always refresh dashboard to get latest data including deliveries
             // Use current range or default to today to keep labels consistent
-            await loadDashboardWithRange((typeof currentTimeRange !== 'undefined') ? currentTimeRange : 'today');
+            // If already loaded once, do it silently to prevent annoying loading screens
+            const isSilent = window.dashboardLoadedOnce || false;
+            await loadDashboardWithRange((typeof currentTimeRange !== 'undefined') ? currentTimeRange : 'today', isSilent);
+            window.dashboardLoadedOnce = true;
             break;
         case 'products':
             await loadProducts();
@@ -491,6 +494,7 @@ async function loadDashboard() {
         }
 
         await loadDashboardWithRange('today');
+        window.dashboardLoadedOnce = true;
     } else {
         console.error('loadDashboardWithRange is not available');
         showToast('Error loading dashboard modules', 'error');

@@ -355,7 +355,7 @@ async function saveDelivery() {
 
         // Refresh dashboard stats if on dashboard tab
         if (typeof loadDashboardWithRange === 'function') {
-            await loadDashboardWithRange();
+            await loadDashboardWithRange((typeof currentTimeRange !== 'undefined') ? currentTimeRange : 'today', true);
         }
 
         hideLoading();
@@ -383,7 +383,7 @@ async function deleteDelivery(id) {
 
         // Refresh dashboard stats if on dashboard tab
         if (typeof loadDashboardWithRange === 'function') {
-            await loadDashboardWithRange();
+            await loadDashboardWithRange((typeof currentTimeRange !== 'undefined') ? currentTimeRange : 'today', true);
         }
 
         hideLoading();

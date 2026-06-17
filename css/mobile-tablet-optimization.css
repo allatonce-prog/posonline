@@ -1,0 +1,205 @@
+/* Mobile & Tablet Layout and Responsiveness Optimizations */
+
+/* ==========================================
+   1. TABLET OPTIMIZATIONS (<= 1024px)
+   ========================================== */
+@media (max-width: 1024px) {
+
+    /* Main Layout */
+    .admin-main {
+        padding: 1rem !important;
+    }
+
+    .admin-header {
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Stats Grid Tuning */
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .stat-card {
+        padding: 1rem !important;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.3rem !important;
+    }
+
+    /* Table Responsiveness Wrapper */
+    .table-container {
+        padding: 1rem !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius-md, 12px);
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .data-table {
+        min-width: 650px;
+        /* Force minimum table width to enable horizontal scroll inside wrapper instead of page stretching */
+        width: 100% !important;
+    }
+
+    /* Charts Grid Alignment */
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+        /* Stack charts cleanly on tablet */
+        gap: 1rem !important;
+    }
+
+    .chart-card {
+        padding: 1rem !important;
+        height: 350px !important;
+    }
+
+    /* Modal Enhancements for Tablet */
+    .modal-content {
+        width: 90% !important;
+        max-width: 600px !important;
+        max-height: 85vh !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-body {
+        overflow-y: auto !important;
+        flex: 1;
+        padding: 1.25rem !important;
+    }
+}
+
+/* ==========================================
+   2. MOBILE OPTIMIZATIONS (<= 600px)
+   ========================================== */
+@media (max-width: 600px) {
+
+    /* Global Spacing Reductions */
+    .admin-main {
+        padding: 0.75rem !important;
+    }
+
+    .admin-content {
+        padding: 0.5rem 0 !important;
+    }
+
+    /* Header Spacing & Layout */
+    .admin-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0.75rem 1rem 0.75rem 3.5rem !important;
+        /* Keep left padding for mobile menu toggle */
+        position: relative !important;
+    }
+
+    .admin-header .header-left {
+        text-align: left !important;
+        flex: 1 !important;
+    }
+
+    .admin-header .header-right {
+        position: relative !important;
+        right: auto !important;
+        width: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Stats Grid for Mobile (2-column layout to prevent overcrowding) */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    .stat-card {
+        padding: 0.75rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+    }
+
+    .stat-card .stat-icon {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .stat-card .stat-info h3 {
+        font-size: 0.75rem !important;
+        margin-bottom: 0.2rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.1rem !important;
+    }
+
+    /* Table Actions Flex Wrap */
+    .table-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    .table-actions {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+
+    .table-actions input,
+    .table-actions select,
+    .table-actions button {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    /* Tap Targets Size Increase for Touch Inputs */
+    button,
+    .btn,
+    .form-control,
+    .nav-item,
+    input,
+    select {
+        min-height: 44px !important;
+        /* Premium mobile accessibility size standard */
+    }
+
+    /* Modals take up full screen height/width for absolute clarity */
+    .modal-content {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Time Range Buttons wrapping nicely */
+    .time-range-btn {
+        flex: 1 1 calc(50% - 0.5rem) !important;
+        text-align: center !important;
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Notifications dropdown positioning */
+    .notifications-panel {
+        right: -60px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 340px !important;
+    }
+}
