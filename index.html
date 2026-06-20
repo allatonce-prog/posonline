@@ -34,7 +34,7 @@
     body {
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      background: #022c22; /* Fallback deep dark green */
+      background: #021a14; /* Fallback deep dark green */
       overflow-x: hidden;
     }
 
@@ -46,18 +46,18 @@
       transform: translateX(-50%);
       width: calc(100% - 4rem);
       max-width: 1200px;
-      height: 64px;
+      height: 56px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0 2rem;
       z-index: 100;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 50px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 0 10px rgba(255, 255, 255, 0.05);
+      background: rgba(10, 20, 18, 0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
       animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
@@ -74,14 +74,11 @@
 
     .nav-logo {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       font-weight: 800;
       color: #ffffff;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      background: linear-gradient(135deg, #ffffff 0%, #a7f3d0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
     }
 
     .nav-links {
@@ -91,10 +88,10 @@
     }
 
     .nav-links a {
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(255, 255, 255, 0.65);
       text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 500;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       padding: 0.25rem 0;
@@ -133,7 +130,7 @@
       transform: scale(1.1);
     }
 
-    /* Background Circles & Liquid Gradient */
+    /* Background & Grid Pattern */
     .login-wrapper {
       min-height: 100vh;
       display: flex;
@@ -141,107 +138,23 @@
       justify-content: center;
       align-items: center;
       padding: 7rem 5rem 6rem;
-      background: linear-gradient(-45deg, #022c22, #064e3b, #0f766e, #047857);
-      background-size: 400% 400%;
-      animation: gradientMove 15s ease infinite;
+      background: radial-gradient(circle at 75% 25%, #054032 0%, #021a14 60%, #010f0b 100%);
       position: relative;
       overflow: hidden;
     }
 
-    /* Interactive Mouse-Following Glow */
-    .mouse-glow {
-      position: fixed;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, rgba(16, 185, 129, 0.03) 45%, transparent 70%);
-      pointer-events: none;
-      z-index: 1;
-      mix-blend-mode: screen;
-      transform: translate3d(-1000px, -1000px, 0);
-      transition: transform 0.1s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease;
-      opacity: 0;
-      will-change: transform, opacity;
-    }
-
-    .bg-shapes {
+    .bg-grid {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 24px 24px;
       pointer-events: none;
       z-index: 0;
-    }
-
-    .bg-circle {
-      position: absolute;
-      border-radius: 50%;
-      will-change: transform;
-    }
-
-    /* Overlapping concentric circles in background */
-    .circle-1 {
-      width: 800px;
-      height: 800px;
-      top: -250px;
-      left: -200px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(6, 78, 59, 0.05) 70%);
-      animation: liquidBubble1 22s ease-in-out infinite;
-    }
-
-    .circle-2 {
-      width: 1100px;
-      height: 1100px;
-      top: -350px;
-      left: -300px;
-      background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 80%);
-      animation: liquidBubble2 28s ease-in-out infinite;
-    }
-
-    .circle-3 {
-      width: 1500px;
-      height: 1500px;
-      top: -450px;
-      left: -400px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 80%);
-      animation: liquidBubble3 36s ease-in-out infinite;
-    }
-
-    .circle-4 {
-      width: 650px;
-      height: 650px;
-      bottom: -150px;
-      right: -150px;
-      background: radial-gradient(circle, rgba(52, 211, 153, 0.18) 0%, transparent 70%);
-      animation: liquidBubble1 24s ease-in-out infinite;
-    }
-
-    /* Floating & Liquid bubble Animations */
-    @keyframes liquidBubble1 {
-      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-      33% { transform: translate(40px, -30px) scale(1.06) rotate(120deg); }
-      66% { transform: translate(-15px, 25px) scale(0.94) rotate(240deg); }
-      100% { transform: translate(0, 0) scale(1) rotate(360deg); }
-    }
-
-    @keyframes liquidBubble2 {
-      0% { transform: translate(0, 0) scale(1) rotate(360deg); }
-      33% { transform: translate(-30px, 35px) scale(0.94) rotate(240deg); }
-      66% { transform: translate(25px, -15px) scale(1.06) rotate(120deg); }
-      100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-    }
-
-    @keyframes liquidBubble3 {
-      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-      50% { transform: translate(30px, 45px) scale(1.04) rotate(180deg); }
-      100% { transform: translate(0, 0) scale(1) rotate(360deg); }
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+      -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
     }
 
     @keyframes cardShake {
@@ -381,14 +294,14 @@
     /* Right Section: Glassmorphic Gradient Card styling */
     .login-container-card {
       width: 100%;
-      max-width: 440px;
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1.5px solid rgba(255, 255, 255, 0.15);
-      border-radius: 36px;
-      padding: 3.5rem 2.75rem;
-      box-shadow: 0 25px 50px -12px rgba(2, 44, 34, 0.45);
+      max-width: 420px;
+      background: rgba(10, 20, 18, 0.6);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 28px;
+      padding: 3.5rem 2.5rem;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
       animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
       animation-delay: 0.4s;
       position: relative;
@@ -421,18 +334,18 @@
     }
 
     .header-divider {
-      width: 60px;
-      height: 3px;
-      background: #10b981;
+      width: 40px;
+      height: 2px;
+      background: #34d399;
       margin: 0 auto;
-      border-radius: 2px;
+      border-radius: 1px;
     }
 
     /* Form Fields styling */
     .login-form {
       display: flex;
       flex-direction: column;
-      gap: 1.75rem;
+      gap: 1.25rem;
     }
 
     .form-group {
@@ -444,85 +357,88 @@
     /* Input Icon */
     .input-icon-left {
       position: absolute;
-      left: 0.25rem;
-      bottom: 0.85rem;
-      font-size: 1.35rem;
-      color: rgba(255, 255, 255, 0.6);
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.45);
       transition: color 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
       z-index: 2;
     }
 
     .form-group input {
       width: 100%;
-      padding: 0.75rem 1rem 0.75rem 2.25rem;
-      border: none;
-      border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-      border-radius: 10px;
+      height: 48px;
+      padding: 0 1rem 0 2.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
       font-size: 0.95rem;
       font-family: inherit;
       color: #ffffff;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-weight: 500;
-      background: transparent;
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .form-group input::placeholder {
-      color: rgba(255, 255, 255, 0.45);
+      color: rgba(255, 255, 255, 0.35);
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 500;
       letter-spacing: 0.5px;
     }
 
     .form-group input:focus {
       outline: none;
-      border-bottom-color: #10b981;
-      background: rgba(255, 255, 255, 0.03);
-      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+      border-color: rgba(52, 211, 153, 0.45);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
     }
 
     .form-group input:focus ~ .input-icon-left {
-      color: #10b981;
-      transform: translateY(-2px) scale(1.08);
+      color: #34d399;
+      transform: translateY(-50%) scale(1.05);
     }
 
     .password-toggle-right {
       position: absolute;
-      right: 0.5rem;
-      bottom: 0.85rem;
-      font-size: 1.25rem;
-      color: rgba(255, 255, 255, 0.6);
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.45);
       cursor: pointer;
       transition: color 0.3s;
       z-index: 5;
     }
 
     .password-toggle-right:hover {
-      color: #10b981;
+      color: #34d399;
     }
 
     /* Login Button styling */
     .login-btn {
       font-family: 'Outfit', sans-serif;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #ffffff;
+      background: #34d399;
+      color: #021a14;
       border: none;
       border-radius: 12px;
-      padding: 1.1rem 2rem;
-      font-size: 1.05rem;
+      padding: 0.95rem 2rem;
+      font-size: 1rem;
       font-weight: 700;
       letter-spacing: 1px;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       margin-top: 0.5rem;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
       position: relative;
       overflow: hidden;
     }
 
     .login-btn:hover {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.45);
+      background: #a7f3d0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(52, 211, 153, 0.35);
     }
 
     .login-btn:active {
@@ -540,7 +456,7 @@
       background: linear-gradient(
         90deg,
         rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0.25) 50%,
         rgba(255, 255, 255, 0) 100%
       );
       transform: skewX(-25deg);
@@ -564,6 +480,7 @@
     .login-btn.loading {
       pointer-events: none;
       opacity: 0.8;
+      color: transparent !important;
     }
 
     .login-btn.loading::after {
@@ -574,8 +491,8 @@
       width: 22px;
       height: 22px;
       margin: -11px 0 0 -11px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #ffffff;
+      border: 3px solid rgba(2, 26, 20, 0.2);
+      border-top-color: #021a14;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
     }
@@ -1018,20 +935,23 @@
 
       .login-container-card .form-group input {
         color: #ffffff !important;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 12px !important;
       }
 
       .login-container-card .form-group input::placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
+        color: rgba(255, 255, 255, 0.4) !important;
       }
 
       .login-container-card .form-group input:focus {
-        border-bottom-color: #34d399 !important;
+        border-color: rgba(52, 211, 153, 0.5) !important;
+        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15) !important;
       }
 
       .login-container-card .input-icon-left,
       .login-container-card .password-toggle-right {
-        color: rgba(255, 255, 255, 0.8) !important;
+        color: rgba(255, 255, 255, 0.65) !important;
       }
 
       .login-container-card .avatar-circle {
@@ -1378,13 +1298,8 @@
   </div>
 
   <div class="login-wrapper">
-    <!-- Background overlapping circular shapes -->
-    <div class="bg-shapes">
-      <div class="bg-circle circle-1"></div>
-      <div class="bg-circle circle-2"></div>
-      <div class="bg-circle circle-3"></div>
-      <div class="bg-circle circle-4"></div>
-    </div>
+    <!-- Subtle SaaS background grid pattern -->
+    <div class="bg-grid"></div>
 
     <div class="split-content-container">
       <!-- Left side: Hero Text & Info (Carousel) -->
