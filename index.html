@@ -113,7 +113,7 @@
       transform: scale(1.1);
     }
 
-    /* Background Circles */
+    /* Background Circles & Liquid Gradient */
     .login-wrapper {
       min-height: 100vh;
       display: flex;
@@ -121,7 +121,9 @@
       justify-content: center;
       align-items: center;
       padding: 7rem 5rem 6rem;
-      background: linear-gradient(135deg, #022c22 0%, #064e3b 50%, #0f766e 100%);
+      background: linear-gradient(-45deg, #022c22, #064e3b, #0f766e, #047857);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
       position: relative;
       overflow: hidden;
     }
@@ -149,7 +151,7 @@
       top: -250px;
       left: -200px;
       background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(6, 78, 59, 0.05) 70%);
-      animation: float1 22s ease-in-out infinite;
+      animation: liquidBubble1 22s ease-in-out infinite;
     }
 
     .circle-2 {
@@ -158,7 +160,7 @@
       top: -350px;
       left: -300px;
       background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 80%);
-      animation: float2 28s ease-in-out infinite;
+      animation: liquidBubble2 28s ease-in-out infinite;
     }
 
     .circle-3 {
@@ -167,7 +169,7 @@
       top: -450px;
       left: -400px;
       background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 80%);
-      animation: float3 36s ease-in-out infinite;
+      animation: liquidBubble3 36s ease-in-out infinite;
     }
 
     .circle-4 {
@@ -176,44 +178,60 @@
       bottom: -150px;
       right: -150px;
       background: radial-gradient(circle, rgba(52, 211, 153, 0.18) 0%, transparent 70%);
-      animation: float1 24s ease-in-out infinite;
+      animation: liquidBubble1 24s ease-in-out infinite;
     }
 
-    /* Floating Animations */
-    @keyframes float1 {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-      50% {
-        transform: translate(30px, -20px) scale(1.03);
-      }
-      100% {
-        transform: translate(0, 0) scale(1);
-      }
+    /* Floating & Liquid bubble Animations */
+    @keyframes liquidBubble1 {
+      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      33% { transform: translate(40px, -30px) scale(1.06) rotate(120deg); }
+      66% { transform: translate(-15px, 25px) scale(0.94) rotate(240deg); }
+      100% { transform: translate(0, 0) scale(1) rotate(360deg); }
     }
 
-    @keyframes float2 {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-      50% {
-        transform: translate(-25px, 25px) scale(0.97);
-      }
-      100% {
-        transform: translate(0, 0) scale(1);
-      }
+    @keyframes liquidBubble2 {
+      0% { transform: translate(0, 0) scale(1) rotate(360deg); }
+      33% { transform: translate(-30px, 35px) scale(0.94) rotate(240deg); }
+      66% { transform: translate(25px, -15px) scale(1.06) rotate(120deg); }
+      100% { transform: translate(0, 0) scale(1) rotate(0deg); }
     }
 
-    @keyframes float3 {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-      50% {
-        transform: translate(20px, 35px) scale(1.02);
-      }
-      100% {
-        transform: translate(0, 0) scale(1);
-      }
+    @keyframes liquidBubble3 {
+      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      50% { transform: translate(30px, 45px) scale(1.04) rotate(180deg); }
+      100% { transform: translate(0, 0) scale(1) rotate(360deg); }
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes cardShake {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-8px); }
+      30%, 60%, 90% { transform: translateX(8px); }
+    }
+
+    /* Keyframes for Typewriter greeting icons */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    @keyframes horizonRise {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .login-container-card.shake {
+      animation: cardShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
     }
 
     /* Content Layout Container */
@@ -1351,7 +1369,10 @@
             <span id="btnText">LOGIN</span>
           </button>
 
-          <div id="typewriterGreeting" class="typewriter-text" style="color: #64748b; text-shadow: none;"></div>
+          <div class="greeting-container" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; min-height: 1.5em;">
+            <span id="greetingIcon" class="greeting-icon" style="font-size: 1.25rem; display: none;"></span>
+            <div id="typewriterGreeting" class="typewriter-text" style="color: #64748b; text-shadow: none; margin-top: 0; min-height: auto;"></div>
+          </div>
 
           <div class="error-message" id="errorMessage"></div>
           <div class="success-message" id="successMessage"></div>
@@ -1711,6 +1732,13 @@
           showMessage(error.message, 'error');
           loginBtn.classList.remove('loading');
           btnText.textContent = 'Sign In';
+
+          // Shake login card on error
+          const card = document.querySelector('.login-container-card');
+          if (card) {
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 500);
+          }
         }
       });
 
@@ -1981,19 +2009,33 @@
       const greetingEl = document.getElementById('typewriterGreeting');
       if (!greetingEl) return;
 
+      const iconEl = document.getElementById('greetingIcon');
       const hour = new Date().getHours();
       let text = "";
+      let iconHtml = "";
 
-      // 12 am - 5 am (0 - 5)
-      if (hour >= 0 && hour < 6) text = "Maayong Kadlawn Bai !";
-      // 6 am - 10 am (6 - 10)
-      else if (hour >= 6 && hour < 11) text = "Maayong Buntag Bai !";
-      // 11 am - 1 pm (11 - 13)
-      else if (hour >= 11 && hour < 14) text = "Maayong Udto Bai !";
-      // 2 pm - 5 pm (14 - 17)
-      else if (hour >= 14 && hour < 18) text = "Maayong Hapon Bai !";
-      // 6 pm - 11:59 pm (18 - 23)
-      else text = "Maayong Gabie Bai !";
+      // Determine text & dynamic breathing/bobbing Phosphor icon based on time
+      if (hour >= 0 && hour < 6) {
+        text = "Maayong Kadlawn Bai !";
+        iconHtml = `<i class="ph ph-moon-stars" style="color: #6366f1; animation: breathe 3s ease-in-out infinite; display: inline-block; vertical-align: middle;"></i>`;
+      } else if (hour >= 6 && hour < 11) {
+        text = "Maayong Buntag Bai !";
+        iconHtml = `<i class="ph ph-sun-horizon" style="color: #f59e0b; animation: horizonRise 3s ease-in-out infinite; display: inline-block; vertical-align: middle;"></i>`;
+      } else if (hour >= 11 && hour < 14) {
+        text = "Maayong Udto Bai !";
+        iconHtml = `<i class="ph ph-sun" style="color: #eab308; animation: spinSlow 12s linear infinite; display: inline-block; vertical-align: middle;"></i>`;
+      } else if (hour >= 14 && hour < 18) {
+        text = "Maayong Hapon Bai !";
+        iconHtml = `<i class="ph ph-cloud-sun" style="color: #f97316; animation: breathe 3s ease-in-out infinite; display: inline-block; vertical-align: middle;"></i>`;
+      } else {
+        text = "Maayong Gabie Bai !";
+        iconHtml = `<i class="ph ph-moon" style="color: #818cf8; animation: breathe 3s ease-in-out infinite; display: inline-block; vertical-align: middle;"></i>`;
+      }
+
+      if (iconEl) {
+        iconEl.innerHTML = iconHtml;
+        iconEl.style.display = 'inline-block';
+      }
 
       let i = 0;
       let isDeleting = false;
