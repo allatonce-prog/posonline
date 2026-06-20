@@ -748,10 +748,48 @@
       text-transform: uppercase;
     }
 
-    .user-avatar:hover .avatar-circle {
-      background: #f1f5f9;
+    .avatar-circle.admin {
+      border-color: #0ea5e9;
+      color: #0369a1;
+      background: #f0f9ff;
+    }
+
+    .avatar-circle.cashier {
       border-color: #10b981;
+      color: #047857;
+      background: #ecfdf5;
+    }
+
+    .user-avatar:hover .avatar-circle.admin {
+      background: #e0f2fe;
+      border-color: #0284c7;
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+    }
+
+    .user-avatar:hover .avatar-circle.cashier {
+      background: #d1fae5;
+      border-color: #059669;
       box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .avatar-role {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 12px;
+      margin-top: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .avatar-role.admin {
+      background: rgba(14, 165, 233, 0.1);
+      color: #0284c7;
+    }
+
+    .avatar-role.cashier {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
     }
 
     .avatar-name {
@@ -1241,23 +1279,44 @@
     </div>
 
     <div class="split-content-container">
-      <!-- Left side: Hero Text & Info -->
-      <div class="hero-left-section">
-        <h1 class="hero-title">JEN TECH.</h1>
-        <h2 class="hero-subtitle">Point of Sale & Inventory Solution</h2>
-        <p class="hero-desc">
-          A robust, offline-first Point of Sale system with automated inventory tracking, real-time sales analytics, and multi-store management. Designed to keep your business running smoothly, online or offline.
-        </p>
-        <div class="hero-actions">
+      <!-- Left side: Hero Text & Info (Carousel) -->
+      <div class="hero-left-section" style="position: relative; overflow: hidden; min-height: 380px; display: flex; flex-direction: column; justify-content: center;">
+        <div class="hero-carousel-viewport" style="width: 100%; overflow: hidden; position: relative;">
+          <div class="hero-carousel-track" id="heroCarouselTrack" style="display: flex; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); width: 300%;">
+            <!-- Slide 1: System Overview -->
+            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+              <h1 class="hero-title">JEN TECH.</h1>
+              <h2 class="hero-subtitle">Point of Sale & Inventory Solution</h2>
+              <p class="hero-desc">
+                A robust, offline-first Point of Sale system with automated inventory tracking, real-time sales analytics, and multi-store management. Designed to keep your business running smoothly, online or offline.
+              </p>
+            </div>
+            <!-- Slide 2: Security Info -->
+            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+              <h1 class="hero-title">LOCAL SECURE.</h1>
+              <h2 class="hero-subtitle">Offline-First & Auto Syncing</h2>
+              <p class="hero-desc">
+                Your database is secured locally and syncs automatically when online. High security, offline resilience, and automatic background backups for your daily operations.
+              </p>
+            </div>
+            <!-- Slide 3: Shift Motivation -->
+            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+              <h1 class="hero-title">EASY SALES.</h1>
+              <h2 class="hero-subtitle">Tracking & Inventory</h2>
+              <p class="hero-desc">
+                Easy sales tracking and inventory management at your fingertips. Designed to keep your business running smoothly, and help cashiers manage transactions effortlessly.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="hero-actions" style="margin-top: 1rem;">
           <a href="about.html" class="btn-learn-more">LEARN MORE</a>
         </div>
         <!-- Dot page indicators -->
-        <div class="page-dots">
-          <span class="dot active"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
+        <div class="page-dots" id="heroCarouselDots" style="margin-top: 3rem;">
+          <span class="dot active" data-slide="0"></span>
+          <span class="dot" data-slide="1"></span>
+          <span class="dot" data-slide="2"></span>
         </div>
       </div>
 
@@ -1637,7 +1696,7 @@
           showMessage('Login successful! Redirecting...', 'success');
 
           // Save to Recent Users
-          saveRecentUser(username);
+          await saveRecentUser(username);
 
           // Redirect based on role
           setTimeout(() => {
@@ -1794,10 +1853,27 @@
       });
     });
     // Recent Users Logic
-    function saveRecentUser(username) {
+    async function saveRecentUser(username) {
       let users = JSON.parse(localStorage.getItem('recent_pos_users') || '[]');
       users = users.filter(u => u.username !== username); // Remove dupe
-      users.unshift({ username, lastLogin: Date.now() }); // Add to top
+      
+      let role = 'cashier'; // Default
+      try {
+        const allUsers = await db.getAll('users');
+        const userObj = allUsers.find(u => u.username === username);
+        if (userObj && userObj.role) {
+          role = userObj.role;
+        } else if (username.toLowerCase().includes('admin')) {
+          role = 'admin';
+        }
+      } catch (e) {
+        console.warn('Could not fetch user role for recent user:', e);
+        if (username.toLowerCase().includes('admin')) {
+          role = 'admin';
+        }
+      }
+
+      users.unshift({ username, role, lastLogin: Date.now() }); // Add to top
       if (users.length > 3) users.pop(); // Keep max 3
       localStorage.setItem('recent_pos_users', JSON.stringify(users));
     }
@@ -1814,13 +1890,19 @@
       }
 
       container.style.display = 'flex';
-      container.innerHTML = users.map(u => `
-            <div class="user-avatar" onclick="window.selectUser('${u.username}')">
+      container.innerHTML = users.map(u => {
+        const role = u.role || (u.username.toLowerCase().includes('admin') ? 'admin' : 'cashier');
+        const roleClass = role === 'admin' ? 'admin' : 'cashier';
+        const roleLabel = role === 'admin' ? 'Admin' : 'Cashier';
+        return `
+            <div class="user-avatar" onclick="window.selectUser('${u.username}')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative;">
                 <div class="remove-user" onclick="window.removeUser('${u.username}', event)"><i class="ph ph-x"></i></div>
-                <div class="avatar-circle">${u.username.substring(0, 2).toUpperCase()}</div>
-                <span class="avatar-name">${u.username}</span>
+                <div class="avatar-circle ${roleClass}">${u.username.substring(0, 2).toUpperCase()}</div>
+                <span class="avatar-name" style="font-weight: 700; color: #1e293b;">${u.username}</span>
+                <span class="avatar-role ${roleClass}">${roleLabel}</span>
             </div>
-        `).join('');
+        `;
+      }).join('');
     }
 
     // Global helpers attached to window
@@ -1838,10 +1920,60 @@
       renderRecentUsers();
     };
 
+    // Hero Left-Side Carousel Logic
+    function initHeroCarousel() {
+      const track = document.getElementById('heroCarouselTrack');
+      const dots = document.querySelectorAll('#heroCarouselDots .dot');
+      if (!track || dots.length === 0) return;
+
+      let currentSlide = 0;
+      const slideCount = 3;
+      let slideInterval;
+
+      function goToSlide(index) {
+        currentSlide = index;
+        track.style.transform = `translateX(-${index * 33.333}%)`;
+        
+        dots.forEach((dot, idx) => {
+          if (idx === index) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+      }
+
+      function startSlideshow() {
+        stopSlideshow();
+        slideInterval = setInterval(() => {
+          let nextSlide = (currentSlide + 1) % slideCount;
+          goToSlide(nextSlide);
+        }, 5000);
+      }
+
+      function stopSlideshow() {
+        if (slideInterval) {
+          clearInterval(slideInterval);
+        }
+      }
+
+      // Add click event to dots
+      dots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+          goToSlide(idx);
+          startSlideshow(); // Reset interval
+        });
+      });
+
+      // Start auto slide
+      startSlideshow();
+    }
+
     // Initial Render
     document.addEventListener('DOMContentLoaded', () => {
       renderRecentUsers();
       initTypewriter();
+      initHeroCarousel();
     });
 
     // Typewriter Logic

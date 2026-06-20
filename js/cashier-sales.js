@@ -211,6 +211,7 @@ window.filterSales = async function (filter, keepPage = false) {
             const total = transaction.total || transaction.amount || 0;
             const items = transaction.items || [];
             const itemCount = items.length;
+            const orderTypeLabel = transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in';
 
             return `
                 <div class="sale-card" onclick="viewTransactionDetails('${transaction.id}')">
@@ -225,6 +226,8 @@ window.filterSales = async function (filter, keepPage = false) {
                         <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
                         <span>•</span>
                         <span>${transaction.paymentMethod || 'Cash'}</span>
+                        <span>•</span>
+                        <span style="font-weight: 600;">${orderTypeLabel}</span>
                         ${transaction.customerName ? `<span>•</span><span>${escapeHtml(transaction.customerName)}</span>` : ''}
                     </div>
                 </div>
@@ -447,6 +450,8 @@ window.viewTransactionDetails = async function (transactionId) {
         // Payment info
         const amountPaid = transaction.amountPaid || total;
         const change = transaction.change || Math.max(0, amountPaid - total);
+        const orderTypeLabel = transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in';
+
         document.getElementById('saleBreakdownPaymentInfo').innerHTML = `
             <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
                 <i class="ph ph-credit-card" style="font-size:1.1rem;color:var(--primary);"></i>
@@ -455,6 +460,10 @@ window.viewTransactionDetails = async function (transactionId) {
             <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
                 <span class="label">Method</span>
                 <span class="value">${escapeHtml(transaction.paymentMethod || 'Cash')}</span>
+            </div>
+            <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
+                <span class="label">Order Type</span>
+                <span class="value" style="font-weight:700;">${orderTypeLabel}</span>
             </div>
             ${amountPaid > 0 && amountPaid !== total ? `
             <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">

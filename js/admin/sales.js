@@ -160,6 +160,12 @@ async function loadSales() {
                     </span>
                 </div>
                 <div>
+                    <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Order Type</span>
+                    <span style="color: var(--dark); font-weight: 600; word-break: break-word;">
+                         ${transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in'}
+                    </span>
+                </div>
+                <div>
                     <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Items</span>
                     <span style="color: var(--primary); font-weight: 600;">
                         ${transaction.items ? transaction.items.length : 0} item${transaction.items && transaction.items.length !== 1 ? 's' : ''}
@@ -218,7 +224,7 @@ async function viewTransaction(id) {
       </div>
     </div>` : ''}
 
-    <div class="detail-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; background: var(--gray-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--gray-100);">
+    <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; background: var(--gray-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--gray-100);">
       <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
         <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-calendar"></i> Date & Time</span>
         <span style="font-weight: 600; color: var(--gray-800);">${formatDateTime(transaction.date)}</span>
@@ -230,6 +236,10 @@ async function viewTransaction(id) {
       <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
         <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-users"></i> Customer</span>
         <span style="font-weight: 600; color: var(--gray-800);">${escapeHtml(transaction.customerName || 'Walk-in')}</span>
+      </div>
+      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-shopping-bag"></i> Order Type</span>
+        <span style="font-weight: 600; color: var(--gray-800);">${transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in'}</span>
       </div>
       <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
         <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Payment Method</span>
@@ -444,6 +454,7 @@ async function exportSales(event) {
     'Date': formatDateTime(t.date),
     'Cashier': t.cashier,
     'Customer': t.customerName || 'Walk-in',
+    'Order Type': t.orderType === 'takeout' ? 'Take-out' : 'Dine-in',
     'Items': t.items.length,
     'Subtotal': t.subtotal.toFixed(2),
     'Total': t.total.toFixed(2),
@@ -466,12 +477,13 @@ async function exportSalesPDF(event) {
     return;
   }
 
-  const headers = ['Transaction ID', 'Date', 'Cashier', 'Customer', 'Items Count', 'Total', 'Payment Method'];
+  const headers = ['Transaction ID', 'Date', 'Cashier', 'Customer', 'Order Type', 'Items Count', 'Total', 'Payment Method'];
   const rows = transactions.map(t => [
     formatTransactionId(t.id),
     formatDateTime(t.date),
     t.cashier,
     t.customerName || 'Walk-in',
+    t.orderType === 'takeout' ? 'Take-out' : 'Dine-in',
     t.items.length,
     formatCurrency(t.total),
     t.paymentMethod === 'split' ? 'Cash + GCash' : (t.paymentMethod || 'Cash')
