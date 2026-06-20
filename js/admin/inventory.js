@@ -533,22 +533,22 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
 
         return `
       <tr>
-        <td class="product-image-cell">
+        <td class="product-image-cell" data-label="Image">
           <div class="product-image-small">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
         </td>
-        <td class="editable-cell" data-field="name" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">
+        <td class="editable-cell" data-label="Product" data-field="name" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">
           <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
           <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(item.description || '')}</div>
         </td>
-        <td class="editable-cell" data-field="sku" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${escapeHtml(item.sku)}</td>
-        <td>${escapeHtml(item.category)}</td>
-        <td class="editable-cell" data-field="stock" data-unique-id="${item.uniqueId}" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${quantityHtml}</td>
-        <td class="editable-cell" data-field="price" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${formatCurrency(item.price)}</td>
-        <td>${formatCurrency(totalValue)}</td>
-        <td>
+        <td class="editable-cell" data-label="SKU" data-field="sku" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${escapeHtml(item.sku)}</td>
+        <td data-label="Category">${escapeHtml(item.category)}</td>
+        <td class="editable-cell" data-label="Current Stock" data-field="stock" data-unique-id="${item.uniqueId}" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${quantityHtml}</td>
+        <td class="editable-cell" data-label="Unit Price" data-field="price" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${formatCurrency(item.price)}</td>
+        <td data-label="Total Value">${formatCurrency(totalValue)}</td>
+        <td data-label="Status">
           <span class="stock-status ${stockClass}">${stockStatus.replace('_', ' ')}</span>
         </td>
-        <td>${actionsHtml}</td>
+        <td data-label="Actions">${actionsHtml}</td>
       </tr>
     `;
     }).join('');
