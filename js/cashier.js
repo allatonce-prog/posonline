@@ -4,6 +4,7 @@ let cart = [];
 let modifiers = []; // Global modifiers list
 let categories = new Set(['all']);
 let currentEditingCartItemIndex = null; // Track which item is being modified
+let currentOrderType = 'dinein'; // 'dinein' or 'takeout' — controls whether takeoutOnly ingredients are deducted
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -135,6 +136,27 @@ document.addEventListener('click', (e) => {
         trigger.classList.remove('active');
     }
 });
+
+// ---------------------------------------------------------
+// Order Type Toggle (Dine-in / Take-out)
+// ---------------------------------------------------------
+window.setOrderType = function (type) {
+    currentOrderType = type;
+    const dineBtn    = document.getElementById('btnDineIn');
+    const takeoutBtn = document.getElementById('btnTakeOut');
+    if (!dineBtn || !takeoutBtn) return;
+
+    const activeStyle   = 'flex:1; padding:0.45rem 0.5rem; border-radius:8px; border:none; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.12);';
+    const inactiveStyle = 'flex:1; padding:0.45rem 0.5rem; border-radius:8px; border:none; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--gray-500);';
+
+    if (type === 'dinein') {
+        dineBtn.style.cssText    = activeStyle + ' background:var(--primary); color:white;';
+        takeoutBtn.style.cssText = inactiveStyle;
+    } else {
+        takeoutBtn.style.cssText = activeStyle + ' background:#0891b2; color:white;';
+        dineBtn.style.cssText    = inactiveStyle;
+    }
+};
 
 // ---------------------------------------------------------
 // Hold / Park Order Functionality
@@ -895,6 +917,7 @@ async function completeTransaction() {
             date:         new Date().toISOString(),
             cashier:      auth.getCurrentUser().username,
             cashierName:  auth.getCurrentUser().name || auth.getCurrentUser().username,
+            orderType:    currentOrderType, // 'dinein' or 'takeout'
             items: cart.map(item => ({
                 productId: item.id,
                 name:      item.name,
@@ -947,8 +970,14 @@ async function completeTransaction() {
             const recipe = product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null;
 
             if (recipe) {
-                // Deduct Ingredients
+                // Deduct Ingredients — skip takeoutOnly ingredients when order is dine-in
                 for (const ingItem of recipe.ingredients) {
+                    // Skip packaging/takeout-only ingredients on dine-in orders
+                    if (ingItem.takeoutOnly === true && currentOrderType === 'dinein') {
+                        console.log(`[OrderType] Skipping takeout-only ingredient (dine-in order): ingredientId=${ingItem.ingredientId}`);
+                        continue;
+                    }
+
                     const ingredient = allIngredients.find(i => i.id === ingItem.ingredientId);
                     if (ingredient) {
                         const qtyToDeduct = (parseFloat(ingItem.quantity) || 0) * item.quantity;
@@ -963,7 +992,7 @@ async function completeTransaction() {
                             ingredientId: ingredient.id, // Specific ingredient
                             type: 'out',
                             quantity: qtyToDeduct,
-                            reason: `Ingredient Used - Sale ${formatTransactionId(transactionId)}`,
+                            reason: `Ingredient Used (${currentOrderType === 'takeout' ? 'Take-out' : 'Dine-in'}) - Sale ${formatTransactionId(transactionId)}`,
                             date: new Date().toISOString(),
                             user: auth.getCurrentUser().username,
                             stockBefore: ingStockBefore,
@@ -1042,6 +1071,9 @@ async function completeTransaction() {
         cart = [];
         updateCart();
         await loadProducts();
+
+        // Reset order type to Dine-in for the next transaction
+        setOrderType('dinein');
 
         // Send notification to Admin
         db.notify(

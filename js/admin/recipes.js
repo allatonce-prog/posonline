@@ -24,6 +24,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// ---------------------------------------------------------
+// INGREDIENT IMAGE UPLOAD HELPERS
+// ---------------------------------------------------------
+
+window.handleIngredientImageSelect = async function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Image size exceeds 2MB limit', 'warning');
+        return;
+    }
+
+    showLoading('Uploading image...');
+    try {
+        let imageUrl = '';
+        if (typeof CLOUDINARY_CLOUD_NAME !== 'undefined' && CLOUDINARY_CLOUD_NAME && typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' && CLOUDINARY_UPLOAD_PRESET) {
+            imageUrl = await uploadToCloudinary(file);
+        } else {
+            imageUrl = await resizeAndCompressImage(file);
+            showToast('Cloudinary not configured. Image compressed locally.', 'info');
+        }
+        document.getElementById('ingredientImageUrl').value = imageUrl;
+        const preview = document.getElementById('ingredientImagePreview');
+        preview.src = imageUrl;
+        preview.style.display = 'block';
+        document.getElementById('ingredientImagePlaceholderIcon').style.display = 'none';
+        document.getElementById('btnRemoveIngredientImage').style.display = 'block';
+        hideLoading();
+        showToast('Image uploaded successfully', 'success');
+    } catch (error) {
+        hideLoading();
+        console.error('Ingredient image upload error:', error);
+        showToast('Error uploading image: ' + error.message, 'error');
+    }
+};
+
+window.removeIngredientImage = function () {
+    document.getElementById('ingredientImageUrl').value = '';
+    document.getElementById('ingredientImageFile').value = '';
+    const preview = document.getElementById('ingredientImagePreview');
+    preview.src = '';
+    preview.style.display = 'none';
+    document.getElementById('ingredientImagePlaceholderIcon').style.display = 'block';
+    document.getElementById('btnRemoveIngredientImage').style.display = 'none';
+};
+
 // Load all required data
 async function loadIngredientsData() {
     showLoading('Loading ingredients...');
@@ -145,6 +192,9 @@ function showAddIngredientModal() {
     const stockInInput = document.getElementById('ingredientStockIn');
     if (stockInInput) stockInInput.value = '';
 
+    // Reset image
+    if (typeof removeIngredientImage === 'function') removeIngredientImage();
+
     document.getElementById('ingredientModal').classList.add('active');
     document.body.classList.add('modal-open');
 }
@@ -171,6 +221,22 @@ async function editIngredient(id) {
     const stockInInput = document.getElementById('ingredientStockIn');
     if (stockInInput) stockInInput.value = '';
 
+    // Load existing image if any
+    if (ing.image) {
+        document.getElementById('ingredientImageUrl').value = ing.image;
+        const preview = document.getElementById('ingredientImagePreview');
+        if (preview) {
+            preview.src = ing.image;
+            preview.style.display = 'block';
+        }
+        const placeholder = document.getElementById('ingredientImagePlaceholderIcon');
+        if (placeholder) placeholder.style.display = 'none';
+        const removeBtn = document.getElementById('btnRemoveIngredientImage');
+        if (removeBtn) removeBtn.style.display = 'block';
+    } else {
+        if (typeof removeIngredientImage === 'function') removeIngredientImage();
+    }
+
     document.getElementById('ingredientModal').classList.add('active');
     document.body.classList.add('modal-open');
 }
@@ -180,6 +246,7 @@ async function saveIngredient() {
     const unit = document.getElementById('ingredientUnit').value;
     let stock = parseFloat(document.getElementById('ingredientStock').value) || 0;
     const cost = parseFloat(document.getElementById('ingredientCost').value) || 0;
+    const image = document.getElementById('ingredientImageUrl')?.value || null;
     const lowStock = 10; // Default since field is removed
 
     const stockIn = parseFloat(document.getElementById('ingredientStockIn')?.value) || 0;
@@ -206,6 +273,7 @@ async function saveIngredient() {
             stock,
             cost,
             lowStock,
+            image: image || null,
             updatedAt: new Date().toISOString()
         };
 

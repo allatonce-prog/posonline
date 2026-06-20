@@ -1216,30 +1216,53 @@ function renderRecipeIngredientRows() {
         const costPerUnit = selectedIng ? selectedIng.cost : 0;
         const totalCostCost = (costPerUnit * (parseFloat(item.quantity) || 0)).toFixed(2);
 
+        // Takeout-only flag
+        const isTakeoutOnly = item.takeoutOnly === true;
+
+        row.style.cssText = `
+            display: flex; 
+            flex-direction: column;
+            gap: 0.3rem; 
+            background: white; 
+            padding: 0.4rem; 
+            border-radius: var(--radius-sm); 
+            border: 1px solid ${isTakeoutOnly ? '#0891b2' : 'var(--gray-200)'}; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        `;
+
         row.innerHTML = `
-            <div style="flex: 1; min-width: 120px;">
-                <select class="form-control form-control-sm" onchange="updateRecipeIngredient(${index}, 'ingredientId', this.value)" style="font-size: 0.85rem; height: auto; padding: 0.25rem 0.5rem; border: none; background: transparent; font-weight: 500;">
-                    ${optionsHtml}
-                </select>
-            </div>
-            
-            <div style="width: 70px; display: flex; align-items: center; gap: 4px; border-left: 1px solid var(--gray-200); padding-left: 8px;">
-                <input type="number" value="${item.quantity}" min="0.01" step="0.01"
-                    onchange="updateRecipeIngredient(${index}, 'quantity', this.value)"
-                    style="width: 100%; border: none; font-size: 0.85rem; text-align: center; padding: 2px; background: transparent; font-weight: 600;">
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+                <div style="flex: 1; min-width: 120px;">
+                    <select class="form-control form-control-sm" onchange="updateRecipeIngredient(${index}, 'ingredientId', this.value)" style="font-size: 0.85rem; height: auto; padding: 0.25rem 0.5rem; border: none; background: transparent; font-weight: 500;">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                
+                <div style="width: 70px; display: flex; align-items: center; gap: 4px; border-left: 1px solid var(--gray-200); padding-left: 8px;">
+                    <input type="number" value="${item.quantity}" min="0.01" step="0.01"
+                        onchange="updateRecipeIngredient(${index}, 'quantity', this.value)"
+                        style="width: 100%; border: none; font-size: 0.85rem; text-align: center; padding: 2px; background: transparent; font-weight: 600;">
+                </div>
+
+                <div style="width: 40px; font-size: 0.75rem; color: var(--gray-500); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${unitLabel}
+                </div>
+
+                <div style="width: 60px; font-size: 0.8rem; font-weight: 600; text-align: right; color: var(--dark);">
+                    ₱${totalCostCost}
+                </div>
+
+                <button type="button" class="btn-icon delete" onclick="removeRecipeIngredient(${index})" style="color: var(--danger); width: 24px; height: 24px; padding: 0; min-width: 24px; margin-left: 4px;">
+                    <i class="ph ph-x"></i>
+                </button>
             </div>
 
-            <div style="width: 40px; font-size: 0.75rem; color: var(--gray-500); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                ${unitLabel}
-            </div>
-
-            <div style="width: 60px; font-size: 0.8rem; font-weight: 600; text-align: right; color: var(--dark);">
-                ₱${totalCostCost}
-            </div>
-
-            <button type="button" class="btn-icon delete" onclick="removeRecipeIngredient(${index})" style="color: var(--danger); width: 24px; height: 24px; padding: 0; min-width: 24px; margin-left: 4px;">
-                <i class="ph ph-x"></i>
-            </button>
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; padding: 0.2rem 0.4rem; border-radius:6px; background:${isTakeoutOnly ? 'rgba(8,145,178,0.08)' : 'var(--gray-50)'}; border: 1px dashed ${isTakeoutOnly ? '#0891b2' : 'var(--gray-200)'}; user-select:none;" title="If ON, this ingredient is only deducted on Take-out orders. Dine-in orders skip it.">
+                <input type="checkbox" ${isTakeoutOnly ? 'checked' : ''} onchange="updateRecipeIngredient(${index}, 'takeoutOnly', this.checked)" style="width:14px; height:14px; accent-color:#0891b2; cursor:pointer;">
+                <span style="font-size:0.75rem; font-weight:700; color:${isTakeoutOnly ? '#0891b2' : 'var(--gray-400)'};">
+                    🥡 Take-out Only ${isTakeoutOnly ? '— will NOT deduct on Dine-in' : ''}
+                </span>
+            </label>
         `;
         fragment.appendChild(row);
     });

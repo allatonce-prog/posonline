@@ -545,6 +545,18 @@
                 </div>
             </div>
 
+            <!-- Order Type Toggle -->
+            <div id="orderTypeToggle" style="display:flex; margin: 0 0.75rem 0; gap: 0; background: var(--gray-100); border-radius: 10px; padding: 3px; border: 1px solid var(--gray-200);">
+                <button id="btnDineIn" onclick="setOrderType('dinein')"
+                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: var(--primary); color: white; box-shadow: 0 1px 4px rgba(0,0,0,0.12);">
+                    🍽️ Dine-in
+                </button>
+                <button id="btnTakeOut" onclick="setOrderType('takeout')"
+                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--gray-500);">
+                    🥡 Take-out
+                </button>
+            </div>
+
             <div class="cart-items" id="cartItems">
                 <div class="cart-empty">
                     <div class="cart-empty-icon">🛒</div>
