@@ -345,13 +345,13 @@
     .login-container-card {
       width: 100%;
       max-width: 440px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(204, 251, 241, 0.85) 100%);
+      background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1.5px solid rgba(255, 255, 255, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
       border-radius: 36px;
       padding: 3.5rem 2.75rem;
-      box-shadow: 0 25px 50px -12px rgba(2, 44, 34, 0.35);
+      box-shadow: 0 25px 50px -12px rgba(2, 44, 34, 0.45);
       animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
     }
@@ -376,7 +376,7 @@
       font-family: 'Outfit', sans-serif;
       font-size: 1.6rem;
       font-weight: 800;
-      color: #0f172a;
+      color: #ffffff;
       letter-spacing: 1px;
       text-transform: uppercase;
       margin-bottom: 0.75rem;
@@ -409,7 +409,7 @@
       left: 0.25rem;
       bottom: 0.85rem;
       font-size: 1.35rem;
-      color: #64748b;
+      color: rgba(255, 255, 255, 0.6);
       transition: color 0.3s;
       z-index: 2;
     }
@@ -418,18 +418,18 @@
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.25rem;
       border: none;
-      border-bottom: 2px solid #cbd5e1;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.25);
       border-radius: 0;
       font-size: 0.95rem;
       font-family: inherit;
-      color: #0f172a;
+      color: #ffffff;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-weight: 500;
       background: transparent;
     }
 
     .form-group input::placeholder {
-      color: #94a3b8;
+      color: rgba(255, 255, 255, 0.45);
       font-size: 0.85rem;
       font-weight: 600;
       letter-spacing: 0.5px;
@@ -450,7 +450,7 @@
       right: 0.5rem;
       bottom: 0.85rem;
       font-size: 1.25rem;
-      color: #64748b;
+      color: rgba(255, 255, 255, 0.6);
       cursor: pointer;
       transition: color 0.3s;
       z-index: 5;
@@ -1374,7 +1374,7 @@
 
           <div class="greeting-container" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; min-height: 1.5em;">
             <span id="greetingIcon" class="greeting-icon" style="font-size: 1.25rem; display: none;"></span>
-            <div id="typewriterGreeting" class="typewriter-text" style="color: #64748b; text-shadow: none; margin-top: 0; min-height: auto;"></div>
+            <div id="typewriterGreeting" class="typewriter-text" style="color: rgba(255, 255, 255, 0.7); text-shadow: none; margin-top: 0; min-height: auto;"></div>
           </div>
 
           <div class="error-message" id="errorMessage"></div>
@@ -1929,7 +1929,7 @@
             <div class="user-avatar" onclick="window.selectUser('${u.username}')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative;">
                 <div class="remove-user" onclick="window.removeUser('${u.username}', event)"><i class="ph ph-x"></i></div>
                 <div class="avatar-circle ${roleClass}">${u.username.substring(0, 2).toUpperCase()}</div>
-                <span class="avatar-name" style="font-weight: 700; color: #1e293b;">${u.username}</span>
+                <span class="avatar-name" style="font-weight: 700; color: #ffffff;">${u.username}</span>
                 <span class="avatar-role ${roleClass}">${roleLabel}</span>
             </div>
         `;
