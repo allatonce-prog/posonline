@@ -148,6 +148,22 @@
       overflow: hidden;
     }
 
+    /* Interactive Mouse-Following Glow */
+    .mouse-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, rgba(16, 185, 129, 0.03) 45%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+      mix-blend-mode: screen;
+      transform: translate3d(-1000px, -1000px, 0);
+      transition: transform 0.1s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
     .bg-shapes {
       position: absolute;
       top: 0;
@@ -2061,7 +2077,26 @@
       renderRecentUsers();
       initTypewriter();
       initHeroCarousel();
+      initMouseGlow();
     });
+
+    // Cursor-Following Glow
+    function initMouseGlow() {
+      if (!window.matchMedia('(pointer: fine)').matches) return;
+
+      const glow = document.createElement('div');
+      glow.className = 'mouse-glow';
+      document.body.appendChild(glow);
+
+      document.addEventListener('mousemove', (e) => {
+        glow.style.opacity = '1';
+        glow.style.transform = `translate3d(${e.clientX - 250}px, ${e.clientY - 250}px, 0)`;
+      });
+
+      document.addEventListener('mouseleave', () => {
+        glow.style.opacity = '0';
+      });
+    }
 
     // Typewriter Logic
     function initTypewriter() {
