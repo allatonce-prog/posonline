@@ -38,18 +38,38 @@
       overflow-x: hidden;
     }
 
-    /* Top Navigation */
+    /* Top Navigation Floating Glass Pill */
     .top-nav {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 90px;
+      position: fixed;
+      top: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 4rem);
+      max-width: 1200px;
+      height: 64px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 5rem;
+      padding: 0 2rem;
       z-index: 100;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), inset 0 0 10px rgba(255, 255, 255, 0.05);
+      animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -30px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
     }
 
     .nav-logo {
@@ -410,7 +430,7 @@
       bottom: 0.85rem;
       font-size: 1.35rem;
       color: rgba(255, 255, 255, 0.6);
-      transition: color 0.3s;
+      transition: color 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 2;
     }
 
@@ -419,7 +439,7 @@
       padding: 0.75rem 1rem 0.75rem 2.25rem;
       border: none;
       border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-      border-radius: 0;
+      border-radius: 10px;
       font-size: 0.95rem;
       font-family: inherit;
       color: #ffffff;
@@ -438,11 +458,13 @@
     .form-group input:focus {
       outline: none;
       border-bottom-color: #10b981;
-      background: transparent;
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
     }
 
-    .form-group input:focus + .input-icon-left {
+    .form-group input:focus ~ .input-icon-left {
       color: #10b981;
+      transform: translateY(-2px) scale(1.08);
     }
 
     .password-toggle-right {
@@ -487,6 +509,38 @@
 
     .login-btn:active {
       transform: translateY(1px);
+    }
+
+    /* Button Shimmer Sweep Effect */
+    .login-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: skewX(-25deg);
+      animation: buttonShimmer 4s infinite ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes buttonShimmer {
+      0% {
+        left: -100%;
+      }
+      25%, 100% {
+        left: 200%;
+      }
+    }
+
+    .login-btn.loading::before {
+      display: none;
     }
 
     .login-btn.loading {
@@ -867,8 +921,10 @@
 
     @media (max-width: 768px) {
       .top-nav {
-        height: 80px;
-        padding: 0 2rem;
+        top: 1rem;
+        width: calc(100% - 2rem);
+        height: 60px;
+        padding: 0 1.5rem;
       }
 
       .nav-links a {
@@ -1353,13 +1409,13 @@
 
         <form class="login-form" id="loginForm">
           <div class="form-group">
-            <span class="input-icon-left"><i class="ph ph-user"></i></span>
             <input type="text" id="username" name="username" placeholder="ENTER USERNAME" required autocomplete="username">
+            <span class="input-icon-left"><i class="ph ph-user"></i></span>
           </div>
 
           <div class="form-group">
-            <span class="input-icon-left"><i class="ph ph-lock-key"></i></span>
             <input type="password" id="password" name="password" placeholder="ENTER PASSWORD" required autocomplete="current-password">
+            <span class="input-icon-left"><i class="ph ph-lock-key"></i></span>
             <span class="password-toggle-right" id="togglePassword">
               <i class="ph ph-eye"></i>
             </span>
