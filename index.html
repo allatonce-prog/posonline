@@ -201,6 +201,35 @@
       color: #ffffff;
       animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
       animation-delay: 0.2s;
+      position: relative;
+      min-width: 0;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-carousel-viewport {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-carousel-track {
+      display: flex;
+      transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+      width: 300%;
+    }
+
+    .hero-slide-item {
+      width: 33.333%;
+      flex-shrink: 0;
+      padding-right: 2rem;
+      box-sizing: border-box;
+    }
+
+    .hero-actions {
+      margin-top: 1rem;
     }
 
     @keyframes slideInLeft {
@@ -272,7 +301,8 @@
     .page-dots {
       display: flex;
       gap: 0.65rem;
-      margin-top: 4rem;
+      margin-top: 3rem;
+      padding: 4px 0;
     }
 
     .dot {
@@ -850,33 +880,35 @@
     /* RESPONSIVE MEDIA QUERIES */
     @media (max-width: 1024px) {
       .top-nav {
-        padding: 0 2.5rem;
+        width: calc(100% - 3rem);
+        padding: 0 2rem;
       }
       
       .split-content-container {
-        gap: 3rem;
-        padding: 0 1.5rem;
+        gap: 4rem;
+        padding: 0 2rem;
       }
 
       .hero-title {
-        font-size: 4.5rem;
+        font-size: 4.8rem;
       }
 
       .hero-subtitle {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 991px) {
       .top-nav {
         top: 1rem;
         width: calc(100% - 2rem);
         height: 60px;
         padding: 0 1.5rem;
+        border-radius: 30px;
       }
 
       .nav-links a {
-        display: none; /* Hide navigation items on tablet/mobile header */
+        display: none; /* Hide desktop nav links, use mobile drawer overlay */
       }
 
       .hamburger-icon {
@@ -886,86 +918,65 @@
       }
 
       .login-wrapper {
-        padding: 6.5rem 2rem 4rem;
+        padding: 7rem 1.5rem 3.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
       }
 
       .split-content-container {
         flex-direction: column-reverse;
-        text-align: center;
-        gap: 3rem;
+        justify-content: center;
+        align-items: center;
+        gap: 3.5rem;
+        max-width: 520px;
+        width: 100%;
+        margin: 0 auto;
       }
 
       .hero-left-section {
         display: flex;
         flex-direction: column;
         align-items: center;
+        text-align: center;
+        min-height: auto !important;
+        width: 100%;
+      }
+
+      .hero-slide-item {
+        padding-right: 0;
+        text-align: center;
       }
 
       .hero-title {
-        font-size: 3.5rem;
+        font-size: clamp(2.8rem, 8vw, 4rem);
+        margin-bottom: 0.5rem;
       }
 
       .hero-subtitle {
-        font-size: 1.5rem;
+        font-size: 1.45rem;
+        margin-bottom: 1.25rem;
       }
 
       .hero-desc {
-        margin: 0 auto 1.75rem;
-        font-size: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 0 auto 2rem;
+        max-width: 480px;
       }
 
       .page-dots {
-        margin-top: 2.25rem;
+        margin-top: 2rem;
+        justify-content: center;
       }
 
       .login-container-card {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 1.5rem 0.5rem !important;
-      }
-
-      .login-container-card h3 {
-        color: #ffffff !important;
-      }
-
-      .login-container-card .header-divider {
-        background: #34d399 !important;
-      }
-
-      .login-container-card .form-group input {
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-radius: 12px !important;
-      }
-
-      .login-container-card .form-group input::placeholder {
-        color: rgba(255, 255, 255, 0.4) !important;
-      }
-
-      .login-container-card .form-group input:focus {
-        border-color: rgba(52, 211, 153, 0.5) !important;
-        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15) !important;
-      }
-
-      .login-container-card .input-icon-left,
-      .login-container-card .password-toggle-right {
-        color: rgba(255, 255, 255, 0.65) !important;
-      }
-
-      .login-container-card .avatar-circle {
-        color: #ffffff !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        background: rgba(255, 255, 255, 0.15) !important;
-      }
-
-      .login-container-card .avatar-name {
-        color: rgba(255, 255, 255, 0.8) !important;
-      }
-
-      .login-container-card #typewriterGreeting {
-        color: rgba(255, 255, 255, 0.8) !important;
+        padding: 2.5rem 2rem;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 450px;
       }
     }
 
@@ -975,11 +986,11 @@
       }
 
       .nav-logo {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
+        letter-spacing: 1px;
       }
 
       .hamburger-icon {
-        display: block !important;
         font-size: 1.6rem;
       }
 
@@ -988,11 +999,11 @@
       }
 
       .split-content-container {
-        gap: 2rem;
+        gap: 2.5rem;
       }
 
       .hero-title {
-        font-size: 2.75rem;
+        font-size: clamp(2.3rem, 7.5vw, 3rem);
       }
 
       .hero-subtitle {
@@ -1000,39 +1011,51 @@
       }
 
       .hero-desc {
-        font-size: 0.9rem;
-        line-height: 1.5;
+        font-size: 0.88rem;
+        line-height: 1.55;
         margin-bottom: 1.5rem;
       }
 
       .btn-learn-more {
-        padding: 0.75rem 1.75rem;
+        padding: 0.8rem 1.75rem;
         font-size: 0.85rem;
       }
 
       .page-dots {
-        margin-top: 1.75rem;
+        margin-top: 1.5rem;
       }
 
       .login-container-card {
-        padding: 1rem 0 !important;
+        padding: 2rem 1.25rem;
+        border-radius: 20px;
       }
 
       .login-card-header {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.75rem;
       }
 
       .login-card-header h3 {
-        font-size: 1.35rem;
+        font-size: 1.4rem;
       }
 
       .login-btn {
-        padding: 0.9rem 1.5rem;
+        padding: 0.85rem 1.5rem;
         font-size: 0.95rem;
       }
 
       .slider-container {
-        max-width: 300px;
+        max-width: 280px;
+      }
+      
+      .recent-users {
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .avatar-circle {
+        width: 48px;
+        height: 48px;
+        font-size: 1rem;
       }
     }
 
@@ -1303,11 +1326,11 @@
 
     <div class="split-content-container">
       <!-- Left side: Hero Text & Info (Carousel) -->
-      <div class="hero-left-section" style="position: relative; min-width: 0; min-height: 380px; display: flex; flex-direction: column; justify-content: center;">
-        <div class="hero-carousel-viewport" style="width: 100%; overflow: hidden; position: relative;">
-          <div class="hero-carousel-track" id="heroCarouselTrack" style="display: flex; transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1); width: 300%;">
+      <div class="hero-left-section">
+        <div class="hero-carousel-viewport">
+          <div class="hero-carousel-track" id="heroCarouselTrack">
             <!-- Slide 1: System Overview -->
-            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+            <div class="hero-slide-item">
               <h1 class="hero-title">JEN TECH.</h1>
               <h2 class="hero-subtitle">Point of Sale & Inventory Solution</h2>
               <p class="hero-desc">
@@ -1315,7 +1338,7 @@
               </p>
             </div>
             <!-- Slide 2: Security Info -->
-            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+            <div class="hero-slide-item">
               <h1 class="hero-title">LOCAL SECURE.</h1>
               <h2 class="hero-subtitle">Offline-First & Auto Syncing</h2>
               <p class="hero-desc">
@@ -1323,7 +1346,7 @@
               </p>
             </div>
             <!-- Slide 3: Shift Motivation -->
-            <div class="hero-slide-item" style="width: 33.333%; flex-shrink: 0; padding-right: 2rem;">
+            <div class="hero-slide-item">
               <h1 class="hero-title">EASY SALES.</h1>
               <h2 class="hero-subtitle">Tracking & Inventory</h2>
               <p class="hero-desc">
@@ -1332,11 +1355,11 @@
             </div>
           </div>
         </div>
-        <div class="hero-actions" style="margin-top: 1rem;">
+        <div class="hero-actions">
           <a href="about.html" class="btn-learn-more">LEARN MORE</a>
         </div>
         <!-- Dot page indicators -->
-        <div class="page-dots" id="heroCarouselDots" style="margin-top: 3rem; padding: 4px 0;">
+        <div class="page-dots" id="heroCarouselDots">
           <span class="dot active" data-slide="0"></span>
           <span class="dot" data-slide="1"></span>
           <span class="dot" data-slide="2"></span>
