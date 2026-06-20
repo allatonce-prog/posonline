@@ -583,6 +583,7 @@
       height: 100%;
       background: rgba(2, 44, 34, 0.6);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -606,11 +607,13 @@
       min-width: 340px;
       max-width: 90%;
       transform: scale(0.9);
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
     }
 
     .status-modal.show .modal-content {
       transform: scale(1);
+      opacity: 1 !important;
     }
 
     .modal-icon {
