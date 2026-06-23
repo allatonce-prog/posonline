@@ -1360,7 +1360,7 @@ window.switchView = async function (view) {
     if (view === 'pos') {
         document.getElementById('posView').style.display = 'block';
         cartSidebar.style.display = 'flex';
-        if (mobileBar) mobileBar.style.display = 'flex';
+        if (mobileBar) mobileBar.style.display = '';
     } else if (view === 'sales') {
         document.getElementById('salesView').style.display = 'block';
         cartSidebar.style.display = 'none';
