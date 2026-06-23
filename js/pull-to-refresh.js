@@ -5,6 +5,8 @@ let pullToRefresh = {
     enabled: false,
     startY: 0,
     currentY: 0,
+    startX: 0,
+    currentX: 0,
     pulling: false,
     refreshing: false,
     threshold: 80, // pixels to pull before refresh triggers
@@ -107,9 +109,19 @@ let pullToRefresh = {
     },
 
     onTouchStart(e) {
-        // CRITICAL iOS FIX: Ignore touches on sidebar
-        const sidebar = document.querySelector('.admin-sidebar');
-        if (sidebar && sidebar.contains(e.target)) {
+        // Ignore touches if a modal is open
+        if (document.body.classList.contains('modal-open') || 
+            document.querySelector('.modal.active') || 
+            document.querySelector('.modal[style*="display:flex"]') || 
+            document.querySelector('.modal[style*="display: block"]')) {
+            return;
+        }
+
+        // CRITICAL iOS FIX: Ignore touches on sidebars
+        const adminSidebar = document.querySelector('.admin-sidebar');
+        const cashierSidebar = document.querySelector('.cashier-sidebar');
+        if ((adminSidebar && adminSidebar.contains(e.target)) || 
+            (cashierSidebar && cashierSidebar.contains(e.target))) {
             return; // Don't intercept sidebar touches
         }
 
@@ -135,6 +147,9 @@ let pullToRefresh = {
 
         // START PULL GESTURE
         this.startY = e.touches[0].pageY;
+        this.startX = e.touches[0].pageX;
+        this.currentY = this.startY; // Prevent stale values on immediate end/tap
+        this.currentX = this.startX;
         this.pulling = true;
 
         // Dynamically add heavier listeners ONLY when needed
@@ -147,7 +162,15 @@ let pullToRefresh = {
         if (!this.pulling || this.refreshing) return;
 
         const currentY = e.touches[0].pageY;
+        const currentX = e.touches[0].pageX;
         const pullDistance = currentY - this.startY;
+        const diffX = currentX - this.startX;
+
+        // If the gesture is primarily horizontal, abort to prevent interfering with horizontal swipes/scrolls
+        if (Math.abs(diffX) > Math.abs(pullDistance) && Math.abs(diffX) > 10) {
+            this.abortPull();
+            return;
+        }
 
         if (pullDistance <= 0) {
             // User is scrolling UP, abort pull
@@ -165,6 +188,7 @@ let pullToRefresh = {
             if (e.cancelable) e.preventDefault();
 
             this.currentY = currentY;
+            this.currentX = currentX;
             const translateY = Math.min(pullDistance, this.maxPull);
             this.indicator.style.transform = `translateY(${translateY}px)`;
             this.indicator.classList.add('pulling');
@@ -195,6 +219,12 @@ let pullToRefresh = {
 
         this.pulling = false;
         this.indicator.classList.remove('pulling');
+
+        // Reset coordinates
+        this.startY = 0;
+        this.currentY = 0;
+        this.startX = 0;
+        this.currentX = 0;
     },
 
     abortPull(resetState = true) {
@@ -206,6 +236,11 @@ let pullToRefresh = {
             this.pulling = false;
             this.indicator.classList.remove('pulling');
             this.indicator.style.transform = '';
+            // Reset coordinates
+            this.startY = 0;
+            this.currentY = 0;
+            this.startX = 0;
+            this.currentX = 0;
         }
     },
 

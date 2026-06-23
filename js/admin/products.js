@@ -729,6 +729,13 @@ async function deleteCurrentProduct() {
                 await db.remove('stockMovements', movement.id);
             }
 
+            // Also delete related recipe
+            const allRecipes = await db.getAll('recipes');
+            const productRecipe = allRecipes.find(r => r.productId === editingProductId);
+            if (productRecipe) {
+                await db.remove('recipes', productRecipe.id);
+            }
+
             hideLoading();
             showToast('Product deleted successfully', 'success');
             closeProductModal();
@@ -1015,6 +1022,13 @@ async function deleteProduct(id) {
         const movements = await db.getAllByIndex('stockMovements', 'productId', id);
         for (const movement of movements) {
             await db.remove('stockMovements', movement.id);
+        }
+
+        // Also delete related recipe
+        const allRecipes = await db.getAll('recipes');
+        const productRecipe = allRecipes.find(r => r.productId === id);
+        if (productRecipe) {
+            await db.remove('recipes', productRecipe.id);
         }
 
         hideLoading();

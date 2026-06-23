@@ -303,13 +303,31 @@ async function saveIngredient() {
 }
 
 async function deleteIngredient(id) {
-    // Check if ingredient is used in any recipe (Needs access to recipes, maybe fetch them here or check integrity)
-    // For now we will just warn/delete or fetch recipes quickly
-    const recipes = await db.getAll('recipes');
-    const usedInRecipes = recipes.filter(r => r.ingredients.some(i => i.ingredientId === id));
+    // Check if ingredient is used in any active product's recipe
+    const [recipes, products] = await Promise.all([
+        db.getAll('recipes'),
+        db.getAll('products')
+    ]);
 
-    if (usedInRecipes.length > 0) {
-        showToast(`Cannot delete: Ingredient is used in ${usedInRecipes.length} recipes`, 'error');
+    const productMap = new Map(products.map(p => [p.id, p]));
+    const activeProductsUsing = [];
+
+    for (const r of recipes) {
+        if (r.ingredients.some(i => i.ingredientId === id)) {
+            const product = productMap.get(r.productId);
+            if (product) {
+                activeProductsUsing.push(product);
+            } else {
+                // Automatically clean up orphaned recipe (product no longer exists)
+                console.log(`Cleaning up orphaned recipe for deleted product ID: ${r.productId}`);
+                db.delete('recipes', r.id).catch(err => console.error('Failed to clean up orphaned recipe:', err));
+            }
+        }
+    }
+
+    if (activeProductsUsing.length > 0) {
+        const productNames = activeProductsUsing.map(p => p.name).join(', ');
+        showToast(`Cannot delete: Ingredient is used in recipes for: ${productNames}`, 'error');
         return;
     }
 

@@ -1176,6 +1176,13 @@ async function deleteProduct(productId) {
             await db.remove('stockMovements', movement.id);
         }
 
+        // Also delete related recipe
+        const allRecipes = await db.getAll('recipes');
+        const productRecipe = allRecipes.find(r => r.productId === productId);
+        if (productRecipe) {
+            await db.remove('recipes', productRecipe.id);
+        }
+
         hideLoading();
         showToast(`Product "${product.name}" deleted successfully`, 'success');
 
