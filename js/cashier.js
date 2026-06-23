@@ -1064,8 +1064,8 @@ async function completeTransaction() {
         hideLoading();
         closeCheckoutModal();
 
-        // Print receipt
-        printTransactionReceipt(transaction, transactionId);
+        // Print receipt removed to make checkout faster (can reprint manually if needed)
+        // printTransactionReceipt(transaction, transactionId);
 
         // Clear cart and reload products
         cart = [];
