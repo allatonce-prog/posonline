@@ -2,8 +2,14 @@
 
 @media (max-width: 1024px) {
 
-    /* 1. RESET ROOT - The only way to guarantee natural scroll on Android */
-    html,
+    /* 1. RESET ROOT - Separate html/body to prevent dual-scrolling locks on mobile */
+    html {
+        height: auto !important;
+        min-height: 100% !important;
+        margin: 0;
+        padding: 0;
+    }
+
     body {
         position: relative !important;
         height: auto !important;

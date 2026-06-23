@@ -106,18 +106,8 @@ class MobileStabilityManager {
 
     // Prevent iOS-specific behaviors
     preventIOSBehaviors() {
-        // Prevent bounce/rubber-banding
-        document.addEventListener('touchmove', (e) => {
-            if (e.target.closest('.scrollable, .modal-body, .tab-content, .cart-items')) {
-                return; // Allow scrolling in specific containers
-            }
-        }, { passive: true });
-
-        // Prevent pull-to-refresh on certain elements
-        let startY = 0;
-        document.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].pageY;
-        }, { passive: true });
+        // Useless scroll and touch listeners removed to prevent main-thread JS execution during scrolling.
+        // Modern iOS scroll behaves correctly natively.
     }
 
     // Pause heavy operations when page is hidden

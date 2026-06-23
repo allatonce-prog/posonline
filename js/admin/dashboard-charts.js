@@ -1,5 +1,12 @@
 // Dashboard Charts Management
 
+// Configure Chart.js global defaults to debounce resize events.
+// On mobile devices, URL/navigation bars hiding/showing during scrolling triggers window resize events,
+// which causes Chart.js to recalculate and redraw charts instantly, stalling scroll animations.
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.resizeDelay = 250;
+}
+
 let salesTrendChartInstance = null;
 let categoryChartInstance = null;
 let paymentMethodChartInstance = null;
