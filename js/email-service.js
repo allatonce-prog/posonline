@@ -178,10 +178,11 @@ async function sendEndOfDayReport(isAutomated = false, forceYesterday = false) {
 
 // Helper if not already globally available
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: 'PHP'
+    const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format(amount);
+    return `₱${formatted}`;
 }
 
 // Helper to resolve the best possible email address
