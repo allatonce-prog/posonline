@@ -936,168 +936,179 @@ async function completeTransaction() {
             ...(isSplitMode && { cashAmount, gcashAmount })
         };
 
-        // Save transaction
-        const transactionId = await db.add('transactions', transaction);
+        // Capture cart copy and order details for background non-blocking execution
+        const cartCopy = [...cart];
+        const orderTypeCopy = currentOrderType;
 
-        // Pre-fetch recipes and ingredients if any product has a recipe
-        // This optimization prevents N+1 queries inside the loop
-        // Check if we need to load recipes or ingredients
-        const productsWithRecipe = cart.filter(item => item.hasRecipe || (products.find(p => p.id === item.id) || {}).hasRecipe);
-        const hasModifiersWithIngredients = cart.some(item => item.modifiers && item.modifiers.some(m => m.ingredientId));
-
-        let allRecipes = [];
-        let allIngredients = [];
-
-        if (productsWithRecipe.length > 0 || hasModifiersWithIngredients) {
-            const promises = [db.getAll('ingredients')];
-            if (productsWithRecipe.length > 0) {
-                promises.push(db.getAll('recipes'));
-            }
-
-            const results = await Promise.all(promises);
-            allIngredients = results[0];
-            if (productsWithRecipe.length > 0) {
-                allRecipes = results[1];
-            }
-        }
-
-        // Update product stock and record movements
-        for (const item of cart) {
-            const product = await db.get('products', item.id);
-            const stockBefore = product.stock;
-
-            // CHECK RECIPE LOGIC
-            const recipe = product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null;
-
-            if (recipe) {
-                // Deduct Ingredients — skip takeoutOnly ingredients when order is dine-in
-                for (const ingItem of recipe.ingredients) {
-                    // Skip packaging/takeout-only ingredients on dine-in orders
-                    if (ingItem.takeoutOnly === true && currentOrderType === 'dinein') {
-                        console.log(`[OrderType] Skipping takeout-only ingredient (dine-in order): ingredientId=${ingItem.ingredientId}`);
-                        continue;
-                    }
-
-                    const ingredient = allIngredients.find(i => i.id === ingItem.ingredientId);
-                    if (ingredient) {
-                        const qtyToDeduct = (parseFloat(ingItem.quantity) || 0) * item.quantity;
-                        const ingStockBefore = ingredient.stock;
-
-                        ingredient.stock = Math.max(0, ingredient.stock - qtyToDeduct);
-                        await db.update('ingredients', ingredient);
-
-                        // Record Ingredient Usage (Optional but good for tracking)
-                        await db.add('stockMovements', {
-                            productId: item.id, // Linked to product sold
-                            ingredientId: ingredient.id, // Specific ingredient
-                            type: 'out',
-                            quantity: qtyToDeduct,
-                            reason: `Ingredient Used (${currentOrderType === 'takeout' ? 'Take-out' : 'Dine-in'}) - Sale ${formatTransactionId(transactionId)}`,
-                            date: new Date().toISOString(),
-                            user: auth.getCurrentUser().username,
-                            stockBefore: ingStockBefore,
-                            stockAfter: ingredient.stock,
-                            unitPrice: ingredient.cost
-                        });
-                    }
-                }
-                // Product stock doesn't change for recipe items (infinity/computed)
-            } else {
-                // NORMAL PRODUCT DEDUCTION (Skip for availability-mode products)
-                if (product.stockMode !== 'availability') {
-                    product.stock = Math.max(0, product.stock - item.quantity);
-                    await db.update('products', product);
-
-                    // Record stock movement with unit price
-                    await db.add('stockMovements', {
-                        productId: item.id,
-                        type: 'out',
-                        quantity: item.quantity,
-                        reason: `Sale - Transaction ${formatTransactionId(transactionId)}`,
-                        date: new Date().toISOString(),
-                        user: auth.getCurrentUser().username,
-                        stockBefore: stockBefore,
-                        stockAfter: product.stock,
-                        unitPrice: item.price
-                    });
-                }
-            }
-
-            // DEDUCT MODIFIER INGREDIENTS
-            if (item.modifiers && item.modifiers.length > 0) {
-                for (const mod of item.modifiers) {
-                    if (mod.ingredientId) {
-                        // Find in pre-fetched list or fetch individually if missed (fallback)
-                        let ingredient = allIngredients.find(i => i.id === mod.ingredientId);
-                        if (!ingredient) {
-                            ingredient = await db.get('ingredients', mod.ingredientId);
-                        }
-
-                        if (ingredient) {
-                            const modQty = mod.quantity || 1;
-                            const qtyToDeduct = item.quantity * modQty;
-                            const ingStockBefore = ingredient.stock;
-
-                            ingredient.stock = Math.max(0, ingredient.stock - qtyToDeduct);
-                            await db.update('ingredients', ingredient);
-
-                            // Record Ingredient Usage for Modifier
-                            await db.add('stockMovements', {
-                                productId: item.id,
-                                modifierName: mod.name,
-                                ingredientId: ingredient.id,
-                                type: 'out',
-                                quantity: qtyToDeduct,
-                                reason: `Modifier Used - Sale ${formatTransactionId(transactionId)}`,
-                                date: new Date().toISOString(),
-                                user: auth.getCurrentUser().username,
-                                stockBefore: ingStockBefore,
-                                stockAfter: ingredient.stock,
-                                unitPrice: ingredient.cost || 0
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
+        // Clear UI instantly
         hideLoading();
         closeCheckoutModal();
 
-        // Print receipt removed to make checkout faster (can reprint manually if needed)
-        // printTransactionReceipt(transaction, transactionId);
-
-        // Clear cart and reload products
+        // Clear cart and reload products UI immediately
         cart = [];
         updateCart();
-        await loadProducts();
+        if (typeof loadProducts === 'function') {
+            loadProducts();
+        }
 
         // Reset order type to Dine-in for the next transaction
         setOrderType('dinein');
-
-        // Send notification to Admin
-        db.notify(
-            'sale',
-            'New Sale Completed',
-            `${transaction.cashierName} completed a sale of ${formatCurrency(transaction.total)}`,
-            { transactionId: transactionId, total: transaction.total }
-        );
-
-        // Check for low stock and notify
-        for (const item of cart) {
-            const product = await db.get('products', item.id);
-            const settings = typeof getSettings === 'function' ? getSettings() : { lowStockThreshold: 10 };
-            if (product.stock <= (settings.lowStockThreshold || 10)) {
-                db.notify(
-                    'low_stock',
-                    'Low Stock Alert',
-                    `${product.name} is running low on stock (${product.stock} left)`,
-                    { productId: product.id, currentStock: product.stock }
-                );
-            }
-        }
-
         showToast('Transaction completed successfully!', 'success');
+
+        // Execute DB updates, stock deductions, and notifications asynchronously in the background
+        (async () => {
+            try {
+                // 1. Save transaction in IndexedDB & Cloud
+                const transactionId = await db.add('transactions', transaction);
+
+                // 2. Send notification to Admin
+                db.notify(
+                    'sale',
+                    'New Sale Completed',
+                    `${transaction.cashierName} completed a sale of ${formatCurrency(transaction.total)}`,
+                    { transactionId: transactionId, total: transaction.total }
+                );
+
+                // 3. Pre-fetch recipes and ingredients if any product has a recipe
+                const productsWithRecipe = cartCopy.filter(item => item.hasRecipe || (products.find(p => p.id === item.id) || {}).hasRecipe);
+                const hasModifiersWithIngredients = cartCopy.some(item => item.modifiers && item.modifiers.some(m => m.ingredientId));
+
+                let allRecipes = [];
+                let allIngredients = [];
+
+                if (productsWithRecipe.length > 0 || hasModifiersWithIngredients) {
+                    const promises = [db.getAll('ingredients')];
+                    if (productsWithRecipe.length > 0) {
+                        promises.push(db.getAll('recipes'));
+                    }
+
+                    const results = await Promise.all(promises);
+                    allIngredients = results[0];
+                    if (productsWithRecipe.length > 0) {
+                        allRecipes = results[1];
+                    }
+                }
+
+                // 4. Update product stock and record movements
+                for (const item of cartCopy) {
+                    const product = await db.get('products', item.id);
+                    if (!product) continue;
+
+                    const stockBefore = product.stock;
+
+                    // CHECK RECIPE LOGIC
+                    const recipe = product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null;
+
+                    if (recipe) {
+                        // Deduct Ingredients — skip takeoutOnly ingredients when order is dine-in
+                        for (const ingItem of recipe.ingredients) {
+                            if (ingItem.takeoutOnly === true && orderTypeCopy === 'dinein') {
+                                continue;
+                            }
+
+                            const ingredient = allIngredients.find(i => i.id === ingItem.ingredientId);
+                            if (ingredient) {
+                                const qtyToDeduct = (parseFloat(ingItem.quantity) || 0) * item.quantity;
+                                const ingStockBefore = ingredient.stock;
+
+                                ingredient.stock = Math.max(0, ingredient.stock - qtyToDeduct);
+                                await db.update('ingredients', ingredient);
+
+                                await db.add('stockMovements', {
+                                    productId: item.id,
+                                    ingredientId: ingredient.id,
+                                    type: 'out',
+                                    quantity: qtyToDeduct,
+                                    reason: `Ingredient Used (${orderTypeCopy === 'takeout' ? 'Take-out' : 'Dine-in'}) - Sale ${formatTransactionId(transactionId)}`,
+                                    date: new Date().toISOString(),
+                                    user: auth.getCurrentUser().username,
+                                    stockBefore: ingStockBefore,
+                                    stockAfter: ingredient.stock,
+                                    unitPrice: ingredient.cost
+                                });
+                            }
+                        }
+                    } else {
+                        // NORMAL PRODUCT DEDUCTION (Skip for availability-mode products)
+                        if (product.stockMode !== 'availability') {
+                            product.stock = Math.max(0, product.stock - item.quantity);
+                            await db.update('products', product);
+
+                            await db.add('stockMovements', {
+                                productId: item.id,
+                                type: 'out',
+                                quantity: item.quantity,
+                                reason: `Sale - Transaction ${formatTransactionId(transactionId)}`,
+                                date: new Date().toISOString(),
+                                user: auth.getCurrentUser().username,
+                                stockBefore: stockBefore,
+                                stockAfter: product.stock,
+                                unitPrice: item.price
+                            });
+                        }
+                    }
+
+                    // DEDUCT MODIFIER INGREDIENTS
+                    if (item.modifiers && item.modifiers.length > 0) {
+                        for (const mod of item.modifiers) {
+                            if (mod.ingredientId) {
+                                let ingredient = allIngredients.find(i => i.id === mod.ingredientId);
+                                if (!ingredient) {
+                                    ingredient = await db.get('ingredients', mod.ingredientId);
+                                }
+
+                                if (ingredient) {
+                                    const modQty = mod.quantity || 1;
+                                    const qtyToDeduct = item.quantity * modQty;
+                                    const ingStockBefore = ingredient.stock;
+
+                                    ingredient.stock = Math.max(0, ingredient.stock - qtyToDeduct);
+                                    await db.update('ingredients', ingredient);
+
+                                    await db.add('stockMovements', {
+                                        productId: item.id,
+                                        modifierName: mod.name,
+                                        ingredientId: ingredient.id,
+                                        type: 'out',
+                                        quantity: qtyToDeduct,
+                                        reason: `Modifier Used - Sale ${formatTransactionId(transactionId)}`,
+                                        date: new Date().toISOString(),
+                                        user: auth.getCurrentUser().username,
+                                        stockBefore: ingStockBefore,
+                                        stockAfter: ingredient.stock,
+                                        unitPrice: ingredient.cost || 0
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 5. Check for low stock and notify
+                for (const item of cartCopy) {
+                    const product = await db.get('products', item.id);
+                    if (!product) continue;
+
+                    const settings = typeof getSettings === 'function' ? getSettings() : { lowStockThreshold: 10 };
+                    if (product.stock <= (settings.lowStockThreshold || 10)) {
+                        db.notify(
+                            'low_stock',
+                            'Low Stock Alert',
+                            `${product.name} is running low on stock (${product.stock} left)`,
+                            { productId: product.id, currentStock: product.stock }
+                        );
+                    }
+                }
+
+                // 6. Reload products UI to show fresh stock levels in the background
+                if (typeof loadProducts === 'function') {
+                    loadProducts();
+                }
+
+            } catch (bgError) {
+                console.error("Background transaction processing failed:", bgError);
+            }
+        })();
 
     } catch (error) {
         hideLoading();
