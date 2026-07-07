@@ -13,16 +13,16 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css?v=5.0">
-    <link rel="stylesheet" href="css/admin.css?v=5.0">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=5.0">
-    <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=5.0">
-    <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=5.0">
-    <link rel="stylesheet" href="css/recipes.css?v=5.0">
+    <link rel="stylesheet" href="css/styles.css?v=6.0">
+    <link rel="stylesheet" href="css/admin.css?v=6.0">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=6.0">
+    <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.0">
+    <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=6.0">
+    <link rel="stylesheet" href="css/recipes.css?v=6.0">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/pagination.js"></script>
-    <script src="js/admin-optimization.js?v=5.0"></script>
+    <script src="js/admin-optimization.js?v=6.0"></script>
 
     <!-- iOS Cache Buster - Force reload if old version detected -->
     <script>
@@ -565,35 +565,53 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Products</h3>
-                            <div class="table-actions">
+                            <div class="table-actions" style="display: flex; align-items: center;">
                                 <input type="text" id="productSearchInput" placeholder="Search products..."
                                     class="form-control" style="max-width: 250px; margin-right: 0.5rem;">
                                 <select id="productCategoryFilter" class="form-control"
                                     style="max-width: 200px; margin-right: 0.5rem;">
                                     <option value="all">All Categories</option>
                                 </select>
+                                <div class="view-toggle-group" style="display: flex; background: var(--gray-100); padding: 3px; border-radius: var(--radius-md); margin-right: 0.75rem; border: 1px solid var(--gray-200);">
+                                    <button class="view-toggle-btn active" id="btnProductsViewTable" onclick="setProductsViewMode('table')" style="background: white; border: none; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Table View">
+                                        <i class="ph ph-rows" style="font-size: 1.1rem; color: var(--primary);"></i>
+                                    </button>
+                                    <button class="view-toggle-btn" id="btnProductsViewGrid" onclick="setProductsViewMode('grid')" style="background: transparent; border: none; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: var(--gray-500);" title="Grid View">
+                                        <i class="ph ph-squares-four" style="font-size: 1.1rem;"></i>
+                                    </button>
+                                </div>
                                 <button class="btn btn-primary" onclick="showAddProductModal()">
                                     + Add Product
                                 </button>
                             </div>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTable">
-                                <tr>
-                                    <td colspan="6" class="table-empty">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        
+                        <!-- Table View -->
+                        <div id="productsTableContainer">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 70px;">Thumbnail</th>
+                                        <th>SKU</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTable">
+                                    <tr>
+                                        <td colspan="7" class="table-empty">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Grid View Container -->
+                        <div id="productsGrid" style="display: none;">
+                            <!-- Grid items will be rendered here dynamically -->
+                        </div>
                     </div>
                 </div>
 
@@ -713,7 +731,7 @@
                     <div class="table-container" style="margin-bottom: 1.5rem;">
                         <div class="table-header">
                             <h3>Products Stock Status</h3>
-                            <div class="filter-controls">
+                            <div class="filter-controls compact-filters">
                                 <input type="text" id="stockSearchInput" placeholder="Search products..."
                                     class="form-control" style="max-width: 300px;">
                                 <select id="stockFilterSelect" class="form-control" style="max-width: 200px;">
@@ -755,7 +773,7 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Stock Movement History</h3>
-                            <div class="filter-controls">
+                            <div class="filter-controls compact-filters">
                                 <select id="movementFilterSelect" class="form-control" style="max-width: 150px;">
                                     <option value="all">All Movements</option>
                                     <option value="in">Stock In Only</option>
@@ -773,7 +791,7 @@
                         <div class="table-responsive">
                             <table class="data-table movement-table"
                                 style="border-collapse: separate; border-spacing: 0;">
-                                <thead style="display: none;">
+                                <thead>
                                     <tr>
                                         <th>Date & Time</th>
                                         <th>Product</th>
@@ -1453,73 +1471,65 @@
                     <div
                         style="margin-bottom: 1rem; border: 2px solid var(--primary); padding: 1.25rem; border-radius: var(--radius-md); background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">
                         <h4
-                            style="margin-bottom: 1rem; font-size: 1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                            style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
                             <i class="ph ph-calculator"></i> Smart Pricing Calculator
                         </h4>
                         <small style="display: block; margin-bottom: 1rem; color: var(--gray-600); font-size: 0.85rem;">
                             💡 Enter any 2 values and the 3rd will auto-calculate!
                         </small>
+                        
+                        <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
+                            <!-- Left: Input Fields -->
+                            <div style="flex: 1.2; min-width: 200px; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="productCost" style="font-weight: 600; color: var(--dark); font-size: 0.85rem;">Cost Price *</label>
+                                    <div style="position: relative;">
+                                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
+                                        <input type="number" id="productCost" class="form-control" step="0.01" min="0" required
+                                            style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                                    </div>
+                                </div>
 
-                        <div class="form-group">
-                            <label for="productCost" style="font-weight: 600; color: var(--dark);">Cost Price *</label>
-                            <div style="position: relative;">
-                                <span
-                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
-                                <input type="number" id="productCost" class="form-control" step="0.01" min="0" required
-                                    style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="productMarkup" style="font-weight: 600; color: var(--dark); font-size: 0.85rem;">Markup Percentage *</label>
+                                    <div style="position: relative;">
+                                        <input type="number" id="productMarkup" class="form-control" step="0.01" min="0"
+                                            style="padding-right: 35px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                                        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="productPrice" style="font-weight: 600; color: var(--dark); font-size: 0.85rem;">Selling Price *</label>
+                                    <div style="position: relative;">
+                                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
+                                        <input type="number" id="productPrice" class="form-control" step="0.01" min="0" required
+                                            style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
+                                    </div>
+                                </div>
                             </div>
-                            <small
-                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
-                                Your purchase/wholesale cost
-                            </small>
-                        </div>
-
-                        <div style="text-align: center; margin: 0.75rem 0; color: var(--gray-400);">
-                            <i class="ph ph-arrow-down" style="font-size: 1.5rem;"></i>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="productMarkup" style="font-weight: 600; color: var(--dark);">Markup Percentage
-                                *</label>
-                            <div style="position: relative;">
-                                <input type="number" id="productMarkup" class="form-control" step="0.01" min="0"
-                                    style="padding-right: 35px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
-                                <span
-                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">%</span>
-                            </div>
-                            <small
-                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
-                                Your profit margin percentage
-                            </small>
-                        </div>
-
-                        <div style="text-align: center; margin: 0.75rem 0; color: var(--gray-400);">
-                            <i class="ph ph-arrow-down" style="font-size: 1.5rem;"></i>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="productPrice" style="font-weight: 600; color: var(--dark);">Selling Price
-                                *</label>
-                            <div style="position: relative;">
-                                <span
-                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">₱</span>
-                                <input type="number" id="productPrice" class="form-control" step="0.01" min="0" required
-                                    style="padding-left: 28px; font-size: 1rem; font-weight: 600;" placeholder="0.00">
-                            </div>
-                            <small
-                                style="display: block; margin-top: 0.25rem; color: var(--gray-600); font-size: 0.75rem;">
-                                Final price for customers
-                            </small>
-                        </div>
-
-                        <!-- Profit Display -->
-                        <div id="profitDisplay"
-                            style="margin-top: 1rem; padding: 0.75rem; background: white; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 600; color: var(--gray-700); font-size: 0.9rem;">💰 Profit per
-                                    Unit:</span>
-                                <span id="profitAmount"
-                                    style="font-weight: 700; color: var(--success); font-size: 1.1rem;">₱0.00</span>
+                            
+                            <!-- Right: SVG Margin Gauge & Profit Display -->
+                            <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); position: relative;">
+                                <!-- Semi-circle Gauge -->
+                                <div style="position: relative; width: 140px; height: 90px; display: flex; justify-content: center; align-items: flex-end; margin-bottom: 0.5rem; overflow: hidden;">
+                                    <svg width="140" height="140" style="position: absolute; top: 0; left: 0; transform: rotate(-180deg);">
+                                        <!-- Background Circle Track -->
+                                        <circle cx="70" cy="70" r="55" fill="none" stroke="var(--gray-200)" stroke-width="12" stroke-dasharray="172.7" stroke-dashoffset="0" stroke-linecap="round"></circle>
+                                        <!-- Dynamic Value Gauge -->
+                                        <circle id="marginGaugeValue" cx="70" cy="70" r="55" fill="none" stroke="var(--success)" stroke-width="12" stroke-dasharray="172.7" stroke-dashoffset="172.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s;"></circle>
+                                    </svg>
+                                    <div style="text-align: center; z-index: 1;">
+                                        <span id="marginGaugePercentage" style="font-size: 1.35rem; font-weight: 800; color: var(--dark); font-family: 'Inter', sans-serif;">0%</span>
+                                        <div style="font-size: 0.65rem; color: var(--gray-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: -2px;">Margin</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Profit Text Info -->
+                                <div id="profitDisplay" style="width: 100%; text-align: center; border-top: 1px dashed var(--gray-200); padding-top: 0.5rem; display: none;">
+                                    <div style="font-size: 0.75rem; color: var(--gray-500); font-weight: 500;">Profit per Unit</div>
+                                    <div id="profitAmount" style="font-size: 1.15rem; font-weight: 800; color: var(--success); font-family: 'Inter', sans-serif; margin-top: 2px;">₱0.00</div>
+                                </div>
                             </div>
                         </div>
 
@@ -2305,31 +2315,33 @@
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="js/email-service.js"></script>
-    <script type="module" src="js/offline-db.js?v=5.0"></script>
-    <script src="js/mobile-stability.js?v=5.0"></script>
-    <script src="js/auth.js?v=5.0"></script>
-    <script src="js/utils.js?v=5.0"></script>
-    <script src="js/admin/dashboard-charts.js?v=5.0"></script>
-    <script src="js/admin.js?v=5.0"></script>
-    <script src="js/admin/time-range.js?v=5.0"></script>
-    <script src="js/admin/products.js?v=5.0"></script>
-    <script src="js/admin/recipes.js?v=5.0"></script>
-    <script src="js/admin/modifiers.js?v=5.0"></script>
-    <script src="js/admin/inventory.js?v=5.0"></script>
-    <script src="js/admin/sales.js?v=5.0"></script>
-    <script src="js/admin/daily-collections.js?v=5.0"></script>
-    <script src="js/admin/expenses.js?v=5.0"></script>
-    <script src="js/admin/salaries.js?v=5.0"></script>
-    <script src="js/admin/deliveries.js?v=5.0"></script>
-    <script src="js/admin/reports.js?v=5.0"></script>
-    <script src="js/admin/users.js?v=5.0"></script>
-    <script src="js/admin/collectibles.js?v=5.0"></script>
-    <script src="js/admin/settings.js?v=5.0"></script>
-    <script src="js/admin/store-switcher.js?v=5.0"></script>
-    <script src="js/admin/notifications.js?v=5.0"></script>
-    <script src="js/admin/item-sales.js?v=5.0"></script>
+    <script type="module" src="js/offline-db.js?v=6.0"></script>
+    <script src="js/mobile-stability.js?v=6.0"></script>
+    <script src="js/auth.js?v=6.0"></script>
+    <script src="js/utils.js?v=6.0"></script>
+    <script src="js/admin/dashboard-charts.js?v=6.0"></script>
+    <script src="js/admin.js?v=6.0"></script>
+    <script src="js/admin/time-range.js?v=6.0"></script>
+    <script src="js/admin/products.js?v=6.0"></script>
+    <script src="js/admin/recipes.js?v=6.0"></script>
+    <script src="js/admin/modifiers.js?v=6.0"></script>
+    <script src="js/admin/inventory.js?v=6.0"></script>
+    <script src="js/admin/sales.js?v=6.0"></script>
+    <script src="js/admin/daily-collections.js?v=6.0"></script>
+    <script src="js/admin/expenses.js?v=6.0"></script>
+    <script src="js/admin/salaries.js?v=6.0"></script>
+    <script src="js/admin/deliveries.js?v=6.0"></script>
+    <script src="js/admin/reports.js?v=6.0"></script>
+    <script src="js/admin/users.js?v=6.0"></script>
+    <script src="js/admin/collectibles.js?v=6.0"></script>
+    <script src="js/admin/settings.js?v=6.0"></script>
+    <script src="js/admin/store-switcher.js?v=6.0"></script>
+    <script src="js/admin/notifications.js?v=6.0"></script>
+    <script src="js/admin/item-sales.js?v=6.0"></script>
     <script src="js/tawk-to.js"></script>
-    <script src="js/pull-to-refresh.js?v=5.0"></script>
+    <script src="js/pull-to-refresh.js?v=6.0"></script>
+    <!-- Global Hover Image Preview Tooltip -->
+    <div id="productHoverTooltip" class="product-tooltip-preview" style="display: none;"></div>
 </body>
 
 </html>

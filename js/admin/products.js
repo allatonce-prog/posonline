@@ -1,6 +1,137 @@
 // Products Management
 let editingProductId = null;
+let currentProductsViewMode = 'table'; // 'table' or 'grid'
 const productsPaginator = new PaginationManager(5);
+
+window.setProductsViewMode = function (mode) {
+    currentProductsViewMode = mode;
+    
+    // Toggle active classes on buttons
+    const btnTable = document.getElementById('btnProductsViewTable');
+    const btnGrid = document.getElementById('btnProductsViewGrid');
+    
+    if (btnTable && btnGrid) {
+        if (mode === 'table') {
+            btnTable.classList.add('active');
+            btnTable.style.background = 'white';
+            btnTable.querySelector('i').style.color = 'var(--primary)';
+            btnGrid.classList.remove('active');
+            btnGrid.style.background = 'transparent';
+            btnGrid.querySelector('i').style.color = 'var(--gray-500)';
+        } else {
+            btnGrid.classList.add('active');
+            btnGrid.style.background = 'white';
+            btnGrid.querySelector('i').style.color = 'var(--primary)';
+            btnTable.classList.remove('active');
+            btnTable.style.background = 'transparent';
+            btnTable.querySelector('i').style.color = 'var(--gray-500)';
+        }
+    }
+    
+    // Toggle visibility of containers
+    const tableContainer = document.getElementById('productsTableContainer');
+    const gridContainer = document.getElementById('productsGrid');
+    
+    if (tableContainer && gridContainer) {
+        if (mode === 'table') {
+            tableContainer.style.display = 'block';
+            gridContainer.style.display = 'none';
+        } else {
+            tableContainer.style.display = 'none';
+            gridContainer.style.display = 'grid';
+        }
+    }
+    
+    loadProducts(false);
+};
+
+// Hover Tooltip functions for image preview
+window.showProductTooltip = async function (event, productId) {
+    const tooltip = document.getElementById('productHoverTooltip');
+    if (!tooltip) return;
+    
+    // Find product from cache or database fallback
+    let product = _productsCache ? _productsCache.find(p => p.id === productId) : null;
+    if (!product) {
+        try {
+            product = await db.get('products', productId);
+        } catch (err) {
+            console.error('Error fetching product for tooltip:', err);
+        }
+    }
+    if (!product) return;
+    
+    const profit = (product.price || 0) - (product.cost || 0);
+    const profitClass = profit >= 0 ? 'profit-green' : 'profit-red';
+    const margin = product.cost ? (((product.price - product.cost) / product.cost) * 100).toFixed(1) : '0';
+    
+    tooltip.innerHTML = `
+        ${product.image ? `<img src="${product.image}" class="product-tooltip-image" alt="${escapeHtml(product.name)}">` : `<div class="product-tooltip-image" style="background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--gray-300);"><i class="ph ph-package"></i></div>`}
+        <div>
+            <h5 class="product-tooltip-title">${escapeHtml(product.name)}</h5>
+            <span class="product-tooltip-sku">SKU: ${escapeHtml(product.sku || 'N/A')}</span>
+        </div>
+        <div class="product-tooltip-divider"></div>
+        <div class="product-tooltip-row">
+            <span>Category:</span>
+            <span class="product-tooltip-value">${escapeHtml(product.category || '-')}</span>
+        </div>
+        <div class="product-tooltip-row">
+            <span>Cost Price:</span>
+            <span class="product-tooltip-value">${formatCurrency(product.cost || 0)}</span>
+        </div>
+        <div class="product-tooltip-row">
+            <span>Selling Price:</span>
+            <span class="product-tooltip-value">${formatCurrency(product.price || 0)}</span>
+        </div>
+        <div class="product-tooltip-row">
+            <span>Profit/Unit:</span>
+            <span class="product-tooltip-value ${profitClass}">${formatCurrency(profit)} (${margin}%)</span>
+        </div>
+        <div class="product-tooltip-row">
+            <span>Stock:</span>
+            <span class="product-tooltip-value">${product.stockMode === 'availability' ? (product.isAvailable !== false ? 'Available' : 'N/A') : product.stock}</span>
+        </div>
+    `;
+    
+    tooltip.style.display = 'flex';
+    tooltip.style.opacity = '1';
+    
+    // Position tooltip
+    window.moveProductTooltip(event);
+};
+
+window.hideProductTooltip = function () {
+    const tooltip = document.getElementById('productHoverTooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+        tooltip.style.opacity = '0';
+    }
+};
+
+window.moveProductTooltip = function (event) {
+    const tooltip = document.getElementById('productHoverTooltip');
+    if (!tooltip) return;
+    
+    const offset = 15;
+    let x = event.clientX + offset;
+    let y = event.clientY + offset;
+    
+    // Boundary check so tooltip doesn't go offscreen
+    const tooltipWidth = tooltip.offsetWidth || 260;
+    const tooltipHeight = tooltip.offsetHeight || 300;
+    
+    if (x + tooltipWidth > window.innerWidth) {
+        x = event.clientX - tooltipWidth - offset;
+    }
+    
+    if (y + tooltipHeight > window.innerHeight) {
+        y = event.clientY - tooltipHeight - offset;
+    }
+    
+    tooltip.style.left = (x + window.scrollX) + 'px';
+    tooltip.style.top = (y + window.scrollY) + 'px';
+};
 
 // Caches to avoid slow database fetches on search/filter/pagination
 let _productsCache = null;
@@ -259,7 +390,17 @@ async function loadProducts(forceRefresh = true) {
     }
 
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No products found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No products found.</td></tr>';
+        const grid = document.getElementById('productsGrid');
+        if (grid) {
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--gray-300);"><i class="ph ph-package"></i></div>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--dark);">No products found</h3>
+                    <p style="color: var(--gray-500); font-size: 0.9rem;">Try adjusting your search or filters.</p>
+                </div>
+            `;
+        }
         const container = document.getElementById('productsPaginationContainer');
         if (container) container.innerHTML = '';
         return;
@@ -268,48 +409,106 @@ async function loadProducts(forceRefresh = true) {
     const paginated = productsPaginator.paginate(products);
     const displayProducts = paginated.data;
     const lowStockThreshold = getLowStockThreshold();
+    const grid = document.getElementById('productsGrid');
 
-    tbody.innerHTML = displayProducts.map(product => {
-        let stockHtml = '';
+    if (currentProductsViewMode === 'table') {
+        tbody.innerHTML = displayProducts.map(product => {
+            let stockHtml = '';
 
-        // AVAILABILITY MODE takes priority over recipe/stock
-        if (product.stockMode === 'availability') {
-            const avail = product.isAvailable !== false;
-            stockHtml = avail
-                ? `<span style="background-color: var(--success); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">Available</span>`
-                : `<span style="background-color: var(--danger); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">Not Available</span>`;
-        } else {
-            // NORMAL STOCK-BASED
-            const isLowStock = product.stock <= lowStockThreshold;
-            const stockStyle = isLowStock
-                ? 'background-color: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;'
-                : 'background-color: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;';
-            stockHtml = `<span style="${stockStyle}">${product.stock}</span>`;
+            // AVAILABILITY MODE takes priority over recipe/stock
+            if (product.stockMode === 'availability') {
+                const avail = product.isAvailable !== false;
+                stockHtml = avail
+                    ? `<span style="background-color: var(--success); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">Available</span>`
+                    : `<span style="background-color: var(--danger); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">Not Available</span>`;
+            } else {
+                // NORMAL STOCK-BASED
+                const isLowStock = product.stock <= lowStockThreshold;
+                const stockStyle = isLowStock
+                    ? 'background-color: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;'
+                    : 'background-color: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;';
+                stockHtml = `<span style="${stockStyle}">${product.stock}</span>`;
+            }
+
+            const imgHtml = product.image
+                ? `<img src="${product.image}" class="table-product-thumbnail" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" alt="${escapeHtml(product.name)}">`
+                : `<div class="table-product-thumbnail" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)"><i class="ph ph-package"></i></div>`;
+
+            return `
+              <tr onclick="editProduct('${product.id}')" style="cursor: pointer;">
+                <td onclick="event.stopPropagation();" style="width: 70px; padding: 0.5rem; text-align: center;">${imgHtml}</td>
+                <td data-label="SKU" class="editable-cell" data-field="sku" data-id="${product.id}" onclick="event.stopPropagation();">${escapeHtml(product.sku)}</td>
+                <td data-label="Name" style="font-weight: 600; color: var(--dark);">
+                    ${escapeHtml(product.name)}
+                    ${product.hasRecipe ? '<span title="Recipe Product">🍔</span>' : ''}
+                </td>
+                <td data-label="Category">${escapeHtml(product.category || '-')}</td>
+                <td data-label="Price" class="editable-cell" data-field="price" data-id="${product.id}" onclick="event.stopPropagation();" style="font-weight: 500;">${formatCurrency(product.price)}</td>
+                <td data-label="Stock">${stockHtml}</td>
+                <td data-label="Actions">
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button class="btn-icon" onclick="editProduct('${product.id}'); event.stopPropagation();" style="color: white; background: #f59e0b; width: 32px; height: 32px; border-radius: 6px;">
+                            <i class="ph ph-pencil-simple"></i>
+                        </button>
+                        <button class="btn-icon delete" onclick="deleteProduct('${product.id}'); event.stopPropagation();" style="color: var(--danger); background: var(--danger-light); width: 32px; height: 32px; border-radius: 6px;">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </div>
+                </td>
+              </tr>
+            `;
+        }).join('');
+    } else {
+        // Grid View Rendering
+        if (grid) {
+            grid.innerHTML = displayProducts.map(product => {
+                let badgeClass = 'success';
+                let badgeText = 'In Stock';
+                
+                if (product.stockMode === 'availability') {
+                    const avail = product.isAvailable !== false;
+                    badgeClass = avail ? 'success' : 'danger';
+                    badgeText = avail ? 'Available' : 'N/A';
+                } else {
+                    const isLowStock = product.stock <= lowStockThreshold;
+                    badgeClass = isLowStock ? 'danger' : 'success';
+                    badgeText = isLowStock ? `Low Stock (${product.stock})` : `Stock: ${product.stock}`;
+                }
+
+                const imgHtml = product.image
+                    ? `<img src="${product.image}" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" alt="${escapeHtml(product.name)}">`
+                    : `<div class="product-card-placeholder" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)"><i class="ph ph-package"></i></div>`;
+
+                return `
+                    <div class="product-grid-card" onclick="editProduct('${product.id}')">
+                        <div class="product-card-image-wrap">
+                            ${imgHtml}
+                            <span class="product-card-badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="product-card-body">
+                            <span class="product-card-sku">${escapeHtml(product.sku || 'NO SKU')}</span>
+                            <h4 class="product-card-name">
+                                ${escapeHtml(product.name)}
+                                ${product.hasRecipe ? '<span title="Recipe Product" style="font-size:1rem;">🍔</span>' : ''}
+                            </h4>
+                            <span class="product-card-category">${escapeHtml(product.category || 'Uncategorized')}</span>
+                            <div class="product-card-footer">
+                                <span class="product-card-price">${formatCurrency(product.price)}</span>
+                                <div class="product-card-actions" onclick="event.stopPropagation();">
+                                    <button class="btn-icon" onclick="editProduct('${product.id}')" style="color: white; background: #f59e0b; width: 32px; height: 32px; border-radius: 6px;">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                    <button class="btn-icon delete" onclick="deleteProduct('${product.id}')" style="color: var(--danger); background: var(--danger-light); width: 32px; height: 32px; border-radius: 6px;">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-
-        return `
-      <tr onclick="editProduct('${product.id}')" style="cursor: pointer;">
-        <td data-label="SKU" class="editable-cell" data-field="sku" data-id="${product.id}" onclick="event.stopPropagation();">${escapeHtml(product.sku)}</td>
-        <td data-label="Name" style="font-weight: 600; color: var(--dark);">
-            ${escapeHtml(product.name)}
-            ${product.hasRecipe ? '<span title="Recipe Product">🍔</span>' : ''}
-        </td>
-        <td data-label="Category">${escapeHtml(product.category || '-')}</td>
-        <td data-label="Price" class="editable-cell" data-field="price" data-id="${product.id}" onclick="event.stopPropagation();" style="font-weight: 500;">${formatCurrency(product.price)}</td>
-        <td data-label="Stock">${stockHtml}</td>
-        <td data-label="Actions">
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button class="btn-icon" onclick="editProduct('${product.id}'); event.stopPropagation();" style="color: white; background: #f59e0b; width: 32px; height: 32px; border-radius: 6px;">
-                    <i class="ph ph-pencil-simple"></i>
-                </button>
-                <button class="btn-icon delete" onclick="deleteProduct('${product.id}'); event.stopPropagation();" style="color: var(--danger); background: var(--danger-light); width: 32px; height: 32px; border-radius: 6px;">
-                    <i class="ph ph-trash"></i>
-                </button>
-            </div>
-        </td>
-      </tr>
-    `;
-    }).join('');
+    }
 
     // Check for pagination container or create it
     const tableContainer = document.querySelector('#products-tab .table-container');
@@ -375,16 +574,45 @@ function setupPricingCalculator() {
         }, 1000);
     };
 
-    // Calculate and update profit display
+    // Calculate and update profit display & margin gauge
     const updateProfitDisplay = () => {
         const cost = parseFloat(newCostInput.value) || 0;
         const price = parseFloat(newPriceInput.value) || 0;
         const markup = parseFloat(newMarkupInput.value) || 0;
 
+        const gaugeVal = document.getElementById('marginGaugeValue');
+        const gaugeText = document.getElementById('marginGaugePercentage');
+
         if (cost > 0 && price > 0) {
             const profit = price - cost;
             profitAmount.textContent = formatCurrency(profit);
             profitDisplay.style.display = 'block';
+
+            // Calculate margin percentage
+            const marginPercentage = ((price - cost) / cost) * 100;
+            if (gaugeText) {
+                gaugeText.textContent = `${marginPercentage >= 0 ? '+' : ''}${marginPercentage.toFixed(1)}%`;
+            }
+
+            // Update gauge circle stroke and offset
+            if (gaugeVal) {
+                const pct = Math.min(100, Math.max(0, marginPercentage));
+                const offset = 172.7 - (172.7 * pct) / 100;
+                gaugeVal.style.strokeDashoffset = offset;
+
+                // Color coding based on margin health
+                if (profit < 0) {
+                    gaugeVal.style.stroke = 'var(--danger)';
+                    if (gaugeText) gaugeText.style.color = 'var(--danger)';
+                } else if (marginPercentage < 15) {
+                    // Margin below 15% is warning/low
+                    gaugeVal.style.stroke = 'var(--warning)';
+                    if (gaugeText) gaugeText.style.color = 'var(--warning)';
+                } else {
+                    gaugeVal.style.stroke = 'var(--success)';
+                    if (gaugeText) gaugeText.style.color = 'var(--success)';
+                }
+            }
 
             // Update profit color based on value
             if (profit < 0) {
@@ -412,6 +640,14 @@ function setupPricingCalculator() {
         } else {
             profitDisplay.style.display = 'none';
             warningDiv.style.display = 'none';
+            if (gaugeVal) {
+                gaugeVal.style.strokeDashoffset = 172.7;
+                gaugeVal.style.stroke = 'var(--gray-200)';
+            }
+            if (gaugeText) {
+                gaugeText.textContent = '0%';
+                gaugeText.style.color = 'var(--dark)';
+            }
         }
     };
 
@@ -495,6 +731,9 @@ function setupPricingCalculator() {
         updateProfitDisplay();
         isCalculating = false;
     });
+
+    // Run initial calculation to update gauge & profit on load
+    updateProfitDisplay();
 }
 
 

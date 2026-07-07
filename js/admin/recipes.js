@@ -7,6 +7,8 @@ console.log('Ingredients module loaded');
 
 // State
 let allIngredients = [];
+let allRecipes = [];
+let allProducts = [];
 let editingIngredientId = null;
 
 // Initialize
@@ -75,8 +77,14 @@ window.removeIngredientImage = function () {
 async function loadIngredientsData() {
     showLoading('Loading ingredients...');
     try {
-        const ingredients = await db.getAll('ingredients');
+        const [ingredients, recipes, products] = await Promise.all([
+            db.getAll('ingredients'),
+            db.getAll('recipes'),
+            db.getAll('products')
+        ]);
         allIngredients = ingredients || [];
+        allRecipes = recipes || [];
+        allProducts = products || [];
 
         console.log('Ingredients:', allIngredients.length);
 
@@ -118,7 +126,32 @@ function renderIngredientsList(ingredients = allIngredients) {
         const totalValue = (parseFloat(ing.stock) * parseFloat(ing.cost)).toFixed(2);
         const isLowStock = ing.stock <= (ing.lowStock || 10);
 
+        // Find products using this ingredient
+        const linkedRecipes = allRecipes.filter(r => r.ingredients && r.ingredients.some(ri => ri.ingredientId === ing.id));
+        const linkedProducts = linkedRecipes.map(r => allProducts.find(p => p.id === r.productId)).filter(Boolean);
+
+        let linkedProductsHtml = '';
+        if (linkedProducts.length > 0) {
+            linkedProductsHtml = `
+            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--gray-100); position: relative;">
+                <button onclick="toggleLinkedProducts(event, '${ing.id}')" style="background: transparent; border: none; padding: 0; color: var(--primary); font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: color 0.2s;">
+                    <i class="ph ph-link" style="font-size: 0.9rem;"></i> Used in ${linkedProducts.length} Product${linkedProducts.length > 1 ? 's' : ''} <i class="ph ph-caret-down toggle-icon" id="caret-${ing.id}" style="transition: transform 0.2s;"></i>
+                </button>
+                <div id="dropdown-${ing.id}" style="display: none; position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 100; background: white; border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 0.5rem; flex-direction: column; gap: 0.4rem; max-height: 160px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); scrollbar-width: thin;">
+                    ${linkedProducts.map(p => `
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray-700); padding: 4px 6px; border-radius: 4px; background: white; border: 1px solid var(--gray-100);">
+                            ${p.image ? `<img src="${p.image}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">` : `<div style="width: 24px; height: 24px; border-radius: 4px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--gray-400);"><i class="ph ph-package"></i></div>`}
+                            <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">${escapeHtml(p.name)}</span>
+                            <span style="font-size: 0.7rem; color: var(--gray-400); margin-left: auto; background: var(--gray-100); padding: 1px 4px; border-radius: 3px;">${escapeHtml(p.category)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            `;
+        }
+
         const card = document.createElement('div');
+        card.className = 'ingredient-card';
         card.style.cssText = `
             background: white; 
             border-radius: var(--radius-md); 
@@ -172,12 +205,49 @@ function renderIngredientsList(ingredients = allIngredients) {
                     </div>
                 </div>
             </div>
+            ${linkedProductsHtml}
         `;
         fragment.appendChild(card);
     });
 
     listContainer.appendChild(fragment);
 }
+
+// Toggle display of linked products under an ingredient
+window.toggleLinkedProducts = function(event, ingId) {
+    event.stopPropagation();
+    const dropdown = document.getElementById(`dropdown-${ingId}`);
+    const caret = document.getElementById(`caret-${ingId}`);
+    if (!dropdown) return;
+
+    const isHidden = dropdown.style.display === 'none';
+
+    if (isHidden) {
+        // Close all other open ingredient dropdowns
+        const otherDropdowns = document.querySelectorAll('.ingredient-card [id^="dropdown-"]');
+        otherDropdowns.forEach(dd => {
+            if (dd.id !== `dropdown-${ingId}` && dd.style.display === 'flex') {
+                dd.style.display = 'none';
+                const otherIngId = dd.id.replace('dropdown-', '');
+                const otherCaret = document.getElementById(`caret-${otherIngId}`);
+                if (otherCaret) otherCaret.style.transform = 'rotate(0deg)';
+                const otherCard = dd.closest('.ingredient-card') || dd.parentElement.parentElement;
+                if (otherCard) otherCard.style.zIndex = 'auto';
+            }
+        });
+    }
+
+    const card = dropdown.closest('.ingredient-card') || dropdown.parentElement.parentElement;
+    if (isHidden) {
+        dropdown.style.display = 'flex';
+        if (caret) caret.style.transform = 'rotate(180deg)';
+        if (card) card.style.zIndex = '10';
+    } else {
+        dropdown.style.display = 'none';
+        if (caret) caret.style.transform = 'rotate(0deg)';
+        if (card) card.style.zIndex = 'auto';
+    }
+};
 
 // Ingredient Modal Functions
 function showAddIngredientModal() {

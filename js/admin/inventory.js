@@ -531,10 +531,14 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
         </div>
         `;
 
+        const hoverEvents = !item.isIngredient
+            ? `onmouseenter="showProductTooltip(event, '${item.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" style="cursor: pointer;"`
+            : '';
+
         return `
       <tr>
         <td class="product-image-cell" data-label="Image">
-          <div class="product-image-small">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
+          <div class="product-image-small" ${hoverEvents}>${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
         </td>
         <td class="editable-cell" data-label="Product" data-field="name" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">
           <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
@@ -641,73 +645,34 @@ async function filterStockMovements(filter, dateFilter, timeFilter) {
     // Pagination
     const paginated = movementsPaginator.paginate(sortedMovements);
     const displayMovements = paginated.data;
-
+    
     tbody.innerHTML = displayMovements.map(movement => {
         const isIngredient = movement.itemType === 'ingredient';
         const item = isIngredient ? ingredientMap[movement.productId] : productMap[movement.productId];
         const itemName = item ? (isIngredient ? `[Ingredient] ${item.name}` : item.name) : 'Unknown Item (Deleted)';
-        const itemSku = isIngredient ? `Unit: ${item?.unit || 'pcs'}` : (item?.sku || 'N/A');
         
         const isStockIn = movement.type === 'in';
-        const typeColor = isStockIn ? 'var(--success)' : 'var(--warning)';
-        const typeIcon = isStockIn ? 'ph-arrow-down' : 'ph-arrow-up';
+        const typeClass = isStockIn ? 'movement-type in' : 'movement-type out';
+        const typeText = isStockIn ? 'Stock In' : 'Stock Out';
+        const typeColor = isStockIn ? 'var(--success)' : 'var(--danger)';
+        const stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
 
         return `
-        <tr>
-            <td colspan="7" style="padding: 0; border: none;">
-                <div class="movement-card clickable-row" onclick="viewStockMovementDetails('${movement.id}')" style="cursor: pointer; border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 0.75rem; background: var(--white); display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s;">
-                    
-                    <!-- Header: Date & Type -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                             <div style="font-weight: 700; color: var(--dark); font-size: 1rem; margin-bottom: 2px;">
-                                ${escapeHtml(itemName)}
-                            </div>
-                            <div style="font-size: 0.8rem; color: var(--gray-500);">
-                                ${formatDateTime(movement.date)}
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                             <span class="badge" style="background-color: ${isStockIn ? '#dcfce7' : '#fef9c3'}; color: ${isStockIn ? '#166534' : '#854d0e'}; font-size: 0.75rem; padding: 4px 8px; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="ph ${typeIcon}"></i> ${isStockIn ? 'Stock In' : 'Stock Out'}
-                             </span>
-                        </div>
-                    </div>
-
-                    <!-- Divider -->
-                    <div style="height: 1px; background: var(--gray-100); width: 100%;"></div>
-
-                    <!-- Details: SKU, Quantity, User -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.85rem;">
-                         <div>
-                            <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Quantity</span>
-                            <span style="color: ${typeColor}; font-weight: 700; font-size: 1.1rem;">
-                                ${isStockIn ? '+' : '-'}${movement.quantity}
-                            </span>
-                        </div>
-                        <div>
-                            <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">SKU/Unit</span>
-                            <span style="color: var(--dark); font-weight: 500;">
-                                ${escapeHtml(itemSku)}
-                            </span>
-                        </div>
-                         <div style="text-align: right;">
-                            <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">By</span>
-                            <span style="color: var(--dark); font-weight: 500;">
-                                <i class="ph ph-user" style="vertical-align: middle;"></i> ${escapeHtml(movement.user || 'Admin')}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Reason Footer -->
-                    <div style="background: var(--light); padding: 0.5rem; border-radius: 4px; font-size: 0.8rem; color: var(--gray-600); display: flex; align-items: flex-start; gap: 0.5rem;">
-                        <i class="ph ph-info" style="margin-top: 2px;"></i>
-                        <span style="font-style: italic;">"${escapeHtml(movement.reason || 'No reason provided')}"</span>
-                    </div>
-                </div>
+        <tr class="clickable-row" onclick="viewStockMovementDetails('${movement.id}')" style="cursor: pointer;">
+            <td data-label="Date" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">${formatDateTime(movement.date)}</td>
+            <td data-label="Product" style="font-weight: 600; color: var(--dark);">${escapeHtml(itemName)}</td>
+            <td data-label="Type"><span class="${typeClass}">${typeText}</span></td>
+            <td data-label="Quantity" style="font-weight: 700; color: ${typeColor}; font-size: 0.95rem;">
+                ${isStockIn ? '+' : '-'}${movement.quantity}
             </td>
+            <td data-label="Reason" style="font-size: 0.85rem; color: var(--gray-600); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${escapeHtml(movement.reason || 'No reason provided')}
+            </td>
+            <td data-label="User" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">
+                <i class="ph ph-user" style="font-size: 0.9rem; vertical-align: middle;"></i> ${escapeHtml(movement.user || 'Admin')}
+            </td>
+            <td data-label="Stock After" style="font-weight: 600; text-align: center; font-size: 0.95rem;">${stockAfter}</td>
         </tr>
-        `;
     }).join('');
 
     // Pagination Controls

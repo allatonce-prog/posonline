@@ -1693,15 +1693,7 @@ textarea.form-control {
             min-width: 650px;
         }
 
-        .filter-controls {
-            flex-direction: column;
-            align-items: stretch;
-            gap: var(--spacing-sm);
-        }
-
-        .filter-controls .form-control {
-            max-width: 100% !important;
-        }
+        /* Keep filter controls horizontal on desktop screen widths */
     }
 
     @media (max-width: 900px) {
@@ -4206,5 +4198,318 @@ textarea.form-control {
 
 .quick-action-btn:active {
     transform: translateY(0);
+}
+
+/* ── Products List View Toggle controls ── */
+.view-toggle-btn:hover {
+    background: var(--gray-200) !important;
+}
+.view-toggle-btn.active {
+    background: white !important;
+    box-shadow: var(--shadow-sm);
+}
+.view-toggle-btn.active i {
+    color: var(--primary) !important;
+}
+
+/* ── Products Grid View Styles ── */
+#productsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+}
+
+.product-grid-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.product-grid-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+}
+
+.product-card-image-wrap {
+    height: 160px;
+    background: var(--gray-50);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.product-card-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-grid-card:hover .product-card-image-wrap img {
+    transform: scale(1.05);
+}
+
+.product-card-placeholder {
+    font-size: 3rem;
+    color: var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-card-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    z-index: 10;
+}
+
+.product-card-badge.success {
+    background: var(--success);
+    color: white;
+}
+
+.product-card-badge.danger {
+    background: var(--danger);
+    color: white;
+}
+
+.product-card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.product-card-sku {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.product-card-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.product-card-category {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-bottom: 0.75rem;
+}
+
+.product-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--gray-100);
+}
+
+.product-card-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--primary);
+    font-family: 'Inter', sans-serif;
+}
+
+.product-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* ── Interactive Premium Hover Tooltip Preview ── */
+.product-tooltip-preview {
+    position: absolute;
+    z-index: 9999;
+    width: 260px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+    padding: 1.25rem;
+    pointer-events: none; /* Make sure it doesn't block mouse interactions */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    animation: tooltipAppear 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tooltipAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.product-tooltip-image {
+    width: 100%;
+    height: 130px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.product-tooltip-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.product-tooltip-sku {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--gray-400);
+}
+
+.product-tooltip-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+    margin: 0.25rem 0;
+}
+
+.product-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--gray-600);
+}
+
+.product-tooltip-value {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.product-tooltip-value.profit-green {
+    color: var(--success);
+}
+.product-tooltip-value.profit-red {
+    color: var(--danger);
+}
+
+/* ── Circular SVG Margin Gauge styling ── */
+#marginGaugeValue {
+    stroke-dasharray: 172.7;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s;
+}
+
+/* ── Thumbnail in Table view ── */
+.table-product-thumbnail {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--gray-400);
+    transition: transform 0.2s ease;
+}
+
+.table-product-thumbnail:hover {
+    transform: scale(1.1);
+}
+
+/* ── Compact Filter Controls in Inventory ── */
+.compact-filters {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    margin-left: auto !important;
+    width: auto !important;
+}
+
+.compact-filters .form-control,
+.compact-filters select,
+.compact-filters input {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    margin: 0 !important;
+    width: auto !important;
+}
+
+#stockSearchInput {
+    width: 200px !important;
+    max-width: 200px !important;
+}
+
+#stockFilterSelect {
+    width: 140px !important;
+    max-width: 140px !important;
+}
+
+#movementFilterSelect {
+    width: 140px !important;
+    max-width: 140px !important;
+}
+
+#movementTimeFilter {
+    width: 120px !important;
+    max-width: 120px !important;
+}
+
+#movementDateFilter {
+    width: 130px !important;
+    max-width: 130px !important;
+}
+
+@media (max-width: 768px) {
+    .compact-filters {
+        width: 100% !important;
+        margin-left: 0 !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+    }
+    
+    .compact-filters .form-control,
+    .compact-filters select,
+    .compact-filters input {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        max-width: none !important;
+    }
 }
 
