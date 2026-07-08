@@ -4512,4 +4512,221 @@ textarea.form-control {
         max-width: none !important;
     }
 }
+
+/* ==========================================================================
+   Redesigned Modern Dashboard Styles
+   ========================================================================== */
+.dashboard-grid-container {
+    display: grid;
+    grid-template-columns: 1.1fr 1.9fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Hero Total Sales Card */
+.hero-sales-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white !important;
+    padding: 2.25rem 2rem;
+    border-radius: 28px;
+    box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.4);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 250px;
+    border: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.hero-sales-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.55);
+}
+
+.hero-sales-card .stat-value {
+    color: white !important;
+    font-size: 3.25rem;
+    font-weight: 850;
+    letter-spacing: -1.5px;
+    margin: 1rem 0;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-family: 'Outfit', 'Inter', sans-serif;
+    line-height: 1;
+}
+
+.hero-sales-card .stat-info h3 {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.hero-sales-card-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.25);
+    padding-top: 1.25rem;
+    margin-top: auto;
+}
+
+.hero-sales-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hero-sales-detail-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+}
+
+.hero-sales-detail-value {
+    font-size: 1.2rem;
+    font-weight: 750;
+    color: white;
+}
+
+/* Background glowing blobs inside the Hero Card */
+.hero-sales-card::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 70%);
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+.hero-sales-card::before {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.4), transparent 75%);
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+/* Tighter, Modern Stats Grid for Secondary Metrics */
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.compact-stat-card {
+    background: white;
+    padding: 1.25rem 1.5rem;
+    border-radius: 20px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.compact-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-light);
+}
+
+.compact-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.compact-stat-card .stat-icon i {
+    font-size: 22px;
+}
+
+.compact-stat-card .stat-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--dark);
+}
+
+.compact-stat-card .stat-info h3 {
+    font-size: 0.72rem;
+    color: var(--gray-500);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+/* Quick Actions Restyling */
+.dashboard-quick-actions {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-top: 1.5rem;
+}
+
+.dashboard-quick-actions .quick-actions-title {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Slot Machine Number Rolling & Blur Animation */
+@keyframes num-roll-blur {
+    0% { filter: blur(0px); opacity: 1; transform: scale(1); }
+    30% { filter: blur(3px); opacity: 0.8; transform: scale(1.03); color: var(--primary); }
+    70% { filter: blur(2px); opacity: 0.9; transform: scale(1.01); }
+    100% { filter: blur(0px); opacity: 1; transform: scale(1); }
+}
+
+.num-animating {
+    animation: num-roll-blur 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: inline-block;
+    will-change: filter, transform, opacity;
+}
+
+/* Custom Scrollbar for Sold Items List */
+#soldItemsListContainer::-webkit-scrollbar {
+    width: 5px;
+}
+#soldItemsListContainer::-webkit-scrollbar-track {
+    background: transparent;
+}
+#soldItemsListContainer::-webkit-scrollbar-thumb {
+    background-color: var(--gray-300);
+    border-radius: 10px;
+}
+#soldItemsListContainer::-webkit-scrollbar-thumb:hover {
+    background-color: var(--gray-400);
+}
+
 

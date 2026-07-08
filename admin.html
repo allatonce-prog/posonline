@@ -14,7 +14,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
     <link rel="stylesheet" href="css/styles.css?v=6.0">
-    <link rel="stylesheet" href="css/admin.css?v=6.0">
+    <link rel="stylesheet" href="css/admin.css?v=6.4">
     <link rel="stylesheet" href="css/mobile-no-zoom.css?v=6.0">
     <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.0">
     <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=6.0">
@@ -278,160 +278,171 @@
 
             <div class="admin-content">
                 <div class="tabs active" id="dashboard-tab">
-                    <!-- Time Range Selector -->
-                    <div style="margin-bottom: 1.5rem;">
-                        <!-- Main Filter Buttons -->
-                        <div
-                            style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                    <!-- Dashboard Header & Utility Bar -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: white; padding: 1rem 1.5rem; border-radius: 20px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-gauge" style="color: var(--primary);"></i> Overview Dashboard
+                            </h2>
+                            <div id="selectedRangeDisplay" style="font-size: 0.82rem; color: var(--gray-500); font-weight: 500;">
+                                <!-- Will show selected date range -->
+                            </div>
+                        </div>
+                        
+                        <!-- Sleek Pill Filters -->
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="time-range-btn active" data-range="today" onclick="switchTimeRange('today')"
-                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);">
-                                <i class="ph ph-calendar-blank"></i> Today
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--primary); background: var(--primary); color: white; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
+                                Today
                             </button>
                             <button class="time-range-btn" data-range="week" onclick="switchTimeRange('week')"
-                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
-                                <i class="ph ph-calendar"></i> This Week
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
+                                This Week
                             </button>
                             <button class="time-range-btn" data-range="month" onclick="switchTimeRange('month')"
-                                style="padding: 0.65rem 1.5rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s;">
-                                <i class="ph ph-calendar-check"></i> This Month
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
+                                This Month
                             </button>
-                        </div>
-
-                        <!-- Custom Range Button (Below) -->
-                        <div style="display: flex; justify-content: center;">
                             <button class="time-range-btn" data-range="custom" onclick="showCustomRangeModal()"
-                                style="padding: 0.5rem 1.25rem; border: 2px solid var(--gray-300); background: white; color: var(--gray-600); border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.3s;">
-                                <i class="ph ph-calendar-dots"></i> Custom Range
-                            </button>
-                        </div>
-
-                        <!-- Selected Date Range Display -->
-                        <div id="selectedRangeDisplay"
-                            style="text-align: center; font-size: 0.9rem; color: var(--gray-600); font-weight: 500; margin-top: 0.75rem; padding: 0.5rem; background: var(--gray-100); border-radius: 8px;">
-                            <!-- Will show selected date range -->
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions Panel -->
-                    <div class="quick-actions-panel">
-                        <div class="quick-actions-title">
-                            <i class="ph ph-lightning"></i> Quick Actions
-                        </div>
-                        <div class="quick-actions-grid">
-                            <button class="quick-action-btn" onclick="showStockInModal()">
-                                <i class="ph ph-download-simple" style="color: var(--primary);"></i>
-                                <span>Stock In</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="showAddExpenseModal()">
-                                <i class="ph ph-receipt" style="color: #ef4444;"></i>
-                                <span>Add Expense</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="showAddProductModal()">
-                                <i class="ph ph-plus" style="color: #6366f1;"></i>
-                                <span>Add Product</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="showAddDeliveryModal()">
-                                <i class="ph ph-truck" style="color: #f59e0b;"></i>
-                                <span>New Delivery</span>
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-calendar-dots"></i> Custom
                             </button>
                         </div>
                     </div>
 
-                    <div class="stats-grid">
-                        <!-- 1. TODAY SALES -->
-                        <div class="stat-card">
-                            <div class="stat-icon primary"><i class="ph ph-currency-dollar"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todaySalesLabel">Today's Sales</h3>
-                                <div class="stat-value" id="todaySales">₱0.00</div>
+                    <!-- Main Dashboard Modern Grid -->
+                    <div class="dashboard-grid-container">
+                        
+                        <!-- Left Column: Hero Total Sales & Quick Actions -->
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem;">
+                            <!-- Hero Total Sales Card -->
+                            <div class="hero-sales-card">
+                                <div class="stat-info">
+                                    <h3 id="todaySalesLabel">Today's Sales</h3>
+                                    <div class="stat-value" id="todaySales">₱0.00</div>
+                                </div>
+                                
+                                <div class="hero-sales-card-details">
+                                    <div class="hero-sales-detail-item">
+                                        <div class="hero-sales-detail-label" id="todayCashSalesLabel">Cash Payments</div>
+                                        <div class="hero-sales-detail-value" id="todayCashSales">₱0.00</div>
+                                    </div>
+                                    <div class="hero-sales-detail-item">
+                                        <div class="hero-sales-detail-label" id="todayGcashSalesLabel">GCash Payments</div>
+                                        <div class="hero-sales-detail-value" id="todayGcashSales">₱0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Actions Panel -->
+                            <div class="dashboard-quick-actions" style="margin-top: 0;">
+                                <div class="quick-actions-title">
+                                    <i class="ph ph-lightning" style="color: var(--warning);"></i> Quick Actions
+                                </div>
+                                <div class="quick-actions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                    <button class="quick-action-btn" onclick="showStockInModal()" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1rem; border-radius: 16px; border: 1px solid var(--gray-200); background: var(--gray-50); cursor: pointer; transition: all 0.2s;">
+                                        <i class="ph ph-download-simple" style="color: var(--primary); font-size: 1.5rem;"></i>
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--gray-800);">Stock In</span>
+                                    </button>
+                                    <button class="quick-action-btn" onclick="showAddExpenseModal()" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1rem; border-radius: 16px; border: 1px solid var(--gray-200); background: var(--gray-50); cursor: pointer; transition: all 0.2s;">
+                                        <i class="ph ph-receipt" style="color: #ef4444; font-size: 1.5rem;"></i>
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--gray-800);">Add Expense</span>
+                                    </button>
+                                    <button class="quick-action-btn" onclick="showAddProductModal()" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1rem; border-radius: 16px; border: 1px solid var(--gray-200); background: var(--gray-50); cursor: pointer; transition: all 0.2s;">
+                                        <i class="ph ph-plus" style="color: #6366f1; font-size: 1.5rem;"></i>
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--gray-800);">Add Product</span>
+                                    </button>
+                                    <button class="quick-action-btn" onclick="showAddDeliveryModal()" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1rem; border-radius: 16px; border: 1px solid var(--gray-200); background: var(--gray-50); cursor: pointer; transition: all 0.2s;">
+                                        <i class="ph ph-truck" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--gray-800);">New Delivery</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 1A. CASH SALES -->
-                        <div class="stat-card">
-                            <div class="stat-icon success" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="ph ph-money"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayCashSalesLabel">Cash Payments (Today)</h3>
-                                <div class="stat-value" id="todayCashSales">₱0.00</div>
+                        <!-- Right Column: Secondary Statistics Grid -->
+                        <div class="dashboard-stats-grid">
+                            
+                            <!-- 1. NET PROFIT -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon success" id="netProfitIcon"><i class="ph ph-trend-up"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="todayNetProfitLabel">Net Profit</h3>
+                                    <div class="stat-value" id="todayNetProfit">₱0.00</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 1B. GCASH SALES -->
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="ph ph-device-mobile"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayGcashSalesLabel">GCash Payments (Today)</h3>
-                                <div class="stat-value" id="todayGcashSales">₱0.00</div>
+                            <!-- 2. EXPENSES -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon warning" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="ph ph-money"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="todayExpensesLabel">Expenses</h3>
+                                    <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 2. TODAY EXPENSES -->
-                        <div class="stat-card">
-                            <div class="stat-icon warning"><i class="ph ph-money"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayExpensesLabel">Today's Expenses</h3>
-                                <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                            <!-- 3. TRANSACTIONS -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon danger" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i class="ph ph-shopping-cart"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="totalTransactionsLabel">Transactions</h3>
+                                    <div class="stat-value" id="totalTransactions">0</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 3. TODAY COLLECTIBLES -->
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i
-                                    class="ph ph-coins"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayCollectiblesLabel">Today's Collectibles</h3>
-                                <div class="stat-value" id="todayCollectibles">₱0.00</div>
+                            <!-- 4. THIS MONTH DELIVERIES -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="ph ph-truck"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="monthDeliveriesLabel">Deliveries</h3>
+                                    <div class="stat-value" id="monthDeliveries">₱0.00</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 4. COLLECTED TODAY -->
-                        <div class="stat-card">
-                            <div class="stat-icon success"><i class="ph ph-hand-coins"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayCollectedLabel">Collections Today</h3>
-                                <div class="stat-value" id="todayCollected">₱0.00</div>
+                            <!-- 5. TODAY COLLECTIBLES -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="ph ph-coins"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="todayCollectiblesLabel">Collectibles</h3>
+                                    <div class="stat-value" id="todayCollectibles">₱0.00</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 5. TODAY TRANSACTIONS -->
-                        <div class="stat-card">
-                            <div class="stat-icon danger"><i class="ph ph-shopping-cart"></i></div>
-                            <div class="stat-info">
-                                <h3 id="totalTransactionsLabel">Sales Transactions Today</h3>
-                                <div class="stat-value" id="totalTransactions">0</div>
+                            <!-- 6. COLLECTED TODAY -->
+                            <div class="compact-stat-card">
+                                <div class="stat-icon success" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="ph ph-hand-coins"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="todayCollectedLabel">Collections</h3>
+                                    <div class="stat-value" id="todayCollected">₱0.00</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 7. NET PROFIT -->
-                        <div class="stat-card">
-                            <div class="stat-icon success" id="netProfitIcon"><i class="ph ph-trend-up"></i></div>
-                            <div class="stat-info">
-                                <h3 id="todayNetProfitLabel">Net Profit (Today)</h3>
-                                <div class="stat-value" id="todayNetProfit">₱0.00</div>
-                            </div>
-                        </div>
+                            <!-- 7. ITEMS SOLD -->
+                            <div class="compact-stat-card" onclick="switchTab('item-sales')" style="grid-column: span 2; cursor: pointer; flex-direction: column; align-items: stretch; gap: 1rem; padding: 1.5rem; min-height: 280px;" title="View Item Sales breakdown">
+                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; margin: 0;"><i class="ph ph-shopping-bag-open"></i></div>
+                                        <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start;">
+                                            <h3 id="totalItemsSoldLabel" style="margin: 0; font-size: 0.8rem; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px;">Items Sold</h3>
+                                            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 2px;">
+                                                <span class="stat-value" id="totalItemsSold" style="font-size: 1.5rem; font-weight: 800; color: var(--dark); line-height: 1; margin: 0;">0</span>
+                                                <span style="font-size: 0.8rem; color: var(--gray-400); font-weight: 500;">units</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                        See breakdown <i class="ph ph-arrow-right"></i>
+                                    </div>
+                                </div>
 
-                        <!-- 8. THIS MONTH DELIVERIES -->
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i
-                                    class="ph ph-truck"></i></div>
-                            <div class="stat-info">
-                                <h3 id="monthDeliveriesLabel">This Month Deliveries</h3>
-                                <div class="stat-value" id="monthDeliveries">₱0.00</div>
+                                <!-- Dynamic List of Sold Items -->
+                                <div id="soldItemsListContainer" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 220px; overflow-y: auto; margin-top: 0.5rem; padding-right: 4px;">
+                                    <div style="text-align: center; color: var(--gray-400); padding: 1.5rem 0; font-size: 0.85rem; font-weight: 500; width: 100%;">
+                                        No items sold in this range
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- 9. TOTAL ITEMS SOLD -->
-                        <div class="stat-card" onclick="switchTab('item-sales')" style="cursor:pointer;"
-                            title="View Item Sales breakdown">
-                            <div class="stat-icon" style="background: rgba(16,185,129,0.12); color: #10b981;"><i
-                                    class="ph ph-shopping-bag-open"></i></div>
-                            <div class="stat-info">
-                                <h3 id="totalItemsSoldLabel">Items Sold Today</h3>
-                                <div class="stat-value" id="totalItemsSold">0</div>
-                                <div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">tap to see
-                                    breakdown →</div>
-                            </div>
                         </div>
                     </div>
 
@@ -2321,7 +2332,7 @@
     <script src="js/utils.js?v=6.0"></script>
     <script src="js/admin/dashboard-charts.js?v=6.0"></script>
     <script src="js/admin.js?v=6.0"></script>
-    <script src="js/admin/time-range.js?v=6.0"></script>
+    <script src="js/admin/time-range.js?v=6.1"></script>
     <script src="js/admin/products.js?v=6.0"></script>
     <script src="js/admin/recipes.js?v=6.1"></script>
     <script src="js/admin/modifiers.js?v=6.0"></script>

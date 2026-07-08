@@ -101,6 +101,66 @@ function updateRangeDisplay(range) {
     display.textContent = text;
 }
 
+// Helper for slot machine rolling number animation with CSS blur effect
+function animateStatValue(element, targetValue, isCurrency = false) {
+    if (!element) return;
+    
+    const target = parseFloat(targetValue) || 0;
+    const currentText = element.textContent || '';
+    
+    // Parse current numeric value from element text (removing currency symbol and commas)
+    let currentVal = parseFloat(element.dataset.currentVal);
+    if (isNaN(currentVal)) {
+        const cleanText = currentText.replace(/[₱,]/g, '').trim();
+        currentVal = parseFloat(cleanText) || 0;
+    }
+    
+    // Save new value in dataset
+    element.dataset.currentVal = target;
+    
+    // Add animation class (which applies the blur and scaling keyframe effect)
+    element.classList.remove('num-animating');
+    // Force DOM reflow to restart CSS animation
+    void element.offsetWidth;
+    element.classList.add('num-animating');
+    
+    // Animation configuration
+    const duration = 850; // ms
+    const startTime = performance.now();
+    const startVal = currentVal;
+    
+    function updateNumber(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease-out cubic easing function
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        const currentNum = startVal + (target - startVal) * easedProgress;
+        
+        if (isCurrency) {
+            element.textContent = formatCurrency(currentNum);
+        } else {
+            element.textContent = Math.round(currentNum).toLocaleString('en-US');
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        } else {
+            // Animation finished: set exact target and clean up classes
+            if (isCurrency) {
+                element.textContent = formatCurrency(target);
+            } else {
+                element.textContent = Math.round(target).toLocaleString('en-US');
+            }
+            setTimeout(() => {
+                element.classList.remove('num-animating');
+            }, 100);
+        }
+    }
+    
+    requestAnimationFrame(updateNumber);
+}
+
 // Load dashboard with selected time range
 async function loadDashboardWithRange(range, isSilent = false) {
     if (!isSilent) {
@@ -227,19 +287,18 @@ async function loadDashboardWithRange(range, isSilent = false) {
 
         // Update Labels based on range
         updateStatLabels(range);
-
-        if (todaySalesEl) todaySalesEl.textContent = formatCurrency(sales);
-        if (todayCashSalesEl) todayCashSalesEl.textContent = formatCurrency(cashSales);
-        if (todayGcashSalesEl) todayGcashSalesEl.textContent = formatCurrency(gcashSales);
-        if (todayExpensesDashEl) todayExpensesDashEl.textContent = formatCurrency(expensesTotal);
-        if (todayCollectiblesEl) todayCollectiblesEl.textContent = formatCurrency(collectiblesTotal);
-        if (todayCollectedEl) todayCollectedEl.textContent = formatCurrency(collectedTotal);
-        if (monthDeliveriesEl) monthDeliveriesEl.textContent = formatCurrency(deliveriesTotal);
-
+        if (todaySalesEl) animateStatValue(todaySalesEl, sales, true);
+        if (todayCashSalesEl) animateStatValue(todayCashSalesEl, cashSales, true);
+        if (todayGcashSalesEl) animateStatValue(todayGcashSalesEl, gcashSales, true);
+        if (todayExpensesDashEl) animateStatValue(todayExpensesDashEl, expensesTotal, true);
+        if (todayCollectiblesEl) animateStatValue(todayCollectiblesEl, collectiblesTotal, true);
+        if (todayCollectedEl) animateStatValue(todayCollectedEl, collectedTotal, true);
+        if (monthDeliveriesEl) animateStatValue(monthDeliveriesEl, deliveriesTotal, true);
+ 
         const salesTransactionsCount = rangeTransactions.filter(t => t.type !== 'collectible_payment' && t.status !== 'voided').length;
-        if (totalTransactionsEl) totalTransactionsEl.textContent = salesTransactionsCount;
-        if (todayNetProfitEl) todayNetProfitEl.textContent = formatCurrency(netProfit);
-
+        if (totalTransactionsEl) animateStatValue(totalTransactionsEl, salesTransactionsCount, false);
+        if (todayNetProfitEl) animateStatValue(todayNetProfitEl, netProfit, true);
+ 
         // Calculate total items (units) sold in range
         const totalItemsSold = rangeTransactions
             .filter(t => t.status !== 'voided' && t.type !== 'collectible_payment')
@@ -248,7 +307,69 @@ async function loadDashboardWithRange(range, isSilent = false) {
                 return sum + t.items.reduce((s, item) => s + (Number(item.quantity) || 0), 0);
             }, 0);
         const totalItemsSoldEl = document.getElementById('totalItemsSold');
-        if (totalItemsSoldEl) totalItemsSoldEl.textContent = totalItemsSold;
+        if (totalItemsSoldEl) animateStatValue(totalItemsSoldEl, totalItemsSold, false);
+
+        // Aggregate items sold
+        const itemSalesMap = {};
+        rangeTransactions
+            .filter(t => t.status !== 'voided' && t.type !== 'collectible_payment')
+            .forEach(t => {
+                if (!t.items || !Array.isArray(t.items)) return;
+                t.items.forEach(item => {
+                    const pid = item.productId || item.id;
+                    if (!pid) return;
+                    if (!itemSalesMap[pid]) {
+                        itemSalesMap[pid] = {
+                            productId: pid,
+                            name: item.name,
+                            price: Number(item.price) || 0,
+                            quantity: 0,
+                        };
+                    }
+                    itemSalesMap[pid].quantity += (Number(item.quantity) || 0);
+                });
+            });
+
+        const productMap = {};
+        if (Array.isArray(products)) {
+            products.forEach(p => {
+                productMap[p.id] = p;
+            });
+        }
+
+        const sortedSoldItems = Object.values(itemSalesMap)
+            .sort((a, b) => b.quantity - a.quantity);
+
+        const soldItemsListContainer = document.getElementById('soldItemsListContainer');
+        if (soldItemsListContainer) {
+            if (sortedSoldItems.length === 0) {
+                soldItemsListContainer.innerHTML = `
+                    <div style="text-align: center; color: var(--gray-400); padding: 1.5rem 0; font-size: 0.85rem; font-weight: 500; width: 100%;">
+                        No items sold in this range
+                    </div>`;
+            } else {
+                soldItemsListContainer.innerHTML = sortedSoldItems.map(item => {
+                    const productImage = productMap[item.productId]?.image || null;
+                    return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--gray-50); border-radius: 12px; border: 1px solid var(--gray-100); transition: all 0.2s;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: var(--gray-100); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--gray-200);">
+                                    ${productImage ? `<img src="${productImage}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 1.2rem;">📦</span>'}
+                                </div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--gray-800); text-align: left;">${item.name}</span>
+                                    <span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 500; text-align: left;">₱${item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+                                <span style="font-size: 0.85rem; font-weight: 750; color: var(--success-dark);">${item.quantity} sold</span>
+                                <span style="font-size: 0.75rem; color: var(--gray-400); font-weight: 500;">₱${(item.quantity * item.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
 
         // Update net profit color
         const netProfitEl = document.getElementById('todayNetProfit');
