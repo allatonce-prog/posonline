@@ -152,26 +152,6 @@ function renderIngredientsList(ingredients = allIngredients) {
 
         const card = document.createElement('div');
         card.className = 'ingredient-card';
-        card.style.cssText = `
-            background: white; 
-            border-radius: var(--radius-md); 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            padding: 1rem; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 0.75rem;
-            position: relative;
-            border: 1px solid var(--gray-200);
-            transition: transform 0.2s, box-shadow 0.2s;
-        `;
-        card.onmouseover = () => {
-            card.style.transform = 'translateY(-2px)';
-            card.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-        };
-        card.onmouseout = () => {
-            card.style.transform = 'none';
-            card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        };
 
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -232,7 +212,10 @@ window.toggleLinkedProducts = function(event, ingId) {
                 const otherCaret = document.getElementById(`caret-${otherIngId}`);
                 if (otherCaret) otherCaret.style.transform = 'rotate(0deg)';
                 const otherCard = dd.closest('.ingredient-card') || dd.parentElement.parentElement;
-                if (otherCard) otherCard.style.zIndex = 'auto';
+                if (otherCard) {
+                    otherCard.style.zIndex = 'auto';
+                    otherCard.classList.remove('dropdown-open');
+                }
             }
         });
     }
@@ -241,11 +224,17 @@ window.toggleLinkedProducts = function(event, ingId) {
     if (isHidden) {
         dropdown.style.display = 'flex';
         if (caret) caret.style.transform = 'rotate(180deg)';
-        if (card) card.style.zIndex = '10';
+        if (card) {
+            card.style.zIndex = '10';
+            card.classList.add('dropdown-open');
+        }
     } else {
         dropdown.style.display = 'none';
         if (caret) caret.style.transform = 'rotate(0deg)';
-        if (card) card.style.zIndex = 'auto';
+        if (card) {
+            card.style.zIndex = 'auto';
+            card.classList.remove('dropdown-open');
+        }
     }
 };
 
