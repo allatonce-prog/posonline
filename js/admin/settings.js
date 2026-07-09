@@ -503,3 +503,112 @@ async function applyCollectiblesCorrection() {
         showToast('Correction failed: ' + error.message, 'error');
     }
 }
+
+/* ==========================================
+   Database Backup & Restore Helpers
+   ========================================== */
+
+window.exportDatabaseBackup = async function () {
+    showLoading('Generating backup file...');
+    try {
+        const collections = ['products', 'recipes', 'ingredients', 'modifiers', 'transactions', 'expenses', 'salaries', 'deliveries', 'settings'];
+        const backupData = {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            data: {}
+        };
+
+        const fetchPromises = collections.map(async (c) => {
+            try {
+                const list = await db.getAll(c);
+                backupData.data[c] = list;
+            } catch (err) {
+                console.warn(`Could not read store: ${c}`, err);
+                backupData.data[c] = [];
+            }
+        });
+
+        await Promise.all(fetchPromises);
+
+        // Convert to string and download
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `arabikca_pos_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast('Backup file generated and downloaded successfully.', 'success');
+    } catch (err) {
+        console.error('Backup generation failed:', err);
+        showToast('Export failed: ' + err.message, 'error');
+    } finally {
+        hideLoading();
+    }
+};
+
+window.importDatabaseBackup = async function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!confirm('WARNING: Importing a backup will overwrite existing products, transactions, and settings in your current database. Do you wish to proceed?')) {
+        event.target.value = '';
+        return;
+    }
+
+    showLoading('Parsing backup...');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const backup = JSON.parse(e.target.result);
+            if (!backup.version || !backup.data) {
+                throw new Error('Invalid backup schema. Missing version or data fields.');
+            }
+
+            const dataKeys = Object.keys(backup.data);
+            let importCount = 0;
+
+            // Import each store in sequence
+            for (const storeName of dataKeys) {
+                const items = backup.data[storeName];
+                if (!Array.isArray(items)) continue;
+
+                // Add or overwrite each item in IndexedDB
+                for (const item of items) {
+                    if (item.id) {
+                        await db.set(storeName, item);
+                        importCount++;
+                    }
+                }
+            }
+
+            showToast(`Restore completed! Successfully imported ${importCount} items.`, 'success');
+            
+            // Clear cache and reload app
+            if (typeof window.clearDbCache === 'function') {
+                window.clearDbCache();
+            }
+            
+            setTimeout(() => window.location.reload(true), 1500);
+
+        } catch (err) {
+            console.error('Database import failed:', err);
+            showToast('Import failed: ' + err.message, 'error');
+        } finally {
+            hideLoading();
+            event.target.value = '';
+        }
+    };
+    reader.onerror = () => {
+        hideLoading();
+        showToast('Error reading backup file.', 'error');
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+};
+

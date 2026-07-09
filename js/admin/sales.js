@@ -109,73 +109,56 @@ async function loadSales() {
 
   tbody.innerHTML = displayTransactions.map(transaction => {
     const isVoided = transaction.status === 'voided';
-
-    // Determine cashier display name
     const cashierDisplay = transaction.cashierName || userMap[transaction.cashier] || transaction.cashier;
+    
+    // Order type badge
+    let orderTypeBadge = '';
+    if (transaction.orderType === 'takeout') {
+        orderTypeBadge = `<span class="badge" style="background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;"><i class="ph ph-shopping-bag"></i> Takeout</span>`;
+    } else {
+        orderTypeBadge = `<span class="badge" style="background: rgba(99, 102, 241, 0.08); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;"><i class="ph ph-house"></i> Dine-in</span>`;
+    }
 
+    // Payment method badge
+    let paymentBadge = '';
+    if (transaction.paymentMethod === 'split') {
+        paymentBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">💵 Cash + 📱 GCash</span>`;
+    } else if (transaction.paymentMethod?.toLowerCase() === 'gcash') {
+        paymentBadge = `<span class="badge" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">📱 GCash</span>`;
+    } else {
+        paymentBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">💵 Cash</span>`;
+    }
+
+    const itemsCount = transaction.items ? transaction.items.length : 0;
+    
     return `
-    <tr>
-      <td colspan="8" style="padding: 0; border: none;">
-        <div class="transaction-card clickable-row" onclick="viewTransaction('${transaction.id}')" style="cursor: pointer; border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 0.75rem; background: ${isVoided ? '#f9fafb' : 'var(--white)'}; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s; position: relative; overflow: hidden; ${isVoided ? 'opacity: 0.8;' : ''}">
-            
-            ${isVoided ? '<div style="position: absolute; top: 10px; right: -25px; background: var(--danger); color: white; padding: 2px 30px; transform: rotate(45deg); font-size: 0.7rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">VOIDED</div>' : ''}
-
-            <!-- Header: Date & ID -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 700; color: var(--dark); font-size: 1rem; margin-bottom: 2px; word-break: break-all;">
-                        ${formatTransactionId(transaction.id)}
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--gray-500);">
-                        ${formatDateTime(transaction.date)}
-                    </div>
-                </div>
-                <div style="text-align: right; flex-shrink: 0; padding-right: ${isVoided ? '20px' : '0'}; min-width: fit-content;">
-                    <div style="color: ${isVoided ? 'var(--gray-500)' : 'var(--success)'}; font-weight: 800; font-size: 1.15rem; ${isVoided ? 'text-decoration: line-through;' : ''} white-space: nowrap;">
-                        ${formatCurrency(Number(transaction.total) || Number(transaction.amount) || 0)}
-                    </div>
-                    <span class="badge ${isVoided ? 'badge-secondary' : 'badge-primary'}" style="font-size: 0.7rem; padding: 2px 6px; margin-top: 2px; display: inline-flex; align-items: center; gap: 3px;">
-                        ${transaction.paymentMethod === 'split'
-                            ? '💵 Cash + 📱 GCash'
-                            : escapeHtml(transaction.paymentMethod || 'Cash')}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Divider -->
-            <div style="height: 1px; background: var(--gray-100); width: 100%;"></div>
-
-            <!-- Details: Cashier, Customer, Items -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; font-size: 0.85rem;">
-                <div>
-                    <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Cashier</span>
-                    <span style="color: var(--dark); font-weight: 500; word-break: break-word;">
-                        <i class="ph ph-user" style="vertical-align: middle;"></i> ${escapeHtml(cashierDisplay)}
-                    </span>
-                </div>
-                <div>
-                    <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Customer</span>
-                    <span style="color: var(--dark); font-weight: 500; word-break: break-word;">
-                         ${escapeHtml(transaction.customerName || 'Walk-in')}
-                    </span>
-                </div>
-                <div>
-                    <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Order Type</span>
-                    <span style="color: var(--dark); font-weight: 600; word-break: break-word;">
-                         ${transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in'}
-                    </span>
-                </div>
-                <div>
-                    <span style="color: var(--gray-500); display: block; font-size: 0.75rem; font-weight: 600;">Items</span>
-                    <span style="color: var(--primary); font-weight: 600;">
-                        ${transaction.items ? transaction.items.length : 0} item${transaction.items && transaction.items.length !== 1 ? 's' : ''}
-                    </span>
-                </div>
-            </div>
+    <tr class="clickable-row ${isVoided ? 'voided-row' : ''}" onclick="viewTransaction('${transaction.id}')" style="cursor: pointer; ${isVoided ? 'opacity: 0.7;' : ''}">
+      <td style="font-weight: 700; font-family: monospace; color: var(--gray-700); font-size: 0.85rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        ${formatTransactionId(transaction.id)}
+      </td>
+      <td style="font-size: 0.82rem; color: var(--gray-600);">${formatDateTime(transaction.date)}</td>
+      <td style="font-weight: 600; color: var(--gray-800);">${escapeHtml(cashierDisplay)}</td>
+      <td style="color: var(--gray-700);">${escapeHtml(transaction.customerName || 'Walk-in')}</td>
+      <td>${orderTypeBadge}</td>
+      <td style="font-weight: 700; color: var(--primary);">${itemsCount} item${itemsCount !== 1 ? 's' : ''}</td>
+      <td style="text-align: right; font-weight: 800; color: ${isVoided ? 'var(--gray-400)' : 'var(--success)'}; ${isVoided ? 'text-decoration: line-through;' : ''} font-size: 0.95rem;">
+        ${formatCurrency(Number(transaction.total) || Number(transaction.amount) || 0)}
+      </td>
+      <td>${paymentBadge}</td>
+      <td style="text-align: right;" onclick="event.stopPropagation();">
+        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-icon" onclick="viewTransaction('${transaction.id}')" style="height: 32px; width: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;" title="View Details">
+                <i class="ph ph-eye" style="font-size: 1.05rem;"></i>
+            </button>
+            ${isVoided ? '' : `
+            <button class="btn btn-danger btn-icon" onclick="initiateVoidTransaction('${transaction.id}'); event.stopPropagation();" style="height: 32px; width: 32px; padding: 0; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); color: #ef4444; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;" title="Void Transaction">
+                <i class="ph ph-prohibit" style="font-size: 1.05rem;"></i>
+            </button>
+            `}
         </div>
       </td>
     </tr>
-  `;
+    `;
   }).join('');
 
   // Pagination Controls

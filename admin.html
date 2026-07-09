@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.0">
     <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=6.0">
     <link rel="stylesheet" href="css/recipes.css?v=6.1">
+    <link rel="stylesheet" href="css/admin-enhancements.css?v=6.0">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/pagination.js"></script>
@@ -72,6 +73,30 @@
 </head>
 
 <body>
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+        <button class="bottom-nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <i class="ph ph-gauge"></i>
+            <span>Dashboard</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="products" onclick="switchTab('products')">
+            <i class="ph ph-package"></i>
+            <span>Products</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="sales" onclick="switchTab('sales')">
+            <i class="ph ph-receipt"></i>
+            <span>Sales</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="inventory" onclick="switchTab('inventory')">
+            <i class="ph ph-clipboard-text"></i>
+            <span>Inventory</span>
+        </button>
+        <button class="bottom-nav-item" id="bottomMenuToggle">
+            <i class="ph ph-list"></i>
+            <span>Menu</span>
+        </button>
+    </nav>
+
     <!-- Mobile Menu Toggle -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle"><i class="ph ph-list"></i></button>
 
@@ -98,6 +123,14 @@
             </div>
 
             <nav class="admin-nav">
+                <!-- Sidebar Search Wrapper -->
+                <div class="sidebar-search-container">
+                    <div class="sidebar-search-wrapper">
+                        <i class="ph ph-magnifying-glass sidebar-search-icon"></i>
+                        <input type="text" id="sidebarSearch" class="sidebar-search-input" placeholder="Search menu...">
+                    </div>
+                </div>
+
                 <!-- Overview -->
                 <div class="nav-section" id="section-overview">
                     <div class="nav-section-header">
@@ -249,12 +282,24 @@
         <main class="admin-main">
             <div class="admin-header">
                 <div class="header-left">
+                    <div class="admin-breadcrumbs" id="adminBreadcrumbs">Overview / Dashboard</div>
                     <h2 id="pageTitle">Dashboard</h2>
                     <p id="currentStoreName" style="font-size: 0.85rem; color: var(--gray-600); margin: 0.25rem 0 0 0;">
                         📍 Loading store...
                     </p>
                 </div>
                 <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+                    <!-- Connection Status Badge -->
+                    <div class="connection-status-badge online" id="connectionStatusBadge" title="Connection: Online">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Online</span>
+                    </div>
+
+                    <!-- Dark Mode Toggle -->
+                    <button class="dark-mode-toggle-btn" id="darkModeToggle" title="Toggle Dark Mode">
+                        <i class="ph ph-moon"></i>
+                    </button>
+
                     <!-- Notifications -->
                     <div class="notifications-dropdown">
                         <button class="notification-btn" id="notificationBtn">
@@ -322,13 +367,13 @@
                     <!-- Main Dashboard Modern Grid -->
                     <div class="dashboard-grid-container">
                         
-                        <!-- Left Column: Hero Total Sales & Quick Actions -->
                         <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem;">
                             <!-- Hero Total Sales Card -->
                             <div class="hero-sales-card">
                                 <div class="stat-info">
                                     <h3 id="todaySalesLabel">Today's Sales</h3>
                                     <div class="stat-value" id="todaySales">₱0.00</div>
+                                    <div class="trend-badge" id="salesTrend" style="display: none;"></div>
                                 </div>
                                 
                                 <div class="hero-sales-card-details">
@@ -368,7 +413,7 @@
                                 </div>
                             </div>
                         </div>
-
+ 
                         <!-- Right Column: Secondary Statistics Grid -->
                         <div class="dashboard-stats-grid">
                             
@@ -378,51 +423,57 @@
                                 <div class="stat-info">
                                     <h3 id="todayNetProfitLabel">Net Profit</h3>
                                     <div class="stat-value" id="todayNetProfit">₱0.00</div>
+                                    <div class="trend-badge" id="netProfitTrend" style="display: none;"></div>
                                 </div>
                             </div>
-
+ 
                             <!-- 2. EXPENSES -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon warning" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="ph ph-money"></i></div>
                                 <div class="stat-info">
                                     <h3 id="todayExpensesLabel">Expenses</h3>
                                     <div class="stat-value" id="todayExpensesDash">₱0.00</div>
+                                    <div class="trend-badge" id="expensesTrend" style="display: none;"></div>
                                 </div>
                             </div>
-
+ 
                             <!-- 3. TRANSACTIONS -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon danger" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i class="ph ph-shopping-cart"></i></div>
                                 <div class="stat-info">
                                     <h3 id="totalTransactionsLabel">Transactions</h3>
                                     <div class="stat-value" id="totalTransactions">0</div>
+                                    <div class="trend-badge" id="transactionsTrend" style="display: none;"></div>
                                 </div>
                             </div>
-
+ 
                             <!-- 4. THIS MONTH DELIVERIES -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="ph ph-truck"></i></div>
                                 <div class="stat-info">
                                     <h3 id="monthDeliveriesLabel">Deliveries</h3>
                                     <div class="stat-value" id="monthDeliveries">₱0.00</div>
+                                    <div class="trend-badge" id="deliveriesTrend" style="display: none;"></div>
                                 </div>
                             </div>
-
+ 
                             <!-- 5. TODAY COLLECTIBLES -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="ph ph-coins"></i></div>
                                 <div class="stat-info">
                                     <h3 id="todayCollectiblesLabel">Collectibles</h3>
                                     <div class="stat-value" id="todayCollectibles">₱0.00</div>
+                                    <div class="trend-badge" id="collectiblesTrend" style="display: none;"></div>
                                 </div>
                             </div>
-
+ 
                             <!-- 6. COLLECTED TODAY -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon success" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="ph ph-hand-coins"></i></div>
                                 <div class="stat-info">
                                     <h3 id="todayCollectedLabel">Collections</h3>
                                     <div class="stat-value" id="todayCollected">₱0.00</div>
+                                    <div class="trend-badge" id="collectedTrend" style="display: none;"></div>
                                 </div>
                             </div>
 
@@ -461,8 +512,15 @@
 
                         <!-- Sales Trend (Full Width) -->
                         <div class="chart-card" style="grid-column: 1 / -1;">
-                            <div class="chart-header">
+                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                 <h3><i class="ph ph-trend-up"></i> Sales Trend</h3>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label class="switch" style="transform: scale(0.85); margin: 0; display: inline-flex; align-items: center;" title="Show predictive 7-day sales forecast line based on history">
+                                        <input type="checkbox" id="enableForecastToggle" onchange="toggleSalesForecast()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--gray-600); user-select: none;">Show 7-Day Forecast</span>
+                                </div>
                             </div>
                             <div class="chart-body" style="height: 300px;">
                                 <canvas id="salesTrendChart"></canvas>
@@ -600,6 +658,28 @@
                                         <i class="ph ph-squares-four" style="font-size: 1.1rem;"></i>
                                     </button>
                                 </div>
+                                <div class="dropdown-wrapper col-visibility-dropdown" style="position: relative; margin-right: 0.75rem;">
+                                    <button type="button" class="btn btn-secondary btn-icon" onclick="toggleColumnDropdown('prod-col-dropdown')" style="height: 38px; width: 38px; display: flex; align-items: center; justify-content: center;" title="Column Visibility">
+                                        <i class="ph ph-columns" style="font-size: 1.1rem;"></i>
+                                    </button>
+                                    <div class="dropdown-menu-list" id="prod-col-dropdown" style="display: none; position: absolute; right: 0; top: 105%; background: white; border: 1px solid var(--gray-200); border-radius: 10px; z-index: 1000; box-shadow: var(--shadow-lg); padding: 8px; min-width: 140px; flex-direction: column; gap: 4px;">
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 8px; font-weight: 600; color: var(--gray-700); cursor: pointer; user-select: none;">
+                                            <input type="checkbox" checked onchange="toggleTableColumn('products', 'col-thumbnail', this)"> Thumbnail
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 8px; font-weight: 600; color: var(--gray-700); cursor: pointer; user-select: none;">
+                                            <input type="checkbox" checked onchange="toggleTableColumn('products', 'col-sku', this)"> SKU
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 8px; font-weight: 600; color: var(--gray-700); cursor: pointer; user-select: none;">
+                                            <input type="checkbox" checked onchange="toggleTableColumn('products', 'col-category', this)"> Category
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 8px; font-weight: 600; color: var(--gray-700); cursor: pointer; user-select: none;">
+                                            <input type="checkbox" checked onchange="toggleTableColumn('products', 'col-price', this)"> Price
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 4px 8px; font-weight: 600; color: var(--gray-700); cursor: pointer; user-select: none;">
+                                            <input type="checkbox" checked onchange="toggleTableColumn('products', 'col-stock', this)"> Stock
+                                        </label>
+                                    </div>
+                                </div>
                                 <button class="btn btn-primary" onclick="showAddProductModal()">
                                     + Add Product
                                 </button>
@@ -611,12 +691,15 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 70px;">Thumbnail</th>
-                                        <th>SKU</th>
-                                        <th>Name</th>
-                                        <th>Category</th>
-                                        <th>Price</th>
-                                        <th>Stock</th>
+                                        <th style="width: 48px; text-align: center;">
+                                            <input type="checkbox" id="selectAllProducts" onchange="toggleSelectAllProducts(this)">
+                                        </th>
+                                        <th class="col-thumbnail" style="width: 70px;">Thumbnail</th>
+                                        <th class="col-sku">SKU</th>
+                                        <th class="col-name">Name</th>
+                                        <th class="col-category">Category</th>
+                                        <th class="col-price">Price</th>
+                                        <th class="col-stock">Stock</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -858,17 +941,18 @@
                                 </button>
                             </div>
                         </div>
-                        <table class="data-table" style="border-collapse: separate; border-spacing: 0;">
-                            <thead style="display: none;">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Date</th>
+                                    <th>Transaction ID</th>
+                                    <th>Date & Time</th>
                                     <th>Cashier</th>
                                     <th>Customer</th>
+                                    <th>Order Type</th>
                                     <th>Items</th>
-                                    <th>Total</th>
-                                    <th>Payment</th>
-                                    <th>Actions</th>
+                                    <th style="text-align: right;">Total</th>
+                                    <th>Payment Method</th>
+                                    <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="salesTable">
@@ -1237,160 +1321,195 @@
 
                 <!-- Settings Tab -->
                 <div class="tabs" id="settings-tab">
-                    <div class="table-container">
-                        <div class="table-header">
-                            <h3>System Settings</h3>
-                        </div>
-                        <div class="settings-content">
+                    <div class="settings-layout-wrapper">
+                        <!-- Left Navigation Sidebar -->
+                        <aside class="settings-nav-sidebar">
+                            <button type="button" class="settings-nav-btn active" onclick="switchSettingsTab('settings-general')">
+                                <i class="ph ph-gear-six"></i> General Settings
+                            </button>
+                            <button type="button" class="settings-nav-btn" onclick="switchSettingsTab('settings-inventory')">
+                                <i class="ph ph-stack"></i> Inventory Rules
+                            </button>
+                            <button type="button" class="settings-nav-btn" onclick="switchSettingsTab('settings-correction')">
+                                <i class="ph ph-wrench"></i> Data Correction
+                            </button>
+                            <button type="button" class="settings-nav-btn" onclick="switchSettingsTab('settings-maintenance')">
+                                <i class="ph ph-database"></i> App & Backups
+                            </button>
+                            <button type="button" class="settings-nav-btn danger" onclick="switchSettingsTab('settings-danger')">
+                                <i class="ph ph-warning-circle"></i> Danger Zone
+                            </button>
+                        </aside>
+
+                        <!-- Right Content Area -->
+                        <div class="settings-content-area">
                             <form id="settingsForm" class="settings-form">
-                                <!-- General Settings -->
-                                <div class="settings-section">
-                                    <h4>General Settings</h4>
-                                    <div class="form-group">
-                                        <label for="systemName">POS System Name *</label>
-                                        <input type="text" id="systemName" class="form-control"
-                                            placeholder="e.g., My Store POS" required>
-                                        <small class="form-text">This name will appear on the login
-                                            page</small>
+                                <!-- Card: General Settings -->
+                                <div class="settings-card active" id="settings-general">
+                                    <div class="settings-card-header">
+                                        <i class="ph ph-gear-six card-icon"></i>
+                                        <div>
+                                            <h4>General Settings</h4>
+                                            <p>Configure core details of your POS branding and reporting emails</p>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="systemDescription">System Description</label>
-                                        <input type="text" id="systemDescription" class="form-control"
-                                            placeholder="e.g., Point of Sale & Inventory Management">
-                                        <small class="form-text">Short description shown on login
-                                            page</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="businessType">Business Type</label>
-                                        <select id="businessType" class="form-control">
-                                            <option value="retail">Retail Store (Default)</option>
-                                            <option value="pharmacy">Pharmacy</option>
-                                        </select>
-                                        <small class="form-text">Select your business type to enable
-                                            specific features
-                                            (e.g., Pharmacy mode enables expiry dates & generic
-                                            names).</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="adminEmail">Admin Email for Reports</label>
-                                        <input type="email" id="adminEmail" class="form-control"
-                                            placeholder="admin@example.com">
-                                        <small class="form-text"> Daily sales reports will be sent to
-                                            this email.
-                                            <button type="button" class="btn btn-sm btn-secondary"
-                                                style="margin-top: 5px; padding: 2px 8px; font-size: 0.75rem;"
-                                                onclick="sendManualYesterdayReport()">
-                                                <i class="ph ph-paper-plane-right"></i> Send Yesterday's
-                                                Report Now
-                                            </button>
-                                        </small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="systemIcon">System Icon (Emoji)</label>
-                                        <input type="text" id="systemIcon" class="form-control" placeholder="🛒"
-                                            maxlength="2">
-                                        <small class="form-text">Emoji icon for the login page</small>
-                                    </div>
-                                </div>
-
-
-                                <!-- Inventory Settings -->
-                                <div class="settings-section">
-                                    <h4>Inventory Settings</h4>
-                                    <div class="form-group">
-                                        <label for="lowStockThreshold">Low Stock Threshold *</label>
-                                        <input type="number" id="lowStockThreshold" class="form-control"
-                                            placeholder="10" min="0" required>
-                                        <small class="form-text">Products with stock at or below this
-                                            value will be
-                                            marked as low stock</small>
-                                    </div>
-                                </div>
-
-                                <!-- Save Button -->
-                                <div class="settings-actions">
-                                    <button type="submit" class="btn btn-primary">💾 Save
-                                        Settings</button>
-                                    <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄
-                                        Reset
-                                        to Default</button>
-                                </div>
-
-                                <!-- Data Correction -->
-                                <div class="settings-section">
-                                    <h4>Data Correction</h4>
-                                    <div class="form-group">
-                                        <label>Today's Collectibles Amount</label>
-                                        <div
-                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                            <div
-                                                style="background: var(--light); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--gray-200);">
-                                                <span style="color: var(--gray-600); font-size: 0.9rem;">Current:</span>
-                                                <span id="currentTodayCollectibles"
-                                                    style="font-weight: bold; color: var(--primary);">Loading...</span>
+                                    <div class="settings-card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                        <div class="form-grid-2">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label for="systemName">POS System Name *</label>
+                                                <input type="text" id="systemName" class="form-control" placeholder="e.g., My Store POS" required>
+                                                <small class="form-text">This name will appear on the login page</small>
                                             </div>
-                                            <button type="button" class="btn btn-sm btn-secondary"
-                                                onclick="refreshCorrectionData()">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label for="systemIcon">System Icon (Emoji)</label>
+                                                <input type="text" id="systemIcon" class="form-control" placeholder="🛒" maxlength="2">
+                                                <small class="form-text">Emoji icon for the login page</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label for="systemDescription">System Description</label>
+                                            <input type="text" id="systemDescription" class="form-control" placeholder="e.g., Point of Sale & Inventory Management">
+                                            <small class="form-text">Short description shown on login page</small>
+                                        </div>
+                                        <div class="form-grid-2">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label for="businessType">Business Type</label>
+                                                <select id="businessType" class="form-control">
+                                                    <option value="retail">Retail Store (Default)</option>
+                                                    <option value="pharmacy">Pharmacy</option>
+                                                </select>
+                                                <small class="form-text">Select business type to toggle specific features</small>
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label for="adminEmail">Admin Email for Reports</label>
+                                                <div style="display: flex; gap: 8px;">
+                                                    <input type="email" id="adminEmail" class="form-control" placeholder="admin@example.com">
+                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="sendManualYesterdayReport()" style="white-space: nowrap; height: 42px;">
+                                                        <i class="ph ph-paper-plane-right"></i> Send Report
+                                                    </button>
+                                                </div>
+                                                <small class="form-text">Daily sales reports will be sent to this email</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card: Inventory Settings -->
+                                <div class="settings-card" id="settings-inventory">
+                                    <div class="settings-card-header">
+                                        <i class="ph ph-stack card-icon"></i>
+                                        <div>
+                                            <h4>Inventory Settings</h4>
+                                            <p>Setup rules for stock thresholds and warning triggers</p>
+                                        </div>
+                                    </div>
+                                    <div class="settings-card-body">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label for="lowStockThreshold">Low Stock Threshold *</label>
+                                            <input type="number" id="lowStockThreshold" class="form-control" placeholder="10" min="0" required>
+                                            <small class="form-text">Products with stock at or below this value will be marked as low stock</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Actions -->
+                                <div class="settings-card active" id="settings-form-actions-wrapper" style="border: none; background: transparent; box-shadow: none;">
+                                    <div class="settings-form-actions" style="border-radius: 12px; border: 1px solid var(--gray-200);">
+                                        <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+                                        <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄 Reset to Default</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Card: Data Correction -->
+                            <div class="settings-card" id="settings-correction">
+                                <div class="settings-card-header">
+                                    <i class="ph ph-wrench card-icon"></i>
+                                    <div>
+                                        <h4>Data Correction</h4>
+                                        <p>Adjust current totals and fix discrepancies manually</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>Today's Collectibles Amount</label>
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <div style="background: var(--gray-50); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--gray-200); display: inline-flex; align-items: center; gap: 6px;">
+                                                <span style="color: var(--gray-600); font-size: 0.85rem; font-weight: 600;">Current Today:</span>
+                                                <span id="currentTodayCollectibles" style="font-weight: bold; color: var(--primary);">Loading...</span>
+                                            </div>
+                                            <button type="button" class="btn btn-secondary btn-icon" onclick="refreshCorrectionData()" style="height: 38px; width: 38px;">
                                                 <i class="ph ph-arrow-clockwise"></i>
                                             </button>
                                         </div>
-                                        <div style="display: flex; gap: 10px;">
-                                            <input type="number" id="targetCollectiblesAmount" class="form-control"
-                                                placeholder="Enter correct amount" step="0.01">
-                                            <button type="button" class="btn btn-primary"
-                                                onclick="applyCollectiblesCorrection()">Update
-                                                Amount</button>
+                                        <div style="display: flex; gap: 10px; max-width: 480px;">
+                                            <input type="number" id="targetCollectiblesAmount" class="form-control" placeholder="Enter correct amount" step="0.01">
+                                            <button type="button" class="btn btn-primary" onclick="applyCollectiblesCorrection()" style="white-space: nowrap;">Update Amount</button>
                                         </div>
-                                        <small class="form-text">
-                                            This will create a "System Adjustment" record to force the
-                                            total for
-                                            strictly <b>today</b> to match your input.
-                                        </small>
+                                        <small class="form-text">Creates a "System Adjustment" record to force today's outstanding collectible total.</small>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- App Maintenance -->
-                                <div class="settings-section">
-                                    <h4>App Maintenance</h4>
-                                    <div class="form-group">
-                                        <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
-                                            Use this if you are experiencing issues or not seeing the
-                                            latest
-                                            updates.
-                                        </p>
-                                        <button type="button" class="btn btn-warning" onclick="resetAppCache()">
-                                            <i class="ph ph-arrow-clockwise"></i> Reset App / Clear
-                                            Cache
+                            <!-- Card: App Maintenance & Backups -->
+                            <div class="settings-card" id="settings-maintenance">
+                                <div class="settings-card-header">
+                                    <i class="ph ph-database card-icon"></i>
+                                    <div>
+                                        <h4>App & Database Maintenance</h4>
+                                        <p>Manage application cache and secure local data backups</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label style="font-weight: 700; color: var(--dark); font-size: 0.9rem;">App Cache Management</label>
+                                        <p style="font-size: 0.85rem; color: var(--gray-500); margin: 0.25rem 0 0.75rem 0;">Clear offline assets cache to pull the latest system updates from server.</p>
+                                        <button type="button" class="btn btn-warning" onclick="resetAppCache()" style="display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-arrow-clockwise"></i> Reset App / Clear Cache
+                                        </button>
+                                    </div>
+                                    <div style="border-top: 1px solid var(--gray-100); padding-top: 1.5rem;">
+                                        <label style="font-weight: 700; color: var(--dark); font-size: 0.9rem;">Local Backups (JSON)</label>
+                                        <p style="font-size: 0.85rem; color: var(--gray-500); margin: 0.25rem 0 0.75rem 0;">Download a complete backup JSON dump of all tables, or import a previously downloaded backup file.</p>
+                                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                            <button type="button" class="btn btn-success" onclick="exportDatabaseBackup()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+                                                <i class="ph ph-download-simple" style="font-size: 1.1rem;"></i> Export Backup
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('importBackupFile').click()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700;">
+                                                <i class="ph ph-upload-simple" style="font-size: 1.1rem;"></i> Import Backup
+                                            </button>
+                                            <input type="file" id="importBackupFile" accept=".json" style="display: none;" onchange="importDatabaseBackup(event)">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card: Danger Zone -->
+                            <div class="settings-card danger" id="settings-danger" style="border: 2px solid var(--danger); background: rgba(239, 68, 68, 0.02);">
+                                <div class="settings-card-header" style="border-bottom-color: rgba(239, 68, 68, 0.1);">
+                                    <i class="ph ph-warning-circle card-icon" style="color: var(--danger);"></i>
+                                    <div>
+                                        <h4 style="color: var(--danger);">Danger Zone</h4>
+                                        <p style="color: var(--danger); opacity: 0.8;">Permanently delete system records. Action cannot be undone.</p>
+                                    </div>
+                                </div>
+                                <div class="settings-card-body">
+                                    <p style="font-size: 0.85rem; color: var(--danger); margin: 0 0 1rem 0; font-weight: 600;">
+                                        WARNING: Deleting records clears sales analytics, transaction streams, and catalog inventories. Verify before resetting.
+                                    </p>
+                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-warning" onclick="clearTransactionRecords()" style="flex: 1; border: 1px solid var(--warning); color: #854d0e; background: #fef9c3; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                            <i class="ph ph-trash"></i> Clear Transactions Only
+                                        </button>
+                                        <button type="button" class="btn btn-danger" onclick="performHardReset()" style="flex: 1; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                            <i class="ph ph-warning-circle"></i> HARD RESET SYSTEM
                                         </button>
                                     </div>
                                 </div>
-                        </div>
-
-                        <!-- Danger Zone -->
-                        <div class="settings-section"
-                            style="border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.05);">
-                            <h4 style="color: var(--danger);">Danger Zone</h4>
-                            <div class="form-group">
-                                <p
-                                    style="font-size: 0.9rem; color: var(--danger); margin-bottom: 0.5rem; font-weight: 500;">
-                                    This action will permanently delete ALL data (Products, Sales,
-                                    History, Users).
-                                    Only your current admin account will remain.
-                                </p>
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                    <button type="button" class="btn btn-warning" onclick="clearTransactionRecords()"
-                                        style="flex: 1; border: 1px solid var(--warning); color: #854d0e; background: #fef9c3;">
-                                        <i class="ph ph-trash"></i> Clear Transaction Records Only
-                                    </button>
-                                    <button type="button" class="btn btn-danger" onclick="performHardReset()"
-                                        style="flex: 1;">
-                                        <i class="ph ph-warning-circle"></i> HARD RESET SYSTEM
-                                    </button>
-                                </div>
                             </div>
                         </div>
-                        </form>
                     </div>
+                </div>                    </div>
                 </div>
             </div>
     </div>
@@ -2360,6 +2479,46 @@
     <script src="js/admin/item-sales.js?v=6.0"></script>
     <script src="js/tawk-to.js"></script>
     <script src="js/pull-to-refresh.js?v=6.0"></script>
+    <!-- Floating Bulk Actions Toolbar -->
+    <div class="bulk-actions-toolbar" id="bulkActionsToolbar" style="display: none;">
+        <div class="bulk-actions-content">
+            <span class="selected-count" id="bulkSelectedCount">0 items selected</span>
+            <div class="bulk-actions-buttons">
+                <button class="btn btn-secondary btn-sm" onclick="bulkExportCSV()" style="display: inline-flex; align-items: center; gap: 4px; padding: 0.5rem 1rem;">
+                    <i class="ph ph-file-csv"></i> Export CSV
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="bulkDeleteProducts()" style="display: inline-flex; align-items: center; gap: 4px; padding: 0.5rem 1rem;">
+                    <i class="ph ph-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette Overlay -->
+    <div class="command-palette-backdrop" id="commandPalette" style="display: none;">
+        <div class="command-palette-container">
+            <div class="command-palette-search-wrapper">
+                <i class="ph ph-terminal-window command-palette-search-icon"></i>
+                <input type="text" id="commandPaletteInput" class="command-palette-input" placeholder="Search commands... (Esc to close)">
+            </div>
+            <div class="command-palette-list" id="commandPaletteList">
+                <!-- Dynamic Items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Slide-out Drawer -->
+    <div class="slide-drawer-backdrop" id="drawerBackdrop" style="display: none;" onclick="closeDetailsDrawer()"></div>
+    <div class="slide-drawer" id="detailsDrawer">
+        <div class="slide-drawer-header">
+            <h3 id="drawerTitle">Product Details</h3>
+            <button class="slide-drawer-close" onclick="closeDetailsDrawer()">×</button>
+        </div>
+        <div class="slide-drawer-body" id="drawerBody">
+            <!-- Dynamic Details -->
+        </div>
+    </div>
+
     <!-- Global Hover Image Preview Tooltip -->
     <div id="productHoverTooltip" class="product-tooltip-preview" style="display: none;"></div>
 </body>

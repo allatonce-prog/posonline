@@ -78,7 +78,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Fetch event - Network first for HTML and CSS, cache first for other assets
+// Fetch event - Network-first for code assets (HTML, CSS, JS), Cache-first for other static resources
 self.addEventListener('fetch', event => {
   const request = event.request;
 
@@ -89,29 +89,36 @@ self.addEventListener('fetch', event => {
   try {
     url = new URL(request.url);
   } catch (e) {
-    return; // Invalid URL - let browser handle it
+    return; // Let browser handle invalid URLs
   }
 
-  // Skip cross-origin requests (tawk.to, Firebase, CDNs, etc.)
-  // Let the browser handle them directly without SW interference
+  // Skip cross-origin requests, except Cloudinary image assets
   const isCrossOrigin = url.origin !== self.location.origin;
-  if (isCrossOrigin) {
-    return; // Do NOT call event.respondWith() - browser handles natively
+  const isCloudinary = url.hostname.includes('cloudinary.com');
+  if (isCrossOrigin && !isCloudinary) {
+    return;
   }
 
-  // Also skip any known external service domains by hostname
+  // Skip bypassed service domains
   if (BYPASS_DOMAINS.some(domain => url.hostname.includes(domain))) {
     return;
   }
 
-  // Network first strategy for HTML and CSS files
-  if (request.mode === 'navigate' ||
-    (request.headers.get('accept') || '').includes('text/html') ||
-    request.url.includes('.css')) {
+  // Detect if this is a manual browser refresh/reload request
+  const isReload = request.cache === 'reload' || request.cache === 'no-cache';
+
+  // Code assets that change frequently and shouldn't load old cached versions when online
+  const isCodeAsset = request.mode === 'navigate' ||
+                      (request.headers.get('accept') || '').includes('text/html') ||
+                      request.url.includes('.css') ||
+                      request.url.includes('.js');
+
+  // If manual reload or code asset, use Network-First strategy
+  if (isReload || isCodeAsset) {
     event.respondWith(
       fetch(request)
         .then(response => {
-          // Cache the new version
+          // Cache the new version if request succeeded
           if (response && response.status === 200) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then(cache => {
@@ -121,55 +128,59 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          // Fallback to cache if network fails
+          // Fallback to cache if network fails (offline mode)
           return caches.match(request)
-            .then(response => {
-              if (response) {
-                return response;
+            .then(cachedResponse => {
+              if (cachedResponse) {
+                return cachedResponse;
               }
-              // If no cache, return to index
-              return caches.match('./index.html');
+              // If no query-matched cache, look for version-agnostic pathname matching
+              const urlWithoutQuery = url.origin + url.pathname;
+              return caches.match(urlWithoutQuery)
+                .then(agnosticResponse => {
+                  if (agnosticResponse) {
+                    return agnosticResponse;
+                  }
+                  // Fallback for navigation requests
+                  if (request.mode === 'navigate') {
+                    return caches.match('./index.html');
+                  }
+                  return new Response('', {
+                    status: 503,
+                    statusText: 'Service Offline'
+                  });
+                });
             });
         })
     );
     return;
   }
 
-  // Cache first strategy for same-origin JS and other assets
-  // Strip query strings when looking up cache so ?v=6.x params don't cause misses
+  // Cache-First strategy for static assets (images, icons, etc.)
   event.respondWith(
-    (async () => {
-      // Try exact URL match first (with query string)
-      let cached = await caches.match(request);
-      if (cached) return cached;
+    caches.match(request).then(cachedResponse => {
+      if (cachedResponse) return cachedResponse;
 
-      // Try without query string (handles ?v=6.x versioning)
+      // Match without query string as fallback
       const urlWithoutQuery = url.origin + url.pathname;
-      cached = await caches.match(urlWithoutQuery);
-      if (cached) return cached;
+      return caches.match(urlWithoutQuery).then(cachedAgnostic => {
+        if (cachedAgnostic) return cachedAgnostic;
 
-      // Not in cache - fetch from network
-      try {
-        const response = await fetch(request);
-
-        // Only cache valid same-origin responses
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          const cache = await caches.open(CACHE_NAME);
-          // Store under pathname (without query) for future version-agnostic hits
-          cache.put(urlWithoutQuery, responseToCache);
-        }
-
-        return response;
-      } catch (err) {
-        // Network failed - return a graceful error (no rejection)
-        console.warn('[ServiceWorker] Fetch failed for:', request.url, err);
-        return new Response('', {
-          status: 503,
-          statusText: 'Service Unavailable'
+        // Fetch from network and cache
+        return fetch(request).then(response => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(urlWithoutQuery, responseClone);
+            });
+          }
+          return response;
+        }).catch(err => {
+          console.warn('[ServiceWorker] Static asset load failed:', request.url, err);
+          return new Response('', { status: 404 });
         });
-      }
-    })()
+      });
+    })
   );
 });
 

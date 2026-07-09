@@ -787,3 +787,97 @@ body.modal-open {
   font-weight: 800;
   color: var(--primary);
 }
+
+/* ==========================================
+   Premium Toast Notifications Styles
+   ========================================== */
+.premium-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid var(--primary, #10b981);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 3000;
+    transform: translateX(350px);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 320px;
+    overflow: hidden;
+    will-change: transform, opacity;
+}
+
+body.dark-mode .premium-toast {
+    background: #1f2937;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.premium-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.premium-toast.success { border-left-color: #10b981; }
+.premium-toast.error { border-left-color: #ef4444; }
+.premium-toast.warning { border-left-color: #f59e0b; }
+.premium-toast.info { border-left-color: #3b82f6; }
+
+.premium-toast-icon {
+    font-size: 1.4rem;
+}
+.premium-toast.success .premium-toast-icon { color: #10b981; }
+.premium-toast.error .premium-toast-icon { color: #ef4444; }
+.premium-toast.warning .premium-toast-icon { color: #f59e0b; }
+.premium-toast.info .premium-toast-icon { color: #3b82f6; }
+
+.premium-toast-body {
+    flex: 1;
+}
+
+.premium-toast-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin: 0 0 2px 0;
+    color: var(--dark, #1e293b);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .premium-toast-title {
+    color: #ffffff;
+}
+
+.premium-toast-message {
+    font-size: 0.85rem;
+    color: var(--gray-500, #64748b);
+    margin: 0;
+}
+
+body.dark-mode .premium-toast-message {
+    color: #cbd5e1;
+}
+
+.premium-toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    width: 100%;
+}
+
+.premium-toast-progress-bar {
+    height: 100%;
+    background: var(--primary, #10b981);
+    width: 100%;
+    transition: width 3s linear;
+}
+.premium-toast.success .premium-toast-progress-bar { background-color: #10b981; }
+.premium-toast.error .premium-toast-progress-bar { background-color: #ef4444; }
+.premium-toast.warning .premium-toast-progress-bar { background-color: #f59e0b; }
+.premium-toast.info .premium-toast-progress-bar { background-color: #3b82f6; }

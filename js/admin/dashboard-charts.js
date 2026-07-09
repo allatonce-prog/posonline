@@ -12,6 +12,19 @@ let categoryChartInstance = null;
 let paymentMethodChartInstance = null;
 let peakHoursChartInstance = null;
 
+// Dynamic chart coloring options based on dark mode body classes
+function getChartThemeOptions() {
+    const isDark = document.body.classList.contains('dark-mode');
+    return {
+        textColor: isDark ? '#94a3b8' : '#64748b',
+        gridColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f3f4f6',
+        legendColor: isDark ? '#e2e8f0' : '#475569'
+    };
+}
+
+let lastLoadedTransactions = [];
+let lastLoadedProducts = [];
+
 // Initialize or update dashboard charts
 function updateDashboardCharts(transactions, products) {
     if (typeof Chart === 'undefined') {
@@ -19,15 +32,18 @@ function updateDashboardCharts(transactions, products) {
         return;
     }
 
+    lastLoadedTransactions = transactions || [];
+    lastLoadedProducts = products || [];
+
     // Determine time granularity based on transaction spread
-    const dates = transactions.map(t => t.date.split('T')[0]);
+    const dates = lastLoadedTransactions.map(t => t.date.split('T')[0]);
     const uniqueDates = new Set(dates);
     const isSingleDay = uniqueDates.size <= 1;
 
-    renderSalesTrendChart(transactions, isSingleDay);
-    renderCategoryChart(transactions, products);
-    renderPaymentMethodChart(transactions);
-    renderPeakHoursChart(transactions);
+    renderSalesTrendChart(lastLoadedTransactions, isSingleDay);
+    renderCategoryChart(lastLoadedTransactions, lastLoadedProducts);
+    renderPaymentMethodChart(lastLoadedTransactions);
+    renderPeakHoursChart(lastLoadedTransactions);
 }
 
 // 1. Sales Trend Chart (Dynamic: Hourly for single day, Daily otherwise)
@@ -109,27 +125,89 @@ function renderSalesTrendChart(transactions, isSingleDay) {
     }
 
     // Gradient
+    const theme = getChartThemeOptions();
+    const isDark = document.body.classList.contains('dark-mode');
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Primary color
-    gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+    if (isDark) {
+        gradient.addColorStop(0, 'rgba(52, 211, 153, 0.4)'); // Emerald/Green glow
+        gradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+    } else {
+        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)'); // Indigo/Blue glow
+        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+    }
+
+    const datasets = [{
+        label: labelText,
+        data: [...data],
+        borderColor: isDark ? '#34d399' : '#6366f1',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        pointBackgroundColor: isDark ? '#111827' : '#ffffff',
+        pointBorderColor: isDark ? '#34d399' : '#6366f1',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4
+    }];
+
+    const showForecast = document.getElementById('enableForecastToggle')?.checked;
+    if (showForecast && data.length >= 2) {
+        const N = data.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        for (let i = 0; i < N; i++) {
+            sumX += i;
+            sumY += data[i];
+            sumXY += i * data[i];
+            sumXX += i * i;
+        }
+
+        const slope = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX || 1);
+        const intercept = (sumY - slope * sumX) / N;
+
+        // Connections & projected points padding
+        const forecastData = new Array(N - 1).fill(null);
+        forecastData.push(data[N - 1]); // Connect with last actual point
+
+        const forecastSteps = 7;
+        const lastLabelDate = isSingleDay ? null : new Date(sortedDates[sortedDates.length - 1]);
+
+        for (let i = 1; i <= forecastSteps; i++) {
+            const projectedIndex = (N - 1) + i;
+            const projectedValue = Math.max(0, slope * projectedIndex + intercept);
+            forecastData.push(projectedValue);
+
+            if (isSingleDay) {
+                // Hourly est
+                const nextHourNum = i % 24;
+                const hourStr = nextHourNum === 0 ? '12 AM' : nextHourNum === 12 ? '12 PM' : nextHourNum > 12 ? `${nextHourNum - 12} PM` : `${nextHourNum} AM`;
+                labels.push(`${hourStr} (Est)`);
+            } else {
+                const nextDate = new Date(lastLabelDate);
+                nextDate.setDate(nextDate.getDate() + i);
+                labels.push(nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' (Est)');
+            }
+        }
+
+        datasets.push({
+            label: 'Forecast Projection (Est)',
+            data: forecastData,
+            borderColor: isDark ? '#fbbf24' : '#f59e0b',
+            borderWidth: 2,
+            borderDash: [6, 6],
+            pointBackgroundColor: isDark ? '#111827' : '#ffffff',
+            pointBorderColor: isDark ? '#fbbf24' : '#f59e0b',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: false,
+            tension: 0.15
+        });
+    }
 
     salesTrendChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: labelText,
-                data: data,
-                borderColor: '#6366f1',
-                backgroundColor: gradient,
-                borderWidth: 2,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#6366f1',
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -141,6 +219,11 @@ function renderSalesTrendChart(transactions, isSingleDay) {
                 tooltip: {
                     mode: 'index',
                     intersect: false,
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#1e293b',
+                    bodyColor: isDark ? '#e2e8f0' : '#475569',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+                    borderWidth: 1,
                     callbacks: {
                         label: function (context) {
                             let label = context.dataset.label || '';
@@ -160,9 +243,10 @@ function renderSalesTrendChart(transactions, isSingleDay) {
                     beginAtZero: true,
                     grid: {
                         borderDash: [2, 4],
-                        color: '#f3f4f6'
+                        color: theme.gridColor
                     },
                     ticks: {
+                        color: theme.textColor,
                         callback: function (value) {
                             return '₱' + value;
                         }
@@ -171,6 +255,9 @@ function renderSalesTrendChart(transactions, isSingleDay) {
                 x: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        color: theme.textColor
                     }
                 }
             },
@@ -242,6 +329,9 @@ function renderCategoryChart(transactions, products) {
         categoryChartInstance.destroy();
     }
 
+    const theme = getChartThemeOptions();
+    const isDark = document.body.classList.contains('dark-mode');
+    
     categoryChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -260,6 +350,7 @@ function renderCategoryChart(transactions, products) {
                 legend: {
                     position: 'bottom', // Move to bottom for better space
                     labels: {
+                        color: theme.legendColor,
                         usePointStyle: true,
                         padding: 15,
                         font: {
@@ -269,6 +360,11 @@ function renderCategoryChart(transactions, products) {
                     }
                 },
                 tooltip: {
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#1e293b',
+                    bodyColor: isDark ? '#e2e8f0' : '#475569',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+                    borderWidth: 1,
                     callbacks: {
                         label: function (context) {
                             let label = context.label || '';
@@ -327,6 +423,9 @@ function renderPaymentMethodChart(transactions) {
         paymentMethodChartInstance.destroy();
     }
 
+    const theme = getChartThemeOptions();
+    const isDark = document.body.classList.contains('dark-mode');
+
     paymentMethodChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
@@ -345,6 +444,7 @@ function renderPaymentMethodChart(transactions) {
                 legend: {
                     position: 'bottom',
                     labels: {
+                        color: theme.legendColor,
                         usePointStyle: true,
                         padding: 15,
                         font: {
@@ -354,6 +454,11 @@ function renderPaymentMethodChart(transactions) {
                     }
                 },
                 tooltip: {
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#1e293b',
+                    bodyColor: isDark ? '#e2e8f0' : '#475569',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+                    borderWidth: 1,
                     callbacks: {
                         label: function (context) {
                             let label = context.label || '';
@@ -400,6 +505,9 @@ function renderPeakHoursChart(transactions) {
         peakHoursChartInstance.destroy();
     }
 
+    const theme = getChartThemeOptions();
+    const isDark = document.body.classList.contains('dark-mode');
+
     peakHoursChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -407,9 +515,9 @@ function renderPeakHoursChart(transactions) {
             datasets: [{
                 label: 'Transactions',
                 data: hours,
-                backgroundColor: '#8b5cf6',
+                backgroundColor: isDark ? '#34d399' : '#8b5cf6',
                 borderRadius: 4,
-                hoverBackgroundColor: '#7c3aed'
+                hoverBackgroundColor: isDark ? '#10b981' : '#7c3aed'
             }]
         },
         options: {
@@ -418,6 +526,13 @@ function renderPeakHoursChart(transactions) {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    titleColor: isDark ? '#ffffff' : '#1e293b',
+                    bodyColor: isDark ? '#e2e8f0' : '#475569',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+                    borderWidth: 1
                 }
             },
             scales: {
@@ -427,12 +542,16 @@ function renderPeakHoursChart(transactions) {
                         display: false
                     },
                     ticks: {
+                        color: theme.textColor,
                         stepSize: 1
                     }
                 },
                 x: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        color: theme.textColor
                     }
                 }
             }
@@ -440,7 +559,23 @@ function renderPeakHoursChart(transactions) {
     });
 }
 
+// Global listener to redraw charts automatically when theme is toggled
+window.addEventListener('themechange', () => {
+    const dashboardTab = document.getElementById('dashboard-tab');
+    if (dashboardTab && dashboardTab.classList.contains('active')) {
+        if (typeof currentTimeRange !== 'undefined' && typeof loadDashboardWithRange === 'function') {
+            loadDashboardWithRange(currentTimeRange, true);
+        }
+    }
+});
+
 // Export for usage
 if (typeof window !== 'undefined') {
     window.updateDashboardCharts = updateDashboardCharts;
+    window.toggleSalesForecast = function () {
+        const dates = lastLoadedTransactions.map(t => t.date.split('T')[0]);
+        const uniqueDates = new Set(dates);
+        const isSingleDay = uniqueDates.size <= 1;
+        renderSalesTrendChart(lastLoadedTransactions, isSingleDay);
+    };
 }

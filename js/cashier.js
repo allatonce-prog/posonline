@@ -279,6 +279,11 @@ async function loadProducts() {
     // Recipe-based auto-calculation has been removed per request.
     // We now just use the base product stock or availability mode logic.
     products = allProducts;
+    
+    // Pre-calculate search tags for high-speed query execution
+    products.forEach(product => {
+        product._searchTag = `${product.name.toLowerCase()} ${product.sku ? product.sku.toLowerCase() : ''} ${product.category ? product.category.toLowerCase() : ''}`;
+    });
 
     // Extract categories
     categories = new Set(['all']);
@@ -337,25 +342,20 @@ function filterByCategory(category) {
 function renderProducts(productsToRender) {
     const grid = document.getElementById('productsGrid');
     const emptyState = document.getElementById('emptyState');
+    if (!grid) return;
 
     if (productsToRender.length === 0) {
         grid.style.display = 'none';
-        emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'block';
         return;
     }
 
     grid.style.display = 'grid';
-    emptyState.style.display = 'none';
-    grid.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'none';
 
     const lowStockThreshold = getLowStockThreshold();
-    const fragment = document.createDocumentFragment();
 
-    productsToRender.forEach(product => {
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.onclick = () => addToCart(product);
-
+    const html = productsToRender.map(product => {
         const available = isProductAvailable(product);
 
         // Stock label
@@ -368,31 +368,24 @@ function renderProducts(productsToRender) {
             stockText = product.stock > 0 ? `${product.stock} in stock` : 'Out of stock';
         }
 
-        card.innerHTML = `
-      <div class="product-image">
-        ${product.image ? `<img src="${product.image}" alt="${product.name}">` : '📦'}
-      </div>
-      <div class="product-info">
-        <div class="product-name">${escapeHtml(product.name)}</div>
-        <div class="product-category">${escapeHtml(product.category || 'Uncategorized')}</div>
-        <div class="product-price">${formatCurrency(product.price)}</div>
-        <div class="product-stock ${stockClass}">${stockText}</div>
-      </div>
-    `;
+        const opacityStyle = available ? '' : 'style="opacity: 0.5; cursor: not-allowed;"';
 
-        // Disable if not available
-        if (!available) {
-            card.style.opacity = '0.5';
-            card.style.cursor = 'not-allowed';
-            card.onclick = () => showToast(
-                product.stockMode === 'availability' ? 'Item is not available' : 'Product out of stock',
-                'warning'
-            );
-        }
+        return `
+        <div class="product-card" data-product-id="${product.id}" ${opacityStyle}>
+          <div class="product-image">
+            ${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">` : '📦'}
+          </div>
+          <div class="product-info">
+            <div class="product-name">${escapeHtml(product.name)}</div>
+            <div class="product-category">${escapeHtml(product.category || 'Uncategorized')}</div>
+            <div class="product-price">${formatCurrency(product.price)}</div>
+            <div class="product-stock ${stockClass}">${stockText}</div>
+          </div>
+        </div>
+        `;
+    }).join('');
 
-        fragment.appendChild(card);
-    });
-    grid.appendChild(fragment);
+    grid.innerHTML = html;
 }
 
 // Add to cart
@@ -1217,9 +1210,7 @@ function setupEventListeners() {
         }
 
         const filtered = products.filter(product =>
-            product.name.toLowerCase().includes(query) ||
-            (product.sku && product.sku.toLowerCase().includes(query)) ||
-            (product.category && product.category.toLowerCase().includes(query))
+            product._searchTag && product._searchTag.includes(query)
         );
 
         renderProducts(filtered);
@@ -1234,6 +1225,24 @@ function setupEventListeners() {
         }
         debouncedSearch(query);
     });
+
+    // Event delegation for product card clicks on catalog grid container
+    const grid = document.getElementById('productsGrid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const card = e.target.closest('.product-card');
+            if (!card) return;
+
+            // Skip handling if clicked on disabling states
+            if (card.style.opacity === '0.5') return;
+
+            const productId = card.dataset.productId;
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            addToCart(product);
+        });
+    }
 
     // Payment method change (single mode)
     document.getElementById('paymentMethod').addEventListener('change', toggleCashPayment);

@@ -390,14 +390,30 @@ async function loadProducts(forceRefresh = true) {
     }
 
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No products found.</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state-card">
+                        <i class="ph ph-package empty-state-icon"></i>
+                        <h3 class="empty-state-title">No products found</h3>
+                        <p class="empty-state-desc">We couldn't find any products matching your filters. Try adding a new product or adjusting the filters.</p>
+                        <button class="btn btn-primary" onclick="showAddProductModal()">
+                            + Add Product
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
         const grid = document.getElementById('productsGrid');
         if (grid) {
             grid.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
-                    <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--gray-300);"><i class="ph ph-package"></i></div>
-                    <h3 style="margin-bottom: 0.5rem; color: var(--dark);">No products found</h3>
-                    <p style="color: var(--gray-500); font-size: 0.9rem;">Try adjusting your search or filters.</p>
+                <div class="empty-state-card" style="grid-column: 1 / -1; width: 100%;">
+                    <i class="ph ph-package empty-state-icon"></i>
+                    <h3 class="empty-state-title">No products found</h3>
+                    <p class="empty-state-desc">We couldn't find any products matching your filters. Try adding a new product or adjusting the filters.</p>
+                    <button class="btn btn-primary" onclick="showAddProductModal()">
+                        + Add Product
+                    </button>
                 </div>
             `;
         }
@@ -435,16 +451,19 @@ async function loadProducts(forceRefresh = true) {
                 : `<div class="table-product-thumbnail" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)"><i class="ph ph-package"></i></div>`;
 
             return `
-              <tr onclick="editProduct('${product.id}')" style="cursor: pointer;">
-                <td onclick="event.stopPropagation();" style="width: 70px; padding: 0.5rem; text-align: center;">${imgHtml}</td>
-                <td data-label="SKU" class="editable-cell" data-field="sku" data-id="${product.id}" onclick="event.stopPropagation();">${escapeHtml(product.sku)}</td>
-                <td data-label="Name" style="font-weight: 600; color: var(--dark);">
+              <tr onclick="viewProductDetails('${product.id}')" style="cursor: pointer;">
+                <td onclick="event.stopPropagation();" style="width: 48px; text-align: center;">
+                    <input type="checkbox" class="product-select-checkbox" data-id="${product.id}" onchange="toggleProductSelection('${product.id}', this.checked)" ${selectedProductIds.has(product.id) ? 'checked' : ''}>
+                </td>
+                <td class="col-thumbnail" onclick="event.stopPropagation();" style="width: 70px; padding: 0.5rem; text-align: center;">${imgHtml}</td>
+                <td class="col-sku editable-cell" data-label="SKU" data-field="sku" data-id="${product.id}" onclick="event.stopPropagation();">${escapeHtml(product.sku)}</td>
+                <td class="col-name" data-label="Name" style="font-weight: 600; color: var(--dark);">
                     ${escapeHtml(product.name)}
                     ${product.hasRecipe ? '<span title="Recipe Product">🍔</span>' : ''}
                 </td>
-                <td data-label="Category">${escapeHtml(product.category || '-')}</td>
-                <td data-label="Price" class="editable-cell" data-field="price" data-id="${product.id}" onclick="event.stopPropagation();" style="font-weight: 500;">${formatCurrency(product.price)}</td>
-                <td data-label="Stock">${stockHtml}</td>
+                <td class="col-category" data-label="Category">${escapeHtml(product.category || '-')}</td>
+                <td class="col-price editable-cell" data-label="Price" data-field="price" data-id="${product.id}" onclick="event.stopPropagation();" style="font-weight: 500;">${formatCurrency(product.price)}</td>
+                <td class="col-stock" data-label="Stock">${stockHtml}</td>
                 <td data-label="Actions">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                         <button class="btn-icon" onclick="editProduct('${product.id}'); event.stopPropagation();" style="color: white; background: #f59e0b; width: 32px; height: 32px; border-radius: 6px;">
@@ -458,6 +477,14 @@ async function loadProducts(forceRefresh = true) {
               </tr>
             `;
         }).join('');
+        
+        // Apply columns settings
+        if (typeof applyStoredColumnVisibility === 'function') {
+            applyStoredColumnVisibility('products');
+        }
+
+        // Update selectAll elements
+        updateBulkActionsToolbar();
     } else {
         // Grid View Rendering
         if (grid) {
@@ -1681,5 +1708,209 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+/* ==========================================
+   Products Multi-Select & Bulk Operations
+   ========================================== */
+
+let selectedProductIds = new Set();
+
+window.toggleProductSelection = function (productId, isChecked) {
+    if (isChecked) {
+        selectedProductIds.add(productId);
+    } else {
+        selectedProductIds.delete(productId);
+    }
+    updateBulkActionsToolbar();
+};
+
+window.toggleSelectAllProducts = function (masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    const checkboxes = document.querySelectorAll('.product-select-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+        const pid = cb.dataset.id;
+        if (isChecked) {
+            selectedProductIds.add(pid);
+        } else {
+            selectedProductIds.delete(pid);
+        }
+    });
+    updateBulkActionsToolbar();
+};
+
+function updateBulkActionsToolbar() {
+    const toolbar = document.getElementById('bulkActionsToolbar');
+    const selectedCountEl = document.getElementById('bulkSelectedCount');
+    if (!toolbar || !selectedCountEl) return;
+
+    const count = selectedProductIds.size;
+    if (count > 0) {
+        selectedCountEl.textContent = `${count} product${count > 1 ? 's' : ''} selected`;
+        toolbar.style.display = 'block';
+        // Add class show in next tick
+        setTimeout(() => toolbar.classList.add('show'), 10);
+    } else {
+        toolbar.classList.remove('show');
+        setTimeout(() => {
+            if (selectedProductIds.size === 0) {
+                toolbar.style.display = 'none';
+            }
+        }, 350);
+    }
+
+    // Update selectAll master checkbox state
+    const masterCheckbox = document.getElementById('selectAllProducts');
+    if (masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.product-select-checkbox');
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        masterCheckbox.checked = allChecked;
+    }
+}
+
+window.bulkExportCSV = function () {
+    if (selectedProductIds.size === 0) return;
+
+    const selectedProducts = _productsCache.filter(p => selectedProductIds.has(p.id));
+
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += 'SKU,Name,Category,Price,Cost,Stock,Stock Mode\n';
+
+    selectedProducts.forEach(p => {
+        const sku = p.sku || '';
+        const name = p.name || '';
+        const cat = p.category || '';
+        const price = p.price || 0;
+        const cost = p.cost || 0;
+        const stock = p.stock || 0;
+        const mode = p.stockMode || 'stock';
+        csvContent += `"${sku}","${name}","${cat}",${price},${cost},${stock},"${mode}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `selected_products_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast(`Exported ${selectedProductIds.size} products to CSV`, 'success');
+};
+
+window.bulkDeleteProducts = async function () {
+    if (selectedProductIds.size === 0) return;
+
+    const confirmDelete = confirm(`Are you sure you want to delete ${selectedProductIds.size} selected products? This action cannot be undone.`);
+    if (!confirmDelete) return;
+
+    showLoading('Deleting products...');
+
+    try {
+        const deletePromises = Array.from(selectedProductIds).map(pid => db.delete('products', pid));
+        await Promise.all(deletePromises);
+
+        showToast(`Successfully deleted ${selectedProductIds.size} products`, 'success');
+
+        // Clear selection
+        selectedProductIds.clear();
+        updateBulkActionsToolbar();
+
+        // Reload products view
+        await loadProducts(true);
+    } catch (err) {
+        console.error('Error during bulk deletion:', err);
+        showToast('Error deleting products: ' + err.message, 'error');
+    } finally {
+        hideLoading();
+    }
+};
+
+/* ==========================================
+   Details Drawer Operations
+   ========================================== */
+
+window.viewProductDetails = async function (productId) {
+    const drawer = document.getElementById('detailsDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    const body = document.getElementById('drawerBody');
+    if (!drawer || !backdrop || !body) return;
+
+    let product = _productsCache ? _productsCache.find(p => p.id === productId) : null;
+    if (!product) {
+        try {
+            product = await db.get('products', productId);
+        } catch (err) {
+            console.error('Error fetching product for drawer:', err);
+        }
+    }
+    if (!product) return;
+
+    const profit = (product.price || 0) - (product.cost || 0);
+    const profitClass = profit >= 0 ? 'profit-green' : 'profit-red';
+    const margin = product.cost ? (((product.price - product.cost) / product.cost) * 100).toFixed(1) : '0';
+
+    body.innerHTML = `
+        <div class="drawer-product-hero">
+            ${product.image ? `<img src="${product.image}" class="drawer-product-image" alt="${escapeHtml(product.name)}">` : `<div class="drawer-product-image" style="background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--gray-300);"><i class="ph ph-package"></i></div>`}
+            <h4 class="drawer-product-title">${escapeHtml(product.name)}</h4>
+            <span style="font-size: 0.85rem; color: var(--gray-500); font-family: monospace;">ID: ${product.id}</span>
+        </div>
+        
+        <div class="drawer-info-grid">
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">SKU</span>
+                <span class="drawer-info-value">${escapeHtml(product.sku || 'N/A')}</span>
+            </div>
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">Category</span>
+                <span class="drawer-info-value">${escapeHtml(product.category || 'Uncategorized')}</span>
+            </div>
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">Cost Price</span>
+                <span class="drawer-info-value">${formatCurrency(product.cost || 0)}</span>
+            </div>
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">Selling Price</span>
+                <span class="drawer-info-value">${formatCurrency(product.price || 0)}</span>
+            </div>
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">Unit Profit</span>
+                <span class="drawer-info-value ${profitClass}">${formatCurrency(profit)} (${margin}%)</span>
+            </div>
+            <div class="drawer-info-card">
+                <span class="drawer-info-label">Current Stock</span>
+                <span class="drawer-info-value">${product.stockMode === 'availability' ? (product.isAvailable !== false ? 'Available' : 'Not Available') : product.stock}</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
+            <button class="btn btn-primary" onclick="editProduct('${product.id}'); closeDetailsDrawer();" style="flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="ph ph-pencil-simple"></i> Edit Product
+            </button>
+            <button class="btn btn-secondary" onclick="closeDetailsDrawer()" style="flex: 1; justify-content: center;">
+                Close
+            </button>
+        </div>
+    `;
+
+    backdrop.style.display = 'block';
+    drawer.classList.add('open');
+};
+
+window.closeDetailsDrawer = function () {
+    const drawer = document.getElementById('detailsDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    if (drawer) drawer.classList.remove('open');
+    if (backdrop) {
+        setTimeout(() => {
+            if (drawer && !drawer.classList.contains('open')) {
+                backdrop.style.display = 'none';
+            }
+        }, 300);
+    }
+};
+
+
 
 

@@ -164,7 +164,7 @@ function animateStatValue(element, targetValue, isCurrency = false) {
 // Load dashboard with selected time range
 async function loadDashboardWithRange(range, isSilent = false) {
     if (!isSilent) {
-        showLoading('Loading data...');
+        showSkeletons();
     }
 
     try {
@@ -271,6 +271,57 @@ async function loadDashboardWithRange(range, isSilent = false) {
         // Calculate collected (payments received in range)
         const collectedPayments = rangeTransactions.filter(t => t.type === 'collectible_payment');
         const collectedTotal = collectedPayments.reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+        // Calculate previous range values for trend computation
+        const { startDate: prevStartDate, endDate: prevEndDate } = getPreviousDateRange(range, startDate, endDate);
+
+        const prevRangeTransactions = storeTransactions.filter(t => {
+            const tDate = new Date(t.date);
+            return tDate >= prevStartDate && tDate <= prevEndDate;
+        });
+
+        const prevRangeExpenses = storeExpenses.filter(e => {
+            const eDate = new Date(e.date);
+            return eDate >= prevStartDate && eDate <= prevEndDate;
+        });
+
+        const prevRangeDeliveries = allDeliveries.filter(d => {
+            const dDate = new Date(d.date);
+            return dDate >= prevStartDate && dDate <= prevEndDate;
+        });
+
+        const prevRangeCollectibles = storeCollectibles.reduce((sum, c) => {
+            let amountInPeriod = 0;
+            const cDate = new Date(c.createdAt || c.date);
+            if (isNaN(cDate.getTime())) return sum;
+            
+            const isDocCreatedInPrevRange = cDate >= prevStartDate && cDate < prevEndDate;
+            if (isDocCreatedInPrevRange) {
+                amountInPeriod = (Number(c.totalAmount) || 0) - (Number(c.paidAmount) || 0);
+            } else if (c.items && c.items.length > 0) {
+                amountInPeriod = c.items.reduce((isum, i) => {
+                    if (i.dateAdded) {
+                        const iDate = new Date(i.dateAdded);
+                        if (!isNaN(iDate.getTime()) && iDate >= prevStartDate && iDate < prevEndDate) {
+                            return isum + (Number(i.total) || 0);
+                        }
+                    }
+                    return isum;
+                }, 0);
+            }
+            return sum + amountInPeriod;
+        }, 0);
+
+        const prevCollectedPayments = prevRangeTransactions.filter(t => t.type === 'collectible_payment');
+        const prevCollectedTotal = prevCollectedPayments.reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+
+        const prevSales = prevRangeTransactions
+            .filter(t => t.status !== 'voided')
+            .reduce((sum, t) => sum + (Number(t.total) || Number(t.amount) || 0), 0);
+            
+        const prevExpensesTotal = prevRangeExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        const prevDeliveriesTotal = prevRangeDeliveries.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        const prevSalesTransactionsCount = prevRangeTransactions.filter(t => t.type !== 'collectible_payment' && t.status !== 'voided').length;
+        const prevNetProfit = prevSales - prevExpensesTotal;
 
         const netProfit = sales - expensesTotal;
 
@@ -298,6 +349,15 @@ async function loadDashboardWithRange(range, isSilent = false) {
         const salesTransactionsCount = rangeTransactions.filter(t => t.type !== 'collectible_payment' && t.status !== 'voided').length;
         if (totalTransactionsEl) animateStatValue(totalTransactionsEl, salesTransactionsCount, false);
         if (todayNetProfitEl) animateStatValue(todayNetProfitEl, netProfit, true);
+ 
+        // Render trend badges Comparison
+        renderTrendBadge('salesTrend', sales, prevSales);
+        renderTrendBadge('netProfitTrend', netProfit, prevNetProfit);
+        renderTrendBadge('expensesTrend', expensesTotal, prevExpensesTotal, true);
+        renderTrendBadge('transactionsTrend', salesTransactionsCount, prevSalesTransactionsCount);
+        renderTrendBadge('deliveriesTrend', deliveriesTotal, prevDeliveriesTotal, true);
+        renderTrendBadge('collectiblesTrend', collectiblesTotal, prevRangeCollectibles, true);
+        renderTrendBadge('collectedTrend', collectedTotal, prevCollectedTotal);
  
         // Calculate total items (units) sold in range
         const totalItemsSold = rangeTransactions
@@ -550,6 +610,88 @@ function updateStatLabels(range) {
     setLabel('todayNetProfitLabel', text.netProfit);
     setLabel('monthDeliveriesLabel', text.deliveries);
     setLabel('totalItemsSoldLabel', text.items);
+}
+
+/* ==========================================
+   Dashboard Skeleton & Trend Helper Functions
+   ========================================== */
+
+function showSkeletons() {
+    const ids = ['todaySales', 'todayCashSales', 'todayGcashSales', 'todayExpensesDash', 'todayCollectibles', 'todayCollected', 'monthDeliveries', 'totalTransactions', 'todayNetProfit', 'totalItemsSold'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '<span class="skeleton skeleton-value" style="width:120px;height:24px;"></span>';
+        }
+    });
+
+    const trendBadgeIds = ['salesTrend', 'netProfitTrend', 'expensesTrend', 'transactionsTrend', 'deliveriesTrend', 'collectiblesTrend', 'collectedTrend'];
+    trendBadgeIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+}
+
+function getPreviousDateRange(range, currentStart, currentEnd) {
+    let startDate = new Date(currentStart);
+    let endDate = new Date(currentEnd);
+    
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    
+    let prevStart = new Date(startDate);
+    let prevEnd = new Date(endDate);
+    
+    if (range === 'today') {
+        prevStart.setDate(prevStart.getDate() - 1);
+        prevEnd.setDate(prevEnd.getDate() - 1);
+    } else if (range === 'week') {
+        prevStart.setDate(prevStart.getDate() - 7);
+        prevEnd.setDate(prevEnd.getDate() - 7);
+    } else if (range === 'month') {
+        prevStart = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+        prevEnd = new Date(startDate.getFullYear(), startDate.getMonth(), 0, 23, 59, 59);
+    } else {
+        prevStart.setDate(prevStart.getDate() - diffDays);
+        prevEnd.setDate(prevEnd.getDate() - diffDays);
+    }
+    
+    return { startDate: prevStart, endDate: prevEnd };
+}
+
+function renderTrendBadge(badgeId, currentVal, prevVal, isLowerBetter = false) {
+    const badge = document.getElementById(badgeId);
+    if (!badge) return;
+    
+    badge.style.display = 'inline-flex';
+    
+    const currentNum = Number(currentVal) || 0;
+    const prevNum = Number(prevVal) || 0;
+    
+    if (prevNum === 0) {
+        if (currentNum === 0) {
+            badge.className = 'trend-badge neutral';
+            badge.innerHTML = '<i class="ph ph-minus"></i> 0%';
+        } else {
+            badge.className = isLowerBetter ? 'trend-badge down' : 'trend-badge up';
+            badge.innerHTML = `<i class="ph ${isLowerBetter ? 'ph-caret-down' : 'ph-caret-up'}"></i> New`;
+        }
+        return;
+    }
+    
+    const pct = ((currentNum - prevNum) / prevNum) * 100;
+    const rounded = Math.abs(pct).toFixed(1);
+    
+    if (pct > 0.1) {
+        badge.className = isLowerBetter ? 'trend-badge down' : 'trend-badge up';
+        badge.innerHTML = `<i class="ph ${isLowerBetter ? 'ph-caret-down' : 'ph-caret-up'}"></i> +${rounded}%`;
+    } else if (pct < -0.1) {
+        badge.className = isLowerBetter ? 'trend-badge up' : 'trend-badge down';
+        badge.innerHTML = `<i class="ph ${isLowerBetter ? 'ph-caret-up' : 'ph-caret-down'}"></i> -${rounded}%`;
+    } else {
+        badge.className = 'trend-badge neutral';
+        badge.innerHTML = '<i class="ph ph-minus"></i> 0%';
+    }
 }
 
 // Export functions for external use

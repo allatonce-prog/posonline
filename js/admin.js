@@ -81,18 +81,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Setup desktop sidebar collapse
     setupDesktopSidebarCollapse();
+
+    // Setup Dark Mode toggle
+    setupDarkMode();
+
+    // Setup Sidebar Menu Search
+    setupSidebarSearch();
+
+    // Setup URL Hash-based routing
+    setupHashRouting();
+
+    // Setup Keyboard Command Palette
+    setupCommandPalette();
+
+    // Setup Connection Status Badge
+    setupConnectionStatusListeners();
+
+    // Setup Crash Recovery Boundary
+    setupCrashBoundary();
+
+    // Setup Sidebar Hover Pre-fetching
+    setupHoverPrefetching();
 });
 
 // Setup mobile menu
 function setupMobileMenu() {
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const bottomMenuToggle = document.getElementById('bottomMenuToggle');
     const sidebar = document.querySelector('.admin-sidebar');
     const overlay = document.getElementById('overlay');
 
-    if (!mobileMenuToggle || !sidebar || !overlay) return;
+    if (!sidebar || !overlay) return;
 
-    // Toggle button click
-    mobileMenuToggle.addEventListener('click', (e) => {
+    const handleToggle = (e) => {
         e.stopPropagation();
         const isOpen = sidebar.classList.contains('open');
 
@@ -101,13 +122,22 @@ function setupMobileMenu() {
         } else {
             openMobileMenu();
         }
-    });
+    };
+
+    // Toggle button click
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', handleToggle);
+    }
+    if (bottomMenuToggle) {
+        bottomMenuToggle.addEventListener('click', handleToggle);
+    }
 
     // Close when clicking outside sidebar (overlay area or main content)
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
             const isClickInsideSidebar = sidebar.contains(e.target);
-            const isClickOnToggle = mobileMenuToggle.contains(e.target);
+            const isClickOnToggle = (mobileMenuToggle && mobileMenuToggle.contains(e.target)) || 
+                                    (bottomMenuToggle && bottomMenuToggle.contains(e.target));
 
             if (!isClickInsideSidebar && !isClickOnToggle) {
                 closeMobileMenu();
@@ -297,6 +327,57 @@ async function switchTab(tab) {
         }, 150);
     }
 
+    // Update active highlight on mobile bottom nav bar
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        btn.classList.toggle('active', isActive);
+    });
+
+    // Update dynamic header breadcrumbs path
+    const parentSections = {
+        dashboard: 'Overview',
+        reports: 'Overview',
+        products: 'Catalog',
+        recipes: 'Catalog',
+        modifiers: 'Catalog',
+        inventory: 'Operations',
+        history: 'Operations',
+        deliveries: 'Operations',
+        sales: 'Finance',
+        'item-sales': 'Finance',
+        collections: 'Finance',
+        collectibles: 'Finance',
+        expenses: 'Finance',
+        salaries: 'Finance',
+        users: 'Management',
+        settings: 'Management'
+    };
+    
+    const parentName = parentSections[tab] || 'System';
+    const breadcrumbEl = document.getElementById('adminBreadcrumbs');
+    if (breadcrumbEl) {
+        const tabNames = {
+            dashboard: 'Dashboard',
+            products: 'Products',
+            recipes: 'Recipes',
+            modifiers: 'Modifiers',
+            inventory: 'Inventory',
+            history: 'History',
+            sales: 'Sales',
+            'item-sales': 'Item Sales',
+            collections: 'Collections',
+            collectibles: 'Collectibles',
+            expenses: 'Expenses',
+            salaries: 'Salaries',
+            deliveries: 'Deliveries',
+            reports: 'Reports',
+            users: 'Users',
+            settings: 'Settings'
+        };
+        const displayName = tabNames[tab] || (tab.charAt(0).toUpperCase() + tab.slice(1));
+        breadcrumbEl.textContent = `${parentName} / ${displayName}`;
+    }
+
     // Update tabs with smooth transition
     const allTabs = document.querySelectorAll('.tabs');
     allTabs.forEach(tabContent => {
@@ -358,6 +439,12 @@ async function switchTab(tab) {
     document.getElementById('pageTitle').textContent = titles[tab] || tab;
 
     currentTab = tab;
+
+    // Update URL hash and localStorage routing preference
+    if (window.location.hash.substring(1) !== tab) {
+        history.replaceState(null, '', '#' + tab);
+    }
+    localStorage.setItem('last_admin_tab', tab);
 
     // Toggle Chat and Connection Status (Only visible on Dashboard)
     const connStatus = document.getElementById('connection-status');
@@ -596,3 +683,417 @@ window.toggleNavSection = function(sectionId) {
         section.classList.toggle('collapsed');
     }
 };
+
+/* ==========================================
+   Admin Enhancements (UI/UX Tasks)
+   ========================================== */
+
+// 1. Dark Mode Setup
+function setupDarkMode() {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (!darkModeToggle) return;
+
+    const applyDarkMode = (isDark) => {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            if (icon) {
+                icon.className = 'ph ph-sun';
+            }
+        } else {
+            document.body.classList.remove('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            if (icon) {
+                icon.className = 'ph ph-moon';
+            }
+        }
+    };
+
+    // Load initial preference (defaults to system preference)
+    const storedPref = localStorage.getItem('admin_dark_mode');
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialDark = storedPref === 'true' || (storedPref === null && systemPref);
+    
+    applyDarkMode(initialDark);
+
+    darkModeToggle.addEventListener('click', () => {
+        const isCurrentlyDark = document.body.classList.contains('dark-mode');
+        const newDarkState = !isCurrentlyDark;
+        applyDarkMode(newDarkState);
+        localStorage.setItem('admin_dark_mode', newDarkState);
+        window.dispatchEvent(new Event('themechange'));
+    });
+}
+
+// 2. Sidebar Search
+function setupSidebarSearch() {
+    const sidebarSearch = document.getElementById('sidebarSearch');
+    if (!sidebarSearch) return;
+
+    sidebarSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const navSections = document.querySelectorAll('.nav-section');
+
+        navSections.forEach(section => {
+            const navItems = section.querySelectorAll('.nav-item');
+            let hasVisibleItem = false;
+
+            navItems.forEach(item => {
+                const text = item.querySelector('span').textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.classList.remove('search-hidden');
+                    hasVisibleItem = true;
+                } else {
+                    item.classList.add('search-hidden');
+                }
+            });
+
+            // Expand and show section if matching, or hide if no matches
+            if (query === '') {
+                section.classList.remove('search-hidden');
+            } else if (hasVisibleItem) {
+                section.classList.remove('search-hidden');
+                section.classList.remove('collapsed');
+            } else {
+                section.classList.add('search-hidden');
+            }
+        });
+    });
+}
+
+// 3. Hash Routing Setup
+function setupHashRouting() {
+    const validTabs = ['dashboard', 'products', 'recipes', 'modifiers', 'inventory', 'history', 'sales', 'item-sales', 'collections', 'collectibles', 'expenses', 'salaries', 'deliveries', 'reports', 'users', 'settings'];
+    
+    const handleHashChange = () => {
+        const hash = window.location.hash.substring(1);
+        if (hash && validTabs.includes(hash)) {
+            if (currentTab !== hash) {
+                switchTab(hash);
+            }
+        }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Navigate to hash or fallback to last active stored tab on initial load
+    const initialHash = window.location.hash.substring(1);
+    if (initialHash && validTabs.includes(initialHash)) {
+        switchTab(initialHash);
+    } else {
+        const storedTab = localStorage.getItem('last_admin_tab');
+        if (storedTab && validTabs.includes(storedTab) && storedTab !== 'dashboard') {
+            switchTab(storedTab);
+        }
+    }
+}
+
+// 4. Command Palette Setup
+function setupCommandPalette() {
+    const palette = document.getElementById('commandPalette');
+    const input = document.getElementById('commandPaletteInput');
+    const list = document.getElementById('commandPaletteList');
+    if (!palette || !input || !list) return;
+
+    let selectedIndex = 0;
+    let visibleCommands = [];
+
+    const commands = [
+        { name: 'Toggle Dark Mode', icon: 'ph-moon-stars', action: () => document.getElementById('darkModeToggle')?.click(), shortcut: 'Ctrl + D' },
+        { name: 'Go to Dashboard', icon: 'ph-gauge', action: () => switchTab('dashboard'), shortcut: 'G + D' },
+        { name: 'Go to Products', icon: 'ph-package', action: () => switchTab('products'), shortcut: 'G + P' },
+        { name: 'Go to Recipes', icon: 'ph-hamburger', action: () => switchTab('recipes'), shortcut: 'G + R' },
+        { name: 'Go to Inventory', icon: 'ph-clipboard-text', action: () => switchTab('inventory'), shortcut: 'G + I' },
+        { name: 'Go to Sales Records', icon: 'ph-receipt', action: () => switchTab('sales'), shortcut: 'G + S' },
+        { name: 'Record Expense', icon: 'ph-money', action: () => { if (typeof showAddExpenseModal === 'function') showAddExpenseModal(); }, shortcut: 'C + E' },
+        { name: 'New Stock In', icon: 'ph-download-simple', action: () => { if (typeof showStockInModal === 'function') showStockInModal(); }, shortcut: 'C + I' },
+        { name: 'Add Product', icon: 'ph-plus', action: () => { if (typeof showAddProductModal === 'function') showAddProductModal(); }, shortcut: 'C + P' },
+        { name: 'New Delivery', icon: 'ph-truck', action: () => { if (typeof showAddDeliveryModal === 'function') showAddDeliveryModal(); }, shortcut: 'C + L' }
+    ];
+
+    const render = (query = '') => {
+        list.innerHTML = '';
+        visibleCommands = commands.filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
+        
+        if (visibleCommands.length === 0) {
+            list.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--gray-400);">No commands found.</div>';
+            return;
+        }
+
+        visibleCommands.forEach((cmd, idx) => {
+            const item = document.createElement('div');
+            item.className = `command-item ${idx === selectedIndex ? 'active' : ''}`;
+            item.innerHTML = `
+                <div class="command-item-left">
+                    <i class="ph ${cmd.icon} command-item-icon"></i>
+                    <span>${cmd.name}</span>
+                </div>
+                <span class="command-item-shortcut">${cmd.shortcut}</span>
+            `;
+            item.addEventListener('click', () => {
+                cmd.action();
+                closePalette();
+            });
+            list.appendChild(item);
+        });
+    };
+
+    const openPalette = () => {
+        palette.style.display = 'flex';
+        input.value = '';
+        selectedIndex = 0;
+        render();
+        setTimeout(() => input.focus(), 50);
+    };
+
+    const closePalette = () => {
+        palette.style.display = 'none';
+    };
+
+    // Keyboard triggers
+    window.addEventListener('keydown', (e) => {
+        // Ctrl + K or slash (/) if not inside input elements
+        if ((e.ctrlKey && e.key.toLowerCase() === 'k') || (e.key === '/' && document.activeElement !== input && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
+            e.preventDefault();
+            if (palette.style.display === 'none' || !palette.style.display) {
+                openPalette();
+            } else {
+                closePalette();
+            }
+        } else if (e.key === 'Escape' && palette.style.display === 'flex') {
+            closePalette();
+        }
+    });
+
+    palette.addEventListener('click', (e) => {
+        if (e.target === palette) {
+            closePalette();
+        }
+    });
+
+    // Arrow navigation inside input
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % visibleCommands.length;
+            render(input.value);
+            scrollToActive();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + visibleCommands.length) % visibleCommands.length;
+            render(input.value);
+            scrollToActive();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (visibleCommands[selectedIndex]) {
+                visibleCommands[selectedIndex].action();
+                closePalette();
+            }
+        }
+    });
+
+    input.addEventListener('input', (e) => {
+        selectedIndex = 0;
+        render(e.target.value);
+    });
+
+    function scrollToActive() {
+        const active = list.querySelector('.command-item.active');
+        if (active) {
+            active.scrollIntoView({ block: 'nearest' });
+        }
+    }
+}
+
+// 5. Connection Status Setup
+function setupConnectionStatusListeners() {
+    const badge = document.getElementById('connectionStatusBadge');
+    if (!badge) return;
+
+    const updateStatus = () => {
+        const isOnline = navigator.onLine;
+        if (isOnline) {
+            badge.className = 'connection-status-badge online';
+            badge.title = 'Connection: Online';
+            badge.querySelector('.status-text').textContent = 'Online';
+            showToast('Connection restored. Database features are fully syncable.', 'success');
+        } else {
+            badge.className = 'connection-status-badge offline';
+            badge.title = 'Connection: Offline';
+            badge.querySelector('.status-text').textContent = 'Offline';
+            showToast('You are offline. Data is saved locally in IndexedDB.', 'warning');
+        }
+    };
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+
+    // Initial check
+    if (!navigator.onLine) {
+        badge.className = 'connection-status-badge offline';
+        badge.title = 'Connection: Offline';
+        badge.querySelector('.status-text').textContent = 'Offline';
+    }
+}
+
+// 6. Global JS Crash Recovery Boundary Setup
+function setupCrashBoundary() {
+    const handleGlobalError = (errorMsg, url, lineNumber, column, errorObj) => {
+        // Prevent duplicate overlays
+        if (document.querySelector('.recovery-overlay')) return false;
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'recovery-overlay';
+        backdrop.innerHTML = `
+            <div class="recovery-card">
+                <i class="ph ph-warning-octagon recovery-icon"></i>
+                <h3 class="recovery-title">App Interface Error</h3>
+                <p class="recovery-desc">An unexpected script execution error has occurred. Your local store transactions and inventory data remain safe in local storage.</p>
+                <div class="recovery-details">
+                    <strong>Error:</strong> ${errorMsg}<br>
+                    <strong>Location:</strong> ${url}:${lineNumber}:${column}
+                </div>
+                <button class="btn btn-primary" onclick="window.location.reload(true)" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-arrow-clockwise"></i> Reload Dashboard
+                </button>
+            </div>
+        `;
+        document.body.appendChild(backdrop);
+        return false;
+    };
+
+    window.onerror = handleGlobalError;
+    window.addEventListener('unhandledrejection', (event) => {
+        const reason = event.reason ? (event.reason.message || event.reason) : 'Promise rejection';
+        handleGlobalError(reason, 'Promise Rejection', 0, 0, event.reason);
+    });
+}
+
+window.switchSettingsTab = function (sectionId) {
+    // Switch active state for nav buttons
+    const btns = document.querySelectorAll('.settings-nav-btn');
+    btns.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(sectionId)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Switch active state for settings cards
+    const cards = document.querySelectorAll('.settings-card');
+    cards.forEach(card => {
+        if (card.id === sectionId) {
+            card.classList.add('active');
+        } else if (card.id === 'settings-form-actions-wrapper') {
+            if (sectionId === 'settings-general' || sectionId === 'settings-inventory') {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        } else {
+            card.classList.remove('active');
+        }
+    });
+};
+
+/* ==========================================
+   Table Column Visibility Controllers
+   ========================================== */
+window.toggleColumnDropdown = function (dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    
+    const isHidden = dropdown.style.display === 'none';
+    dropdown.style.display = isHidden ? 'flex' : 'none';
+    
+    if (isHidden) {
+        const closeDropdown = (e) => {
+            if (!dropdown.contains(e.target) && !e.target.closest('.col-visibility-dropdown')) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeDropdown);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeDropdown), 50);
+    }
+};
+
+window.toggleTableColumn = function (tableKey, colClass, checkbox) {
+    const isHidden = !checkbox.checked;
+    
+    const hiddenCols = JSON.parse(localStorage.getItem(`hidden_cols_${tableKey}`) || '{}');
+    hiddenCols[colClass] = isHidden;
+    localStorage.setItem(`hidden_cols_${tableKey}`, JSON.stringify(hiddenCols));
+    
+    const elements = document.querySelectorAll(`.${colClass}`);
+    elements.forEach(el => {
+        if (isHidden) {
+            el.classList.add('hidden-col');
+        } else {
+            el.classList.remove('hidden-col');
+        }
+    });
+};
+
+window.applyStoredColumnVisibility = function (tableKey) {
+    const hiddenCols = JSON.parse(localStorage.getItem(`hidden_cols_${tableKey}`) || '{}');
+    Object.keys(hiddenCols).forEach(colClass => {
+        const isHidden = hiddenCols[colClass];
+        const elements = document.querySelectorAll(`.${colClass}`);
+        elements.forEach(el => {
+            if (isHidden) {
+                el.classList.add('hidden-col');
+            } else {
+                el.classList.remove('hidden-col');
+            }
+        });
+        
+        const checkbox = document.querySelector(`input[onchange*="${colClass}"]`);
+        if (checkbox) {
+            checkbox.checked = !isHidden;
+        }
+    });
+};
+
+/* ==========================================
+   Intelligent Sidebar Hover Pre-fetching
+   ========================================== */
+function setupHoverPrefetching() {
+    const navItems = document.querySelectorAll('.nav-item, .bottom-nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            const tabId = item.getAttribute('data-tab');
+            if (!tabId || typeof db === 'undefined' || typeof db.getAll !== 'function') return;
+
+            // Trigger background fetches to warm IndexedDB optimization cache
+            if (tabId === 'products') {
+                db.getAll('products').catch(() => {});
+                db.getAll('recipes').catch(() => {});
+                db.getAll('ingredients').catch(() => {});
+            } else if (tabId === 'recipes') {
+                db.getAll('recipes').catch(() => {});
+                db.getAll('ingredients').catch(() => {});
+            } else if (tabId === 'inventory') {
+                db.getAll('products').catch(() => {});
+                db.getAll('ingredients').catch(() => {});
+            } else if (tabId === 'history' || tabId === 'sales' || tabId === 'item-sales') {
+                db.getAll('transactions').catch(() => {});
+            } else if (tabId === 'expenses') {
+                db.getAll('expenses').catch(() => {});
+            } else if (tabId === 'salaries') {
+                db.getAll('salaries').catch(() => {});
+            } else if (tabId === 'deliveries') {
+                db.getAll('deliveries').catch(() => {});
+            } else if (tabId === 'users') {
+                db.getAll('users').catch(() => {});
+            }
+        });
+    });
+}
+
+
+
+
+
+
+
