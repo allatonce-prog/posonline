@@ -108,17 +108,15 @@ function renderStockMovementRow(movement, productMap) {
     let stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
 
 
-    return `
-      <tr class="clickable-row" onclick="viewStockMovementDetails('${movement.id}')">
-        <td data-label="Date">${formatDateTime(movement.date)}</td>
-        <td data-label="Product" style="font-weight: 600; color: var(--dark);">${escapeHtml(productName)}</td>
-        <td data-label="Type"><span class="${typeClass}">${typeText}</span></td>
-        <td data-label="Quantity" style="font-weight: bold;">${movement.quantity}</td>
-        <td data-label="Reason">${escapeHtml(movement.reason)}</td>
-        <td data-label="User">${escapeHtml(movement.user)}</td>
-        <td data-label="Stock After">${stockAfter}</td>
-      </tr>
-    `;
+    return '<tr class="clickable-row" onclick="viewStockMovementDetails(\'' + movement.id + '\')">' +
+        '<td data-label="Date">' + formatDateTime(movement.date) + '</td>' +
+        '<td data-label="Product" style="font-weight: 600; color: var(--dark);">' + escapeHtml(productName) + '</td>' +
+        '<td data-label="Type"><span class="' + typeClass + '">' + typeText + '</span></td>' +
+        '<td data-label="Quantity" style="font-weight: bold;">' + movement.quantity + '</td>' +
+        '<td data-label="Reason">' + escapeHtml(movement.reason) + '</td>' +
+        '<td data-label="User">' + escapeHtml(movement.user) + '</td>' +
+        '<td data-label="Stock After">' + stockAfter + '</td>' +
+    '</tr>';
 }
 
 // Quick stock in
@@ -129,11 +127,11 @@ async function quickStockIn(productId) {
 
     const item = await db.get(collection, dbId);
     if (!item) {
-        showToast(`${isIngredient ? 'Ingredient' : 'Product'} not found`, 'error');
+        showToast((isIngredient ? 'Ingredient' : 'Product') + ' not found', 'error');
         return;
     }
 
-    const quantity = prompt(`Add stock for ${isIngredient ? '[Ingredient] ' : ''}${item.name}\n\nCurrent stock: ${item.stock}\n\nEnter quantity to add:`);
+    const quantity = prompt('Add stock for ' + (isIngredient ? '[Ingredient] ' : '') + (item.name) + '\\n\\nCurrent stock: ' + (item.stock) + '\\n\\nEnter quantity to add:');
 
     if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
         showToast('Invalid quantity', 'warning');
@@ -154,11 +152,11 @@ async function quickStockOut(productId) {
 
     const item = await db.get(collection, dbId);
     if (!item) {
-        showToast(`${isIngredient ? 'Ingredient' : 'Product'} not found`, 'error');
+        showToast((isIngredient ? 'Ingredient' : 'Product') + ' not found', 'error');
         return;
     }
 
-    const quantity = prompt(`Remove stock for ${isIngredient ? '[Ingredient] ' : ''}${item.name}\n\nCurrent stock: ${item.stock}\n\nEnter quantity to remove:`);
+    const quantity = prompt('Remove stock for ' + (isIngredient ? '[Ingredient] ' : '') + (item.name) + '\\n\\nCurrent stock: ' + (item.stock) + '\\n\\nEnter quantity to remove:');
 
     if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
         showToast('Invalid quantity', 'warning');
@@ -166,7 +164,7 @@ async function quickStockOut(productId) {
     }
 
     if (item.stock < parseInt(quantity)) {
-        showToast(`Insufficient stock. Available: ${item.stock}`, 'error');
+        showToast('Insufficient stock. Available: ' + (item.stock), 'error');
         return;
     }
 
@@ -188,7 +186,7 @@ async function processStockOperation(productId, quantity, type, reason) {
         const item = await db.get(collection, dbId);
         if (!item) {
             hideLoading();
-            showToast(`${isIngredient ? 'Ingredient' : 'Product'} not found`, 'error');
+            showToast((isIngredient ? 'Ingredient' : 'Product') + ' not found', 'error');
             return;
         }
 
@@ -201,7 +199,7 @@ async function processStockOperation(productId, quantity, type, reason) {
         } else {
             if (quantity > item.stock) {
                 hideLoading();
-                showToast(`Cannot remove ${quantity} units. Only ${item.stock} in stock.`, 'error');
+                showToast('Cannot remove ' + (quantity) + ' units. Only ' + (item.stock) + ' in stock.', 'error');
                 return;
             }
             item.stock -= quantity;
@@ -224,13 +222,13 @@ async function processStockOperation(productId, quantity, type, reason) {
         });
 
         hideLoading();
-        showToast(`${type === 'in' ? 'Added' : 'Removed'} ${quantity} units to ${item.name}`, 'success');
+        showToast((type === 'in' ? 'Added' : 'Removed') + ' ' + (quantity) + ' units to ' + (item.name), 'success');
 
         // Send notification to Admin
         db.notify(
             type === 'in' ? 'stock_in' : 'stock_out',
-            type === 'in' ? `Manual Stock In (${isIngredient ? 'Ingredient' : 'Product'})` : `Manual Stock Out (${isIngredient ? 'Ingredient' : 'Product'})`,
-            `${auth.getCurrentUser().name || auth.getCurrentUser().username} ${type === 'in' ? 'added' : 'removed'} ${quantity} units for ${item.name}. New total: ${item.stock}`,
+            type === 'in' ? 'Manual Stock In (' + (isIngredient ? 'Ingredient' : 'Product') + ')' : 'Manual Stock Out (' + (isIngredient ? 'Ingredient' : 'Product') + ')',
+            (auth.getCurrentUser().name || auth.getCurrentUser().username) + ' ' + (type === 'in' ? 'added' : 'removed') + ' ' + (quantity) + ' units for ' + (item.name) + '. New total: ' + (item.stock),
             { productId: dbId, itemType: isIngredient ? 'ingredient' : 'product', quantity: quantity, type: type }
         );
 
@@ -241,7 +239,7 @@ async function processStockOperation(productId, quantity, type, reason) {
                 db.notify(
                     'low_stock',
                     'Low Stock Alert',
-                    `${item.name} is running low on stock after removal (${item.stock} left)`,
+                    (item.name) + ' is running low on stock after removal (' + (item.stock) + ' left)',
                     { productId: item.id, currentStock: item.stock }
                 );
             }
@@ -284,8 +282,8 @@ async function exportInventory(event) {
             status: getStockStatus(Number(p.stock) || 0, lowStockThreshold).toUpperCase()
         })),
         ...ingredients.map(i => ({
-            name: `[Ingredient] ${i.name}`,
-            sku: `Unit: ${i.unit || 'pcs'}`,
+            name: '[Ingredient] ' + (i.name),
+            sku: 'Unit: ' + (i.unit || 'pcs'),
             category: 'Ingredient',
             stock: Number(i.stock) || 0,
             price: Number(i.cost) || 0,
@@ -309,7 +307,7 @@ async function exportInventory(event) {
         'Status': item.status
     }));
 
-    const filename = `inventory_export_${new Date().toISOString().split('T')[0]}.csv`;
+    const filename = 'inventory_export_' + (new Date().toISOString().split('T')[0]) + '.csv';
     exportToCSV(exportData, filename);
 }
 
@@ -334,8 +332,8 @@ async function exportInventoryPDF(event) {
             status: getStockStatus(Number(p.stock) || 0, lowStockThreshold).toUpperCase()
         })),
         ...ingredients.map(i => ({
-            name: `[Ingredient] ${i.name}`,
-            sku: `Unit: ${i.unit || 'pcs'}`,
+            name: '[Ingredient] ' + (i.name),
+            sku: 'Unit: ' + (i.unit || 'pcs'),
             category: 'Ingredient',
             stock: Number(i.stock) || 0,
             price: Number(i.cost) || 0,
@@ -360,7 +358,7 @@ async function exportInventoryPDF(event) {
         item.status
     ]);
 
-    const filename = `inventory_export_${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = 'inventory_export_' + (new Date().toISOString().split('T')[0]) + '.pdf';
     exportToPDF('Inventory Status Report', headers, rows, filename);
 }
 
@@ -434,7 +432,7 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
     const combinedItems = [
         ...stockProducts.map(p => ({
             id: p.id,
-            uniqueId: `product_${p.id}`,
+            uniqueId: 'product_' + (p.id),
             name: p.name,
             image: p.image,
             sku: p.sku,
@@ -447,10 +445,10 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
         })),
         ...ingredients.map(i => ({
             id: i.id,
-            uniqueId: `ingredient_${i.id}`,
-            name: `[Ingredient] ${i.name}`,
+            uniqueId: 'ingredient_' + (i.id),
+            name: '[Ingredient] ' + (i.name),
             image: null,
-            sku: `Unit: ${i.unit || 'pcs'}`,
+            sku: 'Unit: ' + (i.unit || 'pcs'),
             category: 'Ingredient',
             stock: Number(i.stock) || 0,
             price: Number(i.cost) || 0, // Use cost as price for total value calculation
@@ -501,60 +499,56 @@ async function filterInventoryProducts(query, filter, forceRefresh = false) {
         const threshold = item.isIngredient ? 10 : lowStockThreshold;
         const stockStatus = getStockStatus(item.stock, threshold).toUpperCase();
         const stockClass = getStockClass(item.stock, threshold);
-        const quantityHtml = `<span class="stock-quantity ${stockClass}">${item.stock}</span>`;
+        const quantityHtml = '<span class="stock-quantity ' + (stockClass) + '">' + (item.stock) + '</span>';
 
-        const inputId = `inline-qty-${item.uniqueId}`;
-        const editFn = item.isIngredient ? `editIngredient('${item.id}')` : `editProduct('${item.id}')`;
-        const deleteFn = item.isIngredient ? `deleteIngredient('${item.id}')` : `deleteProduct('${item.id}')`;
+        const inputId = 'inline-qty-' + (item.uniqueId);
+        const editFn = item.isIngredient ? 'editIngredient(\'' + (item.id) + '\')' : 'editProduct(\'' + (item.id) + '\')';
+        const deleteFn = item.isIngredient ? 'deleteIngredient(\'' + (item.id) + '\')' : 'deleteProduct(\'' + (item.id) + '\')';
 
-        const inlineAdjusterHtml = `
-        <div class="inline-stock-adjuster" style="display: inline-flex; align-items: center; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); overflow: hidden; background: white; margin-right: 0.5rem;">
-          <button class="btn-adjust minus" onclick="inlineStockAdjust('${item.uniqueId}', 'out', '${inputId}'); event.stopPropagation();" style="border: none; background: #fee2e2; color: #dc2626; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock Out">
-            <i class="ph ph-minus"></i>
-          </button>
-          <input id="${inputId}" type="number" value="1" min="1" onclick="event.stopPropagation();" style="width: 50px; height: 30px; text-align: center; border: none; border-left: 1px solid var(--gray-300); border-right: 1px solid var(--gray-300); font-weight: 600; -moz-appearance: textfield; font-size: 0.9rem;" />
-          <button class="btn-adjust plus" onclick="inlineStockAdjust('${item.uniqueId}', 'in', '${inputId}'); event.stopPropagation();" style="border: none; background: #dcfce7; color: #15803d; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock In">
-            <i class="ph ph-plus"></i>
-          </button>
-        </div>
-        `;
+        const inlineAdjusterHtml =
+        '<div class="inline-stock-adjuster" style="display: inline-flex; align-items: center; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); overflow: hidden; background: white; margin-right: 0.5rem;">' +
+          '<button class="btn-adjust minus" onclick="inlineStockAdjust(\'' + item.uniqueId + '\', \'out\', \'' + inputId + '\'); event.stopPropagation();" style="border: none; background: #fee2e2; color: #dc2626; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock Out">' +
+            '<i class="ph ph-minus"></i>' +
+          '</button>' +
+          '<input id="' + inputId + '" type="number" value="1" min="1" onclick="event.stopPropagation();" style="width: 50px; height: 30px; text-align: center; border: none; border-left: 1px solid var(--gray-300); border-right: 1px solid var(--gray-300); font-weight: 600; -moz-appearance: textfield; font-size: 0.9rem;" />' +
+          '<button class="btn-adjust plus" onclick="inlineStockAdjust(\'' + item.uniqueId + '\', \'in\', \'' + inputId + '\'); event.stopPropagation();" style="border: none; background: #dcfce7; color: #15803d; width: 30px; height: 30px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Stock In">' +
+            '<i class="ph ph-plus"></i>' +
+          '</button>' +
+        '</div>';
 
-        const actionsHtml = `
-        <div class="inventory-actions" style="display: flex; align-items: center; gap: 0.25rem; justify-content: flex-end;">
-          ${inlineAdjusterHtml}
-          <button class="btn btn-primary btn-sm" onclick="${editFn}; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Edit">
-            <i class="ph ph-pencil-simple" style="font-size: 1rem;"></i>
-          </button>
-          <button class="btn btn-danger btn-sm" onclick="${deleteFn}; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Delete">
-            <i class="ph ph-trash" style="font-size: 1rem;"></i>
-          </button>
-        </div>
-        `;
+        const actionsHtml =
+        '<div class="inventory-actions" style="display: flex; align-items: center; gap: 0.25rem; justify-content: flex-end;">' +
+          inlineAdjusterHtml +
+          '<button class="btn btn-primary btn-sm" onclick="' + editFn + '; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Edit">' +
+            '<i class="ph ph-pencil-simple" style="font-size: 1rem;"></i>' +
+          '</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="' + deleteFn + '; event.stopPropagation();" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px; border-radius: var(--radius-sm);" title="Delete">' +
+            '<i class="ph ph-trash" style="font-size: 1rem;"></i>' +
+          '</button>' +
+        '</div>';
 
         const hoverEvents = !item.isIngredient
-            ? `onmouseenter="showProductTooltip(event, '${item.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" style="cursor: pointer;"`
+            ? 'onmouseenter="showProductTooltip(event, \'' + (item.id) + '\')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" style="cursor: pointer;"'
             : '';
 
-        return `
-      <tr>
-        <td class="product-image-cell" data-label="Image">
-          <div class="product-image-small" ${hoverEvents}>${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : '📦'}</div>
-        </td>
-        <td class="editable-cell" data-label="Product" data-field="name" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">
-          <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
-          <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(item.description || '')}</div>
-        </td>
-        <td class="editable-cell" data-label="SKU" data-field="sku" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${escapeHtml(item.sku)}</td>
-        <td data-label="Category">${escapeHtml(item.category)}</td>
-        <td class="editable-cell" data-label="Current Stock" data-field="stock" data-unique-id="${item.uniqueId}" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${quantityHtml}</td>
-        <td class="editable-cell" data-label="Unit Price" data-field="price" data-id="${item.id}" data-type="${item.isIngredient ? 'ingredient' : 'product'}" onclick="event.stopPropagation();">${formatCurrency(item.price)}</td>
-        <td data-label="Total Value">${formatCurrency(totalValue)}</td>
-        <td data-label="Status">
-          <span class="stock-status ${stockClass}">${stockStatus.replace('_', ' ')}</span>
-        </td>
-        <td data-label="Actions">${actionsHtml}</td>
-      </tr>
-    `;
+        return '<tr>' +
+        '<td class="product-image-cell" data-label="Image">' +
+          '<div class="product-image-small" ' + hoverEvents + '>' + (item.image ? '<img src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' : '📦') + '</div>' +
+        '</td>' +
+        '<td class="editable-cell" data-label="Product" data-field="name" data-id="' + item.id + '" data-type="' + (item.isIngredient ? 'ingredient' : 'product') + '" onclick="event.stopPropagation();">' +
+          '<div style="font-weight: 600;">' + escapeHtml(item.name) + '</div>' +
+          '<div style="font-size: 0.8rem; color: var(--gray-500);">' + escapeHtml(item.description || '') + '</div>' +
+        '</td>' +
+        '<td class="editable-cell" data-label="SKU" data-field="sku" data-id="' + item.id + '" data-type="' + (item.isIngredient ? 'ingredient' : 'product') + '" onclick="event.stopPropagation();">' + escapeHtml(item.sku) + '</td>' +
+        '<td data-label="Category">' + escapeHtml(item.category) + '</td>' +
+        '<td class="editable-cell" data-label="Current Stock" data-field="stock" data-unique-id="' + item.uniqueId + '" data-id="' + item.id + '" data-type="' + (item.isIngredient ? 'ingredient' : 'product') + '" onclick="event.stopPropagation();">' + quantityHtml + '</td>' +
+        '<td class="editable-cell" data-label="Unit Price" data-field="price" data-id="' + item.id + '" data-type="' + (item.isIngredient ? 'ingredient' : 'product') + '" onclick="event.stopPropagation();">' + formatCurrency(item.price) + '</td>' +
+        '<td data-label="Total Value">' + formatCurrency(totalValue) + '</td>' +
+        '<td data-label="Status">' +
+          '<span class="stock-status ' + stockClass + '">' + stockStatus.replace('_', ' ') + '</span>' +
+        '</td>' +
+        '<td data-label="Actions">' + actionsHtml + '</td>' +
+      '</tr>';
     }).join('');
 
     // Render Controls
@@ -649,7 +643,7 @@ async function filterStockMovements(filter, dateFilter, timeFilter) {
     tbody.innerHTML = displayMovements.map(movement => {
         const isIngredient = movement.itemType === 'ingredient';
         const item = isIngredient ? ingredientMap[movement.productId] : productMap[movement.productId];
-        const itemName = item ? (isIngredient ? `[Ingredient] ${item.name}` : item.name) : 'Unknown Item (Deleted)';
+        const itemName = item ? (isIngredient ? '[Ingredient] ' + (item.name) : item.name) : 'Unknown Item (Deleted)';
         
         const isStockIn = movement.type === 'in';
         const typeClass = isStockIn ? 'movement-type in' : 'movement-type out';
@@ -657,22 +651,21 @@ async function filterStockMovements(filter, dateFilter, timeFilter) {
         const typeColor = isStockIn ? 'var(--success)' : 'var(--danger)';
         const stockAfter = movement.stockAfter !== undefined && movement.stockAfter !== null ? movement.stockAfter : 'N/A';
 
-        return `
-        <tr class="clickable-row" onclick="viewStockMovementDetails('${movement.id}')" style="cursor: pointer;">
-            <td data-label="Date" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">${formatDateTime(movement.date)}</td>
-            <td data-label="Product" style="font-weight: 600; color: var(--dark);">${escapeHtml(itemName)}</td>
-            <td data-label="Type"><span class="${typeClass}">${typeText}</span></td>
-            <td data-label="Quantity" style="font-weight: 700; color: ${typeColor}; font-size: 0.95rem;">
-                ${isStockIn ? '+' : '-'}${movement.quantity}
-            </td>
-            <td data-label="Reason" style="font-size: 0.85rem; color: var(--gray-600); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                ${escapeHtml(movement.reason || 'No reason provided')}
-            </td>
-            <td data-label="User" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">
-                <i class="ph ph-user" style="font-size: 0.9rem; vertical-align: middle;"></i> ${escapeHtml(movement.user || 'Admin')}
-            </td>
-            <td data-label="Stock After" style="font-weight: 600; text-align: center; font-size: 0.95rem;">${stockAfter}</td>
-        </tr>
+        return '<tr class="clickable-row" onclick="viewStockMovementDetails(\'' + movement.id + '\')" style="cursor: pointer;">' +
+            '<td data-label="Date" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">' + formatDateTime(movement.date) + '</td>' +
+            '<td data-label="Product" style="font-weight: 600; color: var(--dark);">' + escapeHtml(itemName) + '</td>' +
+            '<td data-label="Type"><span class="' + typeClass + '">' + typeText + '</span></td>' +
+            '<td data-label="Quantity" style="font-weight: 700; color: ' + typeColor + '; font-size: 0.95rem;">' +
+                (isStockIn ? '+' : '-') + movement.quantity +
+            '</td>' +
+            '<td data-label="Reason" style="font-size: 0.85rem; color: var(--gray-600); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+                escapeHtml(movement.reason || 'No reason provided') +
+            '</td>' +
+            '<td data-label="User" style="white-space: nowrap; font-size: 0.85rem; color: var(--gray-600);">' +
+                '<i class="ph ph-user" style="font-size: 0.9rem; vertical-align: middle;"></i> ' + escapeHtml(movement.user || 'Admin') +
+            '</td>' +
+            '<td data-label="Stock After" style="font-weight: 600; text-align: center; font-size: 0.95rem;">' + stockAfter + '</td>' +
+        '</tr>';
     }).join('');
 
     // Pagination Controls
@@ -693,7 +686,7 @@ let _stockModalProducts = [];
 
 // Helper to render searchable select options
 function renderSearchableOptions(containerId, items) {
-    const optionsContainer = document.querySelector(`#${containerId} .select-options`);
+    const optionsContainer = document.querySelector('#' + containerId + ' .select-options');
     if (!optionsContainer) return;
 
     if (items.length === 0) {
@@ -701,12 +694,12 @@ function renderSearchableOptions(containerId, items) {
         return;
     }
 
-    optionsContainer.innerHTML = items.map(p => `
-        <div class="select-option" onclick="selectSearchableOption('${containerId}', '${p.id}', '${escapeHtml(p.name)} (${escapeHtml(p.meta)})', ${p.stock})">
-            <span class="option-title">${escapeHtml(p.name)}</span>
-            <span class="option-meta">${escapeHtml(p.meta)} | Stock: ${p.stock}</span>
-        </div>
-    `).join('');
+    optionsContainer.innerHTML = items.map(function(p) {
+        return '<div class="select-option" onclick="selectSearchableOption(\'' + containerId + '\', \'' + p.id + '\', \'' + escapeHtml(p.name) + ' (' + escapeHtml(p.meta) + ')\', ' + p.stock + ')">' +
+            '<span class="option-title">' + escapeHtml(p.name) + '</span>' +
+            '<span class="option-meta">' + escapeHtml(p.meta) + ' | Stock: ' + p.stock + '</span>' +
+            '</div>';
+    }).join('');
 }
 
 window.toggleSearchableSelect = function (id) {
@@ -757,21 +750,19 @@ window.selectSearchableOption = function (containerId, value, label, stock) {
                     statusLabel = 'Low Stock';
                 }
                 const badgePrefix = containerId === 'stockInSelect' ? 'stock-in' : 'stock-out';
-                infoDiv.innerHTML = `
-                    <div class="${badgePrefix}-card ${statusClass}">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 600; display: block; letter-spacing: 0.5px;">CURRENT STOCK</span>
-                                <span style="font-size: 1.35rem; font-weight: 800; color: var(--dark);">${stock} units</span>
-                            </div>
-                            <span class="${badgePrefix}-badge ${statusClass}">
-                                <i class="ph ph-info"></i> ${statusLabel}
-                            </span>
-                        </div>
-                    </div>
-                `;
+                infoDiv.innerHTML = '<div class="' + badgePrefix + '-card ' + statusClass + '">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                        '<div>' +
+                            '<span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 600; display: block; letter-spacing: 0.5px;">CURRENT STOCK</span>' +
+                            '<span style="font-size: 1.35rem; font-weight: 800; color: var(--dark);">' + stock + ' units</span>' +
+                        '</div>' +
+                        '<span class="' + badgePrefix + '-badge ' + statusClass + '">' +
+                            '<i class="ph ph-info"></i> ' + statusLabel +
+                        '</span>' +
+                    '</div>' +
+                '</div>';
             } else {
-                infoDiv.innerHTML = `Current Stock: <span style="font-size: 1.1rem;">${stock}</span>`;
+                infoDiv.innerHTML = 'Current Stock: <span style="font-size: 1.1rem;">' + stock + '</span>';
             }
             infoDiv.style.display = 'block';
         }
@@ -898,18 +889,18 @@ async function showStockInModal() {
 
     _stockModalProducts = [
         ...stockProducts.map(p => ({
-            id: `product_${p.id}`,
+            id: 'product_' + (p.id),
             name: p.name,
             stock: p.stock,
-            meta: `SKU: ${p.sku}`,
+            meta: 'SKU: ' + (p.sku),
             type: 'product',
             dbId: p.id
         })),
         ...ingredients.map(i => ({
-            id: `ingredient_${i.id}`,
-            name: `[Ingredient] ${i.name}`,
+            id: 'ingredient_' + (i.id),
+            name: '[Ingredient] ' + (i.name),
             stock: i.stock,
-            meta: `Unit: ${i.unit || 'pcs'}`,
+            meta: 'Unit: ' + (i.unit || 'pcs'),
             type: 'ingredient',
             dbId: i.id
         }))
@@ -978,18 +969,18 @@ async function showStockOutModal() {
 
     _stockModalProducts = [
         ...stockProducts.map(p => ({
-            id: `product_${p.id}`,
+            id: 'product_' + (p.id),
             name: p.name,
             stock: p.stock,
-            meta: `SKU: ${p.sku}`,
+            meta: 'SKU: ' + (p.sku),
             type: 'product',
             dbId: p.id
         })),
         ...ingredients.map(i => ({
-            id: `ingredient_${i.id}`,
-            name: `[Ingredient] ${i.name}`,
+            id: 'ingredient_' + (i.id),
+            name: '[Ingredient] ' + (i.name),
             stock: i.stock,
-            meta: `Unit: ${i.unit || 'pcs'}`,
+            meta: 'Unit: ' + (i.unit || 'pcs'),
             type: 'ingredient',
             dbId: i.id
         }))
@@ -1107,7 +1098,7 @@ async function deleteProduct(productId) {
     }
 
     // Confirm deletion
-    const confirmMessage = `Are you sure you want to delete "${product.name}"?\n\nThis will permanently remove the product and all its data.\n\nCurrent stock: ${product.stock}`;
+    const confirmMessage = 'Are you sure you want to delete "' + (product.name) + '"?\\n\\nThis will permanently remove the product and all its data.\\n\\nCurrent stock: ' + (product.stock);
 
     if (!confirm(confirmMessage)) {
         return;
@@ -1149,7 +1140,7 @@ async function deleteProduct(productId) {
         }
 
         hideLoading();
-        showToast(`Product "${product.name}" deleted successfully`, 'success');
+        showToast('Product "' + (product.name) + '" deleted successfully', 'success');
 
         // Refresh inventory
         await loadInventory();
@@ -1174,59 +1165,58 @@ async function viewStockMovementDetails(id) {
 
         const isIngredient = movement.itemType === 'ingredient';
         const item = isIngredient ? await db.get('ingredients', movement.productId) : await db.get('products', movement.productId);
-        const itemName = item ? (isIngredient ? `[Ingredient] ${item.name}` : item.name) : 'Unknown Item (Deleted)';
-        const itemSku = isIngredient ? `Unit: ${item?.unit || 'pcs'}` : (item?.sku || 'N/A');
+        const itemName = item ? (isIngredient ? '[Ingredient] ' + (item.name) : item.name) : 'Unknown Item (Deleted)';
+        const itemSku = isIngredient ? 'Unit: ' + (item?.unit || 'pcs') : (item?.sku || 'N/A');
         const typeText = movement.type === 'in' ? 'Stock In' : 'Stock Out';
         const typeColor = movement.type === 'in' ? 'var(--success)' : 'var(--warning)';
 
-        const detailsHtml = `
-            <div class="transaction-header">
-                <div class="transaction-title">
-                    <h3>Movement Details</h3>
-                    <span style="font-family: monospace; font-size: 0.85rem; color: var(--gray-500);">${id}</span>
-                </div>
-            </div>
+        const detailsHtml =
+            '<div class="transaction-header">' +
+                '<div class="transaction-title">' +
+                    '<h3>Movement Details</h3>' +
+                    '<span style="font-family: monospace; font-size: 0.85rem; color: var(--gray-500);">' + id + '</span>' +
+                '</div>' +
+            '</div>' +
 
-            <div class="detail-grid" style="grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
-                 <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">Date</p>
-                    <p>${formatDateTime(movement.date)}</p>
-                </div>
-                <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">Type</p>
-                    <p style="color: ${typeColor}; font-weight: bold;">${typeText}</p>
-                </div>
-                <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">${isIngredient ? 'Ingredient' : 'Product'}</p>
-                    <p>${escapeHtml(itemName)}</p>
-                </div>
-                 <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">${isIngredient ? 'Unit' : 'SKU'}</p>
-                    <p>${escapeHtml(itemSku)}</p>
-                </div>
-                <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">Quantity</p>
-                    <p style="font-size: 1.25rem; font-weight: bold;">${movement.quantity}</p>
-                </div>
-                <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">User</p>
-                    <p>${escapeHtml(movement.user)}</p>
-                </div>
-                 <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">Stock Before</p>
-                    <p>${movement.stockBefore !== undefined ? movement.stockBefore : 'N/A'}</p>
-                </div>
-                 <div class="detail-item">
-                    <p style="font-weight: 800; color: var(--dark);">Stock After</p>
-                    <p>${movement.stockAfter !== undefined ? movement.stockAfter : 'N/A'}</p>
-                </div>
-            </div>
+            '<div class="detail-grid" style="grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">Date</p>' +
+                    '<p>' + formatDateTime(movement.date) + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">Type</p>' +
+                    '<p style="color: ' + typeColor + '; font-weight: bold;">' + typeText + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">' + (isIngredient ? 'Ingredient' : 'Product') + '</p>' +
+                    '<p>' + escapeHtml(itemName) + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">' + (isIngredient ? 'Unit' : 'SKU') + '</p>' +
+                    '<p>' + escapeHtml(itemSku) + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">Quantity</p>' +
+                    '<p style="font-size: 1.25rem; font-weight: bold;">' + movement.quantity + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">User</p>' +
+                    '<p>' + escapeHtml(movement.user) + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">Stock Before</p>' +
+                    '<p>' + (movement.stockBefore !== undefined ? movement.stockBefore : 'N/A') + '</p>' +
+                '</div>' +
+                '<div class="detail-item">' +
+                    '<p style="font-weight: 800; color: var(--dark);">Stock After</p>' +
+                    '<p>' + (movement.stockAfter !== undefined ? movement.stockAfter : 'N/A') + '</p>' +
+                '</div>' +
+            '</div>' +
 
-            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--light); border-radius: var(--radius-md);">
-                <p style="font-weight: 800; color: var(--dark); margin-bottom: 0.5rem;">Reason</p>
-                <p>${escapeHtml(movement.reason)}</p>
-            </div>
-        `;
+            '<div style="margin-top: 1.5rem; padding: 1rem; background: var(--light); border-radius: var(--radius-md);">' +
+                '<p style="font-weight: 800; color: var(--dark); margin-bottom: 0.5rem;">Reason</p>' +
+                '<p>' + escapeHtml(movement.reason) + '</p>' +
+            '</div>';
 
         // Reuse transaction modal for simplicity
         const modalBody = document.getElementById('transactionDetails');
@@ -1268,16 +1258,16 @@ async function showInventoryListModal(type) {
         // Combine into standard items
         const combinedItems = [
             ...stockProducts.map(p => ({
-                id: `product_${p.id}`,
+                id: 'product_' + (p.id),
                 name: p.name,
                 sku: p.sku || 'N/A',
                 stock: Number(p.stock) || 0,
                 isIngredient: false
             })),
             ...ingredients.map(i => ({
-                id: `ingredient_${i.id}`,
-                name: `[Ingredient] ${i.name}`,
-                sku: `Unit: ${i.unit || 'pcs'}`,
+                id: 'ingredient_' + (i.id),
+                name: '[Ingredient] ' + (i.name),
+                sku: 'Unit: ' + (i.unit || 'pcs'),
                 stock: Number(i.stock) || 0,
                 isIngredient: true
             }))
@@ -1308,40 +1298,38 @@ async function showInventoryListModal(type) {
             );
         }
 
-        const detailsHtml = `
-            <div class="transaction-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-                <div class="transaction-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="ph ${iconClass}" style="color: ${currentAlertType === 'low' ? 'var(--warning)' : 'var(--danger)'}; font-size: 1.5rem;"></i>
-                        <h3 style="margin: 0;">${title}</h3>
-                    </div>
-                    <span style="color: var(--gray-500); font-size: 0.85rem;">${filtered.length} items</span>
-                </div>
-                
-                <div class="search-container">
-                    <input type="text" id="alertSearchInput" class="form-control" 
-                        placeholder="Search by name or SKU..." 
-                        value="${currentAlertQuery}"
-                        oninput="debounceAlertSearch(this.value)">
-                </div>
-            </div>
+        const detailsHtml =
+            '<div class="transaction-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">' +
+                '<div class="transaction-title" style="display: flex; justify-content: space-between; align-items: center;">' +
+                    '<div style="display: flex; align-items: center; gap: 0.5rem;">' +
+                        '<i class="ph ' + iconClass + '" style="color: ' + (currentAlertType === 'low' ? 'var(--warning)' : 'var(--danger)') + '; font-size: 1.5rem;"></i>' +
+                        '<h3 style="margin: 0;">' + title + '</h3>' +
+                    '</div>' +
+                    '<span style="color: var(--gray-500); font-size: 0.85rem;">' + filtered.length + ' items</span>' +
+                '</div>' +
+                '<div class="search-container">' +
+                    '<input type="text" id="alertSearchInput" class="form-control" ' +
+                        'placeholder="Search by name or SKU..." ' +
+                        'value="' + currentAlertQuery + '" ' +
+                        'oninput="debounceAlertSearch(this.value)">' +
+                '</div>' +
+            '</div>' +
 
-            <div class="table-responsive" style="margin-top: 1rem; min-height: 300px;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Stock</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="alertProductsTable">
-                        ${renderAlertTableRows(filtered)}
-                    </tbody>
-                </table>
-            </div>
-            <div id="alertPaginationContainer" style="margin-top: 1rem;"></div>
-        `;
+            '<div class="table-responsive" style="margin-top: 1rem; min-height: 300px;">' +
+                '<table class="data-table">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th>Product</th>' +
+                            '<th>Stock</th>' +
+                            '<th>Action</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody id="alertProductsTable">' +
+                        renderAlertTableRows(filtered) +
+                    '</tbody>' +
+                '</table>' +
+            '</div>' +
+            '<div id="alertPaginationContainer" style="margin-top: 1rem;"></div>';
 
         const modalBody = document.getElementById('transactionDetails');
         if (modalBody) {
@@ -1379,27 +1367,27 @@ function renderAlertTableRows(products) {
     }
 
     const paginated = alertPaginator.paginate(products);
-    return paginated.data.map(p => `
-        <tr>
-            <td>
-                <div style="font-weight: 600;">${escapeHtml(p.name)}</div>
-                <div style="font-size: 0.75rem; color: var(--gray-500); font-family: monospace;">SKU: ${escapeHtml(p.sku)}</div>
-            </td>
-            <td style="font-weight: bold; color: ${Number(p.stock) === 0 ? 'var(--danger)' : 'var(--warning)'}">
-                ${p.stock}
-            </td>
-            <td>
-                <div class="inventory-actions">
-                    <button class="btn btn-success btn-sm" onclick="quickStockIn('${p.id}'); showInventoryListModal();" title="Stock In">
-                        <i class="ph ph-plus"></i>
-                    </button>
-                    <button class="btn btn-warning btn-sm" onclick="quickStockOut('${p.id}'); showInventoryListModal();" title="Stock Out">
-                        <i class="ph ph-minus"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+    return paginated.data.map(function(p) {
+        return '<tr>' +
+            '<td>' +
+                '<div style="font-weight: 600;">' + escapeHtml(p.name) + '</div>' +
+                '<div style="font-size: 0.75rem; color: var(--gray-500); font-family: monospace;">SKU: ' + escapeHtml(p.sku) + '</div>' +
+            '</td>' +
+            '<td style="font-weight: bold; color: ' + (Number(p.stock) === 0 ? 'var(--danger)' : 'var(--warning)') + '">' +
+                p.stock +
+            '</td>' +
+            '<td>' +
+                '<div class="inventory-actions">' +
+                    '<button class="btn btn-success btn-sm" onclick="quickStockIn(\'' + p.id + '\'); showInventoryListModal();" title="Stock In">' +
+                        '<i class="ph ph-plus"></i>' +
+                    '</button>' +
+                    '<button class="btn btn-warning btn-sm" onclick="quickStockOut(\'' + p.id + '\'); showInventoryListModal();" title="Stock Out">' +
+                        '<i class="ph ph-minus"></i>' +
+                    '</button>' +
+                '</div>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
 }
 
 // Debounced search for alert modal
@@ -1433,19 +1421,19 @@ window.inlineStockAdjust = async function (productId, type, inputId) {
     }
 
     if (type === 'out' && item.stock < qty) {
-        showToast(`Insufficient stock. Available: ${item.stock}`, 'error');
+        showToast('Insufficient stock. Available: ' + (item.stock), 'error');
         return;
     }
 
     const actionText = type === 'in' ? 'stock in' : 'stock out';
     const defaultReason = type === 'in' ? 'Manual stock addition' : 'Manual stock removal';
-    const reason = prompt(`Reason for ${actionText} of ${qty} units for ${item.name}:`, defaultReason);
+    const reason = prompt('Reason for ' + (actionText) + ' of ' + (qty) + ' units for ' + (item.name) + ':', defaultReason);
     if (reason === null) return; // Cancelled
 
     // Prepend 'product_' or 'ingredient_' if not present so processStockOperation handles it correctly
     let fullId = productId;
     if (!productId.startsWith('product_') && !productId.startsWith('ingredient_')) {
-        fullId = `product_${productId}`;
+        fullId = 'product_' + (productId);
     }
 
     await processStockOperation(fullId, qty, type, reason || defaultReason);
@@ -1505,15 +1493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         input.className = 'form-control inline-edit-input';
         input.value = currentValue;
-        input.style.cssText = `
-            width: 100%;
-            padding: 4px 8px;
-            margin: 0;
-            font-size: inherit;
-            font-family: inherit;
-            font-weight: inherit;
-            text-align: ${inputType === 'number' ? 'center' : 'left'};
-        `;
+        input.style.cssText = 'width: 100%; padding: 4px 8px; margin: 0; font-size: inherit; font-family: inherit; font-weight: inherit; text-align: ' + (inputType === 'number' ? 'center' : 'left') + ';';
 
         cell.innerHTML = '';
         cell.appendChild(input);
@@ -1542,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (field === 'sku' || field === 'name') {
                 if (!newValue) {
-                    showToast(`${field.toUpperCase()} cannot be empty`, 'warning');
+                    showToast((field.toUpperCase()) + ' cannot be empty', 'warning');
                     cell.innerHTML = originalHtml;
                     return;
                 }
@@ -1554,7 +1534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const type = diff > 0 ? 'in' : 'out';
                         const qty = Math.abs(diff);
-                        const fullId = `${itemType}_${itemId}`;
+                        const fullId = (itemType) + '_' + (itemId);
                         const reason = 'Inline stock correction';
                         await processStockOperation(fullId, qty, type, reason);
                     } catch (err) {
@@ -1578,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             item.markup = ((newValue - item.cost) / item.cost) * 100;
                         }
                         await db.update(collection, item);
-                        showToast(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} updated successfully`, 'success');
+                        showToast((itemType.charAt(0).toUpperCase() + itemType.slice(1)) + ' updated successfully', 'success');
                     } catch (err) {
                         showToast('Error saving changes: ' + err.message, 'error');
                         cell.innerHTML = originalHtml;

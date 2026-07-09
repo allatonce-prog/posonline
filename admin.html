@@ -24,15 +24,15 @@
     <script src="js/pagination.js"></script>
     <script src="js/admin-optimization.js?v=6.0"></script>
 
-    <!-- iOS Cache Buster - Force reload if old version detected -->
+    <!-- Cache Buster - Force reload if old version detected -->
     <script>
         (function () {
-            const CURRENT_VERSION = '4.16';
+            const CURRENT_VERSION = '6.1';
             const storedVersion = localStorage.getItem('admin_js_version');
 
             // If version mismatch or first load, clear everything and reload
             if (storedVersion !== CURRENT_VERSION) {
-                console.log('Version mismatch detected. Clearing cache...');
+                console.log('Version mismatch detected (' + storedVersion + ' -> ' + CURRENT_VERSION + '). Clearing cache...');
 
                 // Clear all caches
                 if ('caches' in window) {
@@ -41,19 +41,28 @@
                     });
                 }
 
-                // Unregister service workers
+                // Unregister old service workers and install fresh one
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                        for (let registration of registrations) {
-                            registration.unregister();
-                        }
+                        var promises = registrations.map(function(reg) {
+                            // Trigger update to fetch new sw.js, then unregister old
+                            return reg.update().then(function() {
+                                return reg.unregister();
+                            }).catch(function() {
+                                return reg.unregister();
+                            });
+                        });
+                        return Promise.all(promises);
+                    }).then(function() {
+                        // Re-register the fresh service worker
+                        navigator.serviceWorker.register('./sw.js');
                     });
                 }
 
                 // Update version
                 localStorage.setItem('admin_js_version', CURRENT_VERSION);
 
-                // Force reload with cache bypass
+                // Force reload with cache bypass (only if this isn't a first visit)
                 if (storedVersion) {
                     window.location.reload(true);
                 }
@@ -2336,7 +2345,7 @@
     <script src="js/admin/products.js?v=6.0"></script>
     <script src="js/admin/recipes.js?v=6.1"></script>
     <script src="js/admin/modifiers.js?v=6.0"></script>
-    <script src="js/admin/inventory.js?v=6.0"></script>
+    <script src="js/admin/inventory.js?v=6.2"></script>
     <script src="js/admin/sales.js?v=6.0"></script>
     <script src="js/admin/daily-collections.js?v=6.0"></script>
     <script src="js/admin/expenses.js?v=6.0"></script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v22';
+const CACHE_NAME = 'pos-system-v23';
 const urlsToCache = [
   './',
   './index.html',
@@ -45,9 +45,25 @@ const urlsToCache = [
   './js/admin/item-sales.js'
 ];
 
+// Domains to always bypass the service worker (pass-through to network)
+const BYPASS_DOMAINS = [
+  'tawk.to',
+  'embed.tawk.to',
+  'firebaseio.com',
+  'firestore.googleapis.com',
+  'googleapis.com',
+  'firebase.googleapis.com',
+  'identitytoolkit.googleapis.com',
+  'securetoken.googleapis.com',
+  'unpkg.com',
+  'cdn.jsdelivr.net',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
+];
+
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Installing v22...');
+  console.log('[ServiceWorker] Installing v23...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -64,25 +80,49 @@ self.addEventListener('install', event => {
 
 // Fetch event - Network first for HTML and CSS, cache first for other assets
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+
+  // Only handle GET requests
+  if (request.method !== 'GET') return;
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch (e) {
+    return; // Invalid URL - let browser handle it
+  }
+
+  // Skip cross-origin requests (tawk.to, Firebase, CDNs, etc.)
+  // Let the browser handle them directly without SW interference
+  const isCrossOrigin = url.origin !== self.location.origin;
+  if (isCrossOrigin) {
+    return; // Do NOT call event.respondWith() - browser handles natively
+  }
+
+  // Also skip any known external service domains by hostname
+  if (BYPASS_DOMAINS.some(domain => url.hostname.includes(domain))) {
+    return;
+  }
 
   // Network first strategy for HTML and CSS files
-  if (event.request.mode === 'navigate' ||
-    event.request.headers.get('accept').includes('text/html') ||
-    event.request.url.includes('.css')) {
+  if (request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html') ||
+    request.url.includes('.css')) {
     event.respondWith(
-      fetch(event.request)
+      fetch(request)
         .then(response => {
           // Cache the new version
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(request, responseClone);
+            });
+          }
           return response;
         })
         .catch(() => {
           // Fallback to cache if network fails
-          return caches.match(event.request)
+          return caches.match(request)
             .then(response => {
               if (response) {
                 return response;
@@ -95,32 +135,41 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache first strategy for other resources
+  // Cache first strategy for same-origin JS and other assets
+  // Strip query strings when looking up cache so ?v=6.x params don't cause misses
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
+    (async () => {
+      // Try exact URL match first (with query string)
+      let cached = await caches.match(request);
+      if (cached) return cached;
+
+      // Try without query string (handles ?v=6.x versioning)
+      const urlWithoutQuery = url.origin + url.pathname;
+      cached = await caches.match(urlWithoutQuery);
+      if (cached) return cached;
+
+      // Not in cache - fetch from network
+      try {
+        const response = await fetch(request);
+
+        // Only cache valid same-origin responses
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          const cache = await caches.open(CACHE_NAME);
+          // Store under pathname (without query) for future version-agnostic hits
+          cache.put(urlWithoutQuery, responseToCache);
         }
-        return fetch(event.request).then(
-          response => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
 
-            // Clone the response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
+        return response;
+      } catch (err) {
+        // Network failed - return a graceful error (no rejection)
+        console.warn('[ServiceWorker] Fetch failed for:', request.url, err);
+        return new Response('', {
+          status: 503,
+          statusText: 'Service Unavailable'
+        });
+      }
+    })()
   );
 });
 
@@ -132,6 +181,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('[ServiceWorker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
