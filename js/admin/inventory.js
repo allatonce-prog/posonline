@@ -90,6 +90,18 @@ async function updateInventoryStats() {
     if (lowStockCountEl) lowStockCountEl.textContent = lowStockItems;
     if (outOfStockCountEl) outOfStockCountEl.textContent = outOfStockItems;
     if (totalStockValueEl) totalStockValueEl.textContent = formatCurrency(totalStockValue);
+
+    // Update Sidebar live low stock alert badge
+    const sidebarLowStockBadge = document.getElementById('sidebarLowStockBadge');
+    if (sidebarLowStockBadge) {
+        const totalAlerts = lowStockItems + outOfStockItems;
+        if (totalAlerts > 0) {
+            sidebarLowStockBadge.textContent = totalAlerts;
+            sidebarLowStockBadge.style.display = 'inline-flex';
+        } else {
+            sidebarLowStockBadge.style.display = 'none';
+        }
+    }
 }
 
 // Load stock movements with enhanced features
@@ -881,8 +893,14 @@ window.setStockOutFilter = function (type, btnEl) {
 
 // Show stock in modal
 async function showStockInModal() {
-    const products = await db.getAll('products');
-    const ingredients = await db.getAll('ingredients');
+    let products = _inventoryProductsCache;
+    let ingredients = _inventoryIngredientsCache;
+    if (!products || !ingredients) {
+        products = await db.getAll('products');
+        ingredients = await db.getAll('ingredients');
+        _inventoryProductsCache = products;
+        _inventoryIngredientsCache = ingredients;
+    }
 
     // Only show stock-based items (exclude availability-only items)
     const stockProducts = products.filter(p => p.stockMode !== 'availability');
@@ -961,8 +979,14 @@ async function processStockIn() {
 
 // Show stock out modal
 async function showStockOutModal() {
-    const products = await db.getAll('products');
-    const ingredients = await db.getAll('ingredients');
+    let products = _inventoryProductsCache;
+    let ingredients = _inventoryIngredientsCache;
+    if (!products || !ingredients) {
+        products = await db.getAll('products');
+        ingredients = await db.getAll('ingredients');
+        _inventoryProductsCache = products;
+        _inventoryIngredientsCache = ingredients;
+    }
 
     // Only show stock-based items (exclude availability-only items)
     const stockProducts = products.filter(p => p.stockMode !== 'availability');

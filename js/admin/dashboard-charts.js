@@ -44,6 +44,7 @@ function updateDashboardCharts(transactions, products) {
     renderCategoryChart(lastLoadedTransactions, lastLoadedProducts);
     renderPaymentMethodChart(lastLoadedTransactions);
     renderPeakHoursChart(lastLoadedTransactions);
+    renderAllSparklines(lastLoadedTransactions);
 }
 
 // 1. Sales Trend Chart (Dynamic: Hourly for single day, Daily otherwise)
@@ -569,9 +570,118 @@ window.addEventListener('themechange', () => {
     }
 });
 
+let sparklineChartInstances = {};
+
+function drawSparkline(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+    
+    if (sparklineChartInstances[canvasId]) {
+        sparklineChartInstances[canvasId].destroy();
+    }
+    
+    // Create gradient fill
+    const gradient = ctx.createLinearGradient(0, 0, 0, 35);
+    gradient.addColorStop(0, color + '33'); // 20% opacity
+    gradient.addColorStop(1, color + '00'); // 0% opacity
+    
+    sparklineChartInstances[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: new Array(data.length).fill(''),
+            datasets: [{
+                data: data,
+                borderColor: color,
+                backgroundColor: gradient,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            },
+            layout: {
+                padding: { top: 2, bottom: 2, left: 2, right: 2 }
+            }
+        }
+    });
+}
+
+async function renderAllSparklines(transactions) {
+    const validTxns = (transactions || []).filter(t => t.status !== 'voided');
+    
+    // Default time range boundaries (e.g. today or last 7 days if empty)
+    let startRangeTime = new Date().getTime() - 24 * 60 * 60 * 1000;
+    let endRangeTime = new Date().getTime();
+    
+    if (validTxns.length > 0) {
+        const sortedTxns = [...validTxns].sort((a, b) => new Date(a.date) - new Date(b.date));
+        startRangeTime = new Date(sortedTxns[0].date).getTime();
+        endRangeTime = new Date(sortedTxns[sortedTxns.length - 1].date).getTime();
+    }
+    
+    // Fetch expenses
+    let rangeExpenses = [];
+    try {
+        if (typeof db !== 'undefined') {
+            const allExpenses = await db.getAll('expenses');
+            rangeExpenses = allExpenses.filter(e => {
+                const eTime = new Date(e.date).getTime();
+                return eTime >= startRangeTime && eTime <= endRangeTime;
+            });
+        }
+    } catch (e) {
+        console.error('Error loading expenses for sparklines:', e);
+    }
+    
+    // Binning helper
+    const numBins = 8;
+    function binData(items, valueExtractor) {
+        const bins = new Array(numBins).fill(0);
+        const duration = endRangeTime - startRangeTime;
+        if (duration <= 0) {
+            bins[numBins - 1] = items.reduce((sum, item) => sum + valueExtractor(item), 0);
+            return bins;
+        }
+        items.forEach(item => {
+            const time = new Date(item.date || item.createdAt).getTime();
+            let binIdx = Math.floor(((time - startRangeTime) / duration) * numBins);
+            if (binIdx >= numBins) binIdx = numBins - 1;
+            if (binIdx < 0) binIdx = 0;
+            bins[binIdx] += valueExtractor(item);
+        });
+        return bins;
+    }
+    
+    const salesBins = binData(validTxns, t => Number(t.total) || Number(t.amount) || 0);
+    const expensesBins = binData(rangeExpenses, e => Number(e.amount) || 0);
+    const netProfitBins = salesBins.map((s, idx) => s - expensesBins[idx]);
+    
+    // Render sparklines
+    drawSparkline('salesSparkline', salesBins, '#ffffff'); // White line on green card background
+    
+    // Dynamic color for net profit (green if positive/zero, red if negative)
+    const isNetProfitPositive = netProfitBins[netProfitBins.length - 1] >= 0;
+    drawSparkline('netProfitSparkline', netProfitBins, isNetProfitPositive ? '#10b981' : '#ef4444');
+    
+    drawSparkline('expensesSparkline', expensesBins, '#f59e0b');
+}
+
 // Export for usage
 if (typeof window !== 'undefined') {
     window.updateDashboardCharts = updateDashboardCharts;
+    window.renderAllSparklines = renderAllSparklines;
     window.toggleSalesForecast = function () {
         const dates = lastLoadedTransactions.map(t => t.date.split('T')[0]);
         const uniqueDates = new Set(dates);

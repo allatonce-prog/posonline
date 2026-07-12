@@ -212,3 +212,77 @@
         max-width: 340px !important;
     }
 }
+
+/* ==========================================
+   3. EXTRA MOBILE & PORTRAIT RESPONSIVENESS OVERRIDES
+   ========================================== */
+@media (max-width: 768px) {
+    /* Stack charts grid cleanly on small tablets and portrait phones */
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .chart-card {
+        height: 300px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Collapse form grids to single column */
+    .form-row, .grid-2-col, .grid-3-col, .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Assure modal body scroll works and header fits viewport height */
+    .modal-content {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    .modal-body {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding: 1.25rem 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Force stats grid to a single column to prevent text overlaps and sparklines squashing */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Redefine small card widths to allow text and sparklines to breathe */
+    .stat-card {
+        padding: 1.25rem 1rem !important;
+        position: relative !important;
+    }
+
+    /* Hide breadcrumbs on mobile to save vertical header room */
+    .admin-breadcrumbs {
+        display: none !important;
+    }
+
+    /* Truncate long page titles in header to avoid overlap with actions */
+    .admin-header h2 {
+        font-size: 1.2rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 130px !important;
+    }
+
+    /* Scale timeline headers down slightly in activity widgets */
+    .timeline-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 2px !important;
+    }
+
+    .timeline-time {
+        font-size: 0.65rem !important;
+    }
+}

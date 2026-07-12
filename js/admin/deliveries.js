@@ -85,6 +85,17 @@ async function loadDeliveries() {
     if (totalElement) totalElement.textContent = formatCurrency(total);
     if (countElement) countElement.textContent = count;
 
+    // Update Sidebar deliveries count badge
+    const sidebarDeliveriesBadge = document.getElementById('sidebarDeliveriesBadge');
+    if (sidebarDeliveriesBadge) {
+        if (count > 0) {
+            sidebarDeliveriesBadge.textContent = count;
+            sidebarDeliveriesBadge.style.display = 'inline-flex';
+        } else {
+            sidebarDeliveriesBadge.style.display = 'none';
+        }
+    }
+
     // Render list
     if (sortedDeliveries.length === 0) {
         tbody.innerHTML = `<tr><td class="table-empty">No deliveries for ${isDateFiltered ? 'this date' : 'this month'}</td></tr>`;

@@ -128,6 +128,7 @@
                     <div class="sidebar-search-wrapper">
                         <i class="ph ph-magnifying-glass sidebar-search-icon"></i>
                         <input type="text" id="sidebarSearch" class="sidebar-search-input" placeholder="Search menu...">
+                        <kbd class="search-shortcut-kbd" style="position: absolute; right: 0.75rem; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.6); pointer-events: none; transition: opacity 0.2s; font-size: 0.7rem; padding: 2px 5px; font-weight: 700; border-radius: 4px; font-family: monospace;">/</kbd>
                     </div>
                 </div>
 
@@ -187,17 +188,23 @@
                         <i class="ph ph-caret-down section-caret"></i>
                     </div>
                     <div class="nav-section-content">
-                        <div class="nav-item" data-tab="inventory">
-                            <i class="ph ph-clipboard-text nav-icon"></i>
-                            <span>Inventory</span>
+                        <div class="nav-item" data-tab="inventory" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 0.875rem;">
+                                <i class="ph ph-clipboard-text nav-icon"></i>
+                                <span>Inventory</span>
+                            </div>
+                            <span class="sidebar-badge badge-danger" id="sidebarLowStockBadge" style="display: none;">0</span>
                         </div>
                         <div class="nav-item" data-tab="history">
                             <i class="ph ph-clock-counter-clockwise nav-icon"></i>
                             <span>History</span>
                         </div>
-                        <div class="nav-item" data-tab="deliveries">
-                            <i class="ph ph-truck nav-icon"></i>
-                            <span>Deliveries</span>
+                        <div class="nav-item" data-tab="deliveries" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 0.875rem;">
+                                <i class="ph ph-truck nav-icon"></i>
+                                <span>Deliveries</span>
+                            </div>
+                            <span class="sidebar-badge badge-info" id="sidebarDeliveriesBadge" style="display: none;">0</span>
                         </div>
                     </div>
                 </div>
@@ -375,6 +382,9 @@
                                     <div class="stat-value" id="todaySales">₱0.00</div>
                                     <div class="trend-badge" id="salesTrend" style="display: none;"></div>
                                 </div>
+                                <div class="sparkline-container" style="position: absolute; right: 2rem; top: 2.25rem; width: 120px; height: 55px; z-index: 1;">
+                                    <canvas id="salesSparkline" class="sparkline-canvas"></canvas>
+                                </div>
                                 
                                 <div class="hero-sales-card-details">
                                     <div class="hero-sales-detail-item">
@@ -420,20 +430,26 @@
                             <!-- 1. NET PROFIT -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon success" id="netProfitIcon"><i class="ph ph-trend-up"></i></div>
-                                <div class="stat-info">
+                                <div class="stat-info" style="flex: 1; min-width: 0;">
                                     <h3 id="todayNetProfitLabel">Net Profit</h3>
                                     <div class="stat-value" id="todayNetProfit">₱0.00</div>
                                     <div class="trend-badge" id="netProfitTrend" style="display: none;"></div>
+                                </div>
+                                <div class="sparkline-container">
+                                    <canvas id="netProfitSparkline" class="sparkline-canvas"></canvas>
                                 </div>
                             </div>
  
                             <!-- 2. EXPENSES -->
                             <div class="compact-stat-card">
                                 <div class="stat-icon warning" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="ph ph-money"></i></div>
-                                <div class="stat-info">
+                                <div class="stat-info" style="flex: 1; min-width: 0;">
                                     <h3 id="todayExpensesLabel">Expenses</h3>
                                     <div class="stat-value" id="todayExpensesDash">₱0.00</div>
                                     <div class="trend-badge" id="expensesTrend" style="display: none;"></div>
+                                </div>
+                                <div class="sparkline-container">
+                                    <canvas id="expensesSparkline" class="sparkline-canvas"></canvas>
                                 </div>
                             </div>
  
@@ -554,6 +570,21 @@
                             </div>
                             <div class="chart-body" style="height: 300px;">
                                 <canvas id="peakHoursChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Activity Feed Widget -->
+                        <div class="activity-feed-card" style="grid-column: span 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 300px; margin-top: 0;">
+                            <div class="activity-feed-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gray-100); padding-bottom: 8px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--dark);"><i class="ph ph-activity" style="color: var(--primary);"></i> Recent Activity</h3>
+                                <button class="btn btn-secondary btn-sm" onclick="refreshActivityFeed()" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="ph ph-arrows-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="activity-timeline" id="activityTimeline" style="flex: 1; overflow-y: auto; max-height: 240px; padding-top: 8px;">
+                                <div style="text-align: center; color: var(--gray-400); padding: 2rem 0; font-size: 0.85rem; font-weight: 500;">
+                                    Loading activity feed...
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2521,6 +2552,46 @@
 
     <!-- Global Hover Image Preview Tooltip -->
     <div id="productHoverTooltip" class="product-tooltip-preview" style="display: none;"></div>
+
+    <!-- Keyboard Shortcuts HUD Modal -->
+    <div class="shortcuts-hud-backdrop" id="shortcutsHUD" style="display: none;">
+        <div class="shortcuts-hud-container">
+            <div class="shortcuts-hud-header">
+                <h3><i class="ph ph-keyboard"></i> Keyboard Shortcuts Guide</h3>
+                <button class="shortcuts-hud-close" onclick="toggleShortcutsHUD()">×</button>
+            </div>
+            <div class="shortcuts-hud-grid">
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Toggle Command Palette</span>
+                    <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>K</kbd> or <kbd>/</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Show Keyboard Shortcuts HUD</span>
+                    <span class="shortcut-keys"><kbd>?</kbd> or <kbd>Ctrl</kbd> + <kbd>/</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Toggle Dark Mode</span>
+                    <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Close Active Modal / HUD / Drawer</span>
+                    <span class="shortcut-keys"><kbd>Esc</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Switch to Dashboard Tab</span>
+                    <span class="shortcut-keys"><kbd>g</kbd> then <kbd>d</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Switch to Products Tab</span>
+                    <span class="shortcut-keys"><kbd>g</kbd> then <kbd>p</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="shortcut-label">Switch to Inventory Tab</span>
+                    <span class="shortcut-keys"><kbd>g</kbd> then <kbd>i</kbd></span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

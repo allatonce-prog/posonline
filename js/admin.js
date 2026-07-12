@@ -102,6 +102,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Setup Sidebar Hover Pre-fetching
     setupHoverPrefetching();
+
+    // Setup Dashboard Activity Feed Timeline
+    if (typeof refreshActivityFeed === 'function') {
+        refreshActivityFeed();
+    }
 });
 
 // Setup mobile menu
@@ -800,15 +805,18 @@ function setupCommandPalette() {
 
     const commands = [
         { name: 'Toggle Dark Mode', icon: 'ph-moon-stars', action: () => document.getElementById('darkModeToggle')?.click(), shortcut: 'Ctrl + D' },
+        { name: 'Show Keyboard Shortcuts HUD', icon: 'ph-keyboard', action: () => toggleShortcutsHUD(), shortcut: '?' },
         { name: 'Go to Dashboard', icon: 'ph-gauge', action: () => switchTab('dashboard'), shortcut: 'G + D' },
         { name: 'Go to Products', icon: 'ph-package', action: () => switchTab('products'), shortcut: 'G + P' },
-        { name: 'Go to Recipes', icon: 'ph-hamburger', action: () => switchTab('recipes'), shortcut: 'G + R' },
+        { name: 'Go to Recipes', icon: 'ph-chef-hat', action: () => switchTab('recipes'), shortcut: 'G + R' },
         { name: 'Go to Inventory', icon: 'ph-clipboard-text', action: () => switchTab('inventory'), shortcut: 'G + I' },
         { name: 'Go to Sales Records', icon: 'ph-receipt', action: () => switchTab('sales'), shortcut: 'G + S' },
         { name: 'Record Expense', icon: 'ph-money', action: () => { if (typeof showAddExpenseModal === 'function') showAddExpenseModal(); }, shortcut: 'C + E' },
         { name: 'New Stock In', icon: 'ph-download-simple', action: () => { if (typeof showStockInModal === 'function') showStockInModal(); }, shortcut: 'C + I' },
         { name: 'Add Product', icon: 'ph-plus', action: () => { if (typeof showAddProductModal === 'function') showAddProductModal(); }, shortcut: 'C + P' },
-        { name: 'New Delivery', icon: 'ph-truck', action: () => { if (typeof showAddDeliveryModal === 'function') showAddDeliveryModal(); }, shortcut: 'C + L' }
+        { name: 'New Delivery', icon: 'ph-truck', action: () => { if (typeof showAddDeliveryModal === 'function') showAddDeliveryModal(); }, shortcut: 'C + L' },
+        { name: 'Toggle Sidebar Collapse', icon: 'ph-caret-left', action: () => document.getElementById('sidebarToggleBtn')?.click(), shortcut: 'Ctrl + B' },
+        { name: 'Refresh Dashboard Feed', icon: 'ph-arrows-clockwise', action: () => { if (typeof refreshActivityFeed === 'function') refreshActivityFeed(); }, shortcut: 'Ctrl + R' }
     ];
 
     const render = (query = '') => {
@@ -851,18 +859,84 @@ function setupCommandPalette() {
     };
 
     // Keyboard triggers
+    let lastKey = '';
     window.addEventListener('keydown', (e) => {
-        // Ctrl + K or slash (/) if not inside input elements
-        if ((e.ctrlKey && e.key.toLowerCase() === 'k') || (e.key === '/' && document.activeElement !== input && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
+        const activeTag = document.activeElement.tagName;
+        const isEditing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement.isContentEditable;
+        
+        // Escape close active overlays
+        if (e.key === 'Escape') {
+            let handled = false;
+            if (palette.style.display === 'flex') {
+                closePalette();
+                handled = true;
+            }
+            const hud = document.getElementById('shortcutsHUD');
+            if (hud && hud.style.display === 'flex') {
+                hud.style.display = 'none';
+                handled = true;
+            }
+            if (handled) {
+                e.preventDefault();
+            }
+            return;
+        }
+
+        if (isEditing) return;
+
+        // Toggle Command Palette: Ctrl+K or /
+        if ((e.ctrlKey && e.key.toLowerCase() === 'k') || e.key === '/') {
             e.preventDefault();
             if (palette.style.display === 'none' || !palette.style.display) {
                 openPalette();
             } else {
                 closePalette();
             }
-        } else if (e.key === 'Escape' && palette.style.display === 'flex') {
-            closePalette();
+            return;
         }
+
+        // Toggle Shortcuts HUD: ? or Ctrl+/
+        if (e.key === '?' || (e.ctrlKey && e.key === '/')) {
+            e.preventDefault();
+            toggleShortcutsHUD();
+            return;
+        }
+
+        // Toggle Dark Mode: Ctrl+D
+        if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+            e.preventDefault();
+            document.getElementById('darkModeToggle')?.click();
+            return;
+        }
+
+        // Toggle Sidebar: Ctrl+B
+        if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            document.getElementById('sidebarToggleBtn')?.click();
+            return;
+        }
+
+        // Sequential Navigation: g then tab initial
+        if (lastKey === 'g') {
+            let handled = true;
+            if (e.key.toLowerCase() === 'd') switchTab('dashboard');
+            else if (e.key.toLowerCase() === 'p') switchTab('products');
+            else if (e.key.toLowerCase() === 'r') switchTab('recipes');
+            else if (e.key.toLowerCase() === 'i') switchTab('inventory');
+            else if (e.key.toLowerCase() === 's') switchTab('sales');
+            else handled = false;
+
+            if (handled) {
+                e.preventDefault();
+                lastKey = '';
+                return;
+            }
+        }
+
+        lastKey = e.key.toLowerCase();
+        setTimeout(() => {
+            if (lastKey === e.key.toLowerCase()) lastKey = '';
+        }, 1000);
     });
 
     palette.addEventListener('click', (e) => {
@@ -1090,6 +1164,108 @@ function setupHoverPrefetching() {
         });
     });
 }
+
+/* ==========================================
+   Activity Feed and Shortcuts HUD Helpers
+   ========================================== */
+window.toggleShortcutsHUD = function () {
+    const hud = document.getElementById('shortcutsHUD');
+    if (!hud) return;
+    if (hud.style.display === 'none' || !hud.style.display) {
+        hud.style.display = 'flex';
+    } else {
+        hud.style.display = 'none';
+    }
+};
+
+window.refreshActivityFeed = async function () {
+    const timeline = document.getElementById('activityTimeline');
+    if (!timeline) return;
+
+    // Local utility for HTML escaping
+    const escapeHtml = (str) => {
+        if (typeof str !== 'string') return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+
+    try {
+        if (typeof db === 'undefined' || !db.isInitialized) {
+            timeline.innerHTML = '<div style="text-align: center; color: var(--gray-400); padding: 1.5rem 0;">Database not ready...</div>';
+            return;
+        }
+
+        // Fetch recent stock movements and notifications
+        const movements = await db.getAll('stockMovements') || [];
+        const notifications = await db.getAll('notifications') || [];
+
+        // Map movements
+        const mappedMovements = movements.map(m => {
+            const isStockIn = m.type === 'in';
+            return {
+                title: isStockIn ? 'Stock Added' : 'Stock Removed',
+                desc: `${m.quantity} units of ${m.itemType || 'product'} (ID: ${m.productId}) ${isStockIn ? 'received' : 'deducted'}. Reason: ${m.reason || 'None'}`,
+                time: new Date(m.date),
+                type: isStockIn ? 'success' : 'warning',
+                icon: isStockIn ? 'ph-download-simple' : 'ph-upload-simple'
+            };
+        });
+
+        // Map notifications
+        const mappedNotifs = notifications.map(n => {
+            let type = 'info';
+            let icon = 'ph-bell';
+            if (n.type === 'low_stock' || n.type === 'stock_out') {
+                type = 'warning';
+                icon = 'ph-warning-octagon';
+            } else if (n.type === 'sale') {
+                type = 'success';
+                icon = 'ph-shopping-cart';
+            } else if (n.type === 'error' || n.type === 'void') {
+                type = 'danger';
+                icon = 'ph-x-circle';
+            }
+            return {
+                title: n.title,
+                desc: n.message,
+                time: new Date(n.createdAt || n.date),
+                type: type,
+                icon: icon
+            };
+        });
+
+        // Combine and sort chronologically
+        const combined = [...mappedMovements, ...mappedNotifs]
+            .filter(item => !isNaN(item.time.getTime()))
+            .sort((a, b) => b.time - a.time)
+            .slice(0, 10);
+
+        if (combined.length === 0) {
+            timeline.innerHTML = '<div style="text-align: center; color: var(--gray-400); padding: 2rem 0; font-size: 0.85rem; font-weight: 500;">No recent activity logged</div>';
+            return;
+        }
+
+        timeline.innerHTML = combined.map(item => {
+            const timeStr = item.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + item.time.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return `
+                <div class="timeline-item">
+                    <div class="timeline-icon ${item.type}">
+                        <i class="ph ${item.icon}"></i>
+                    </div>
+                    <div class="timeline-header">
+                        <span class="timeline-title">${escapeHtml(item.title)}</span>
+                        <span class="timeline-time">${timeStr}</span>
+                    </div>
+                    <div class="timeline-desc">${escapeHtml(item.desc)}</div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error loading activity feed:', error);
+        timeline.innerHTML = '<div style="text-align: center; color: var(--danger); padding: 2rem 0;">Error loading activity</div>';
+    }
+};
+
 
 
 

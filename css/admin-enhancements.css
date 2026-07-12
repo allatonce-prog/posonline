@@ -1258,8 +1258,6 @@ body.dark-mode .settings-form-actions {
     text-align: center !important;
 }
 
-}
-
 /* ==========================================
    18. Table Column Visibility Styles
    ========================================== */
@@ -1284,6 +1282,416 @@ body.dark-mode .dropdown-menu-list label {
 body.dark-mode .dropdown-menu-list label:hover {
     background: #1f2937 !important;
 }
+
+/* ==========================================
+   19. KPI Sparkline Styles
+   ========================================== */
+.sparkline-container {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1rem;
+    width: 100px;
+    height: 40px;
+    z-index: 1;
+    pointer-events: none;
+}
+.sparkline-canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.compact-stat-card .stat-info {
+    position: relative;
+    z-index: 2;
+}
+.hero-sales-card .stat-info {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* ==========================================
+   20. Keyboard Shortcuts HUD styles
+   ========================================== */
+.shortcuts-hud-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.25s ease;
+}
+
+.shortcuts-hud-container {
+    width: 90%;
+    max-width: 500px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--gray-200, #e2e8f0);
+    overflow: hidden;
+    padding: 2rem;
+    animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body.dark-mode .shortcuts-hud-container {
+    background: #111827;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.shortcuts-hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray-200, #e2e8f0);
+    padding-bottom: 0.75rem;
+}
+
+body.dark-mode .shortcuts-hud-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.shortcuts-hud-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark, #1e293b);
+}
+
+body.dark-mode .shortcuts-hud-header h3 {
+    color: #ffffff;
+}
+
+.shortcuts-hud-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-500, #9ca3af);
+    line-height: 1;
+}
+
+.shortcuts-hud-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--gray-100, #f1f5f9);
+}
+
+body.dark-mode .shortcut-row {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.shortcut-row:last-child {
+    border-bottom: none;
+}
+
+.shortcut-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-600, #4b5563);
+}
+
+body.dark-mode .shortcut-label {
+    color: #cbd5e1;
+}
+
+.shortcut-keys {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+kbd {
+    background: var(--gray-50, #f8fafc);
+    border: 1px solid var(--gray-300, #cbd5e1);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--gray-300, #cbd5e1);
+    color: var(--gray-800, #1e293b);
+    display: inline-block;
+    font-family: monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+body.dark-mode kbd {
+    background: #1f2937;
+    border-color: #4b5563;
+    box-shadow: 0 2px 0 #4b5563;
+    color: #f3f4f6;
+}
+
+/* ==========================================
+   21. Activity Feed Widget styles
+   ========================================== */
+.activity-feed-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid var(--gray-200, #e2e8f0);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+body.dark-mode .activity-feed-card {
+    background: #111827;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.activity-feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--gray-100, #f1f5f9);
+    padding-bottom: 0.75rem;
+}
+
+body.dark-mode .activity-feed-header {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.activity-feed-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark, #1e293b);
+}
+
+body.dark-mode .activity-feed-header h3 {
+    color: #ffffff;
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--gray-200, #e2e8f0);
+}
+
+body.dark-mode .activity-timeline::before {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.timeline-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: -32px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gray-100, #f3f4f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: var(--gray-600, #4b5563);
+    border: 2px solid #ffffff;
+    z-index: 1;
+}
+
+body.dark-mode .timeline-icon {
+    background: #1f2937;
+    color: #cbd5e1;
+    border-color: #111827;
+}
+
+.timeline-icon.success { background: #dcfce7; color: #166534; }
+.timeline-icon.warning { background: #fef3c7; color: #92400e; }
+.timeline-icon.danger { background: #fee2e2; color: #991b1b; }
+.timeline-icon.info { background: #dbeafe; color: #1e40af; }
+
+body.dark-mode .timeline-icon.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+body.dark-mode .timeline-icon.warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+body.dark-mode .timeline-icon.danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+body.dark-mode .timeline-icon.info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.timeline-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+}
+
+body.dark-mode .timeline-title {
+    color: #ffffff;
+}
+
+.timeline-time {
+    font-size: 0.72rem;
+    color: var(--gray-400, #94a3b8);
+}
+
+.timeline-desc {
+    font-size: 0.82rem;
+    color: var(--gray-500, #64748b);
+    line-height: 1.4;
+}
+
+body.dark-mode .timeline-desc {
+    color: #cbd5e1;
+}
+
+/* ==========================================
+   22. Sidebar Enhancements
+   ========================================== */
+.admin-sidebar .nav-item.active {
+    position: relative;
+    background: rgba(16, 185, 129, 0.08) !important;
+    color: #10b981 !important;
+}
+
+body.dark-mode .admin-sidebar .nav-item.active {
+    background: rgba(52, 211, 153, 0.12) !important;
+    color: #34d399 !important;
+}
+
+.admin-sidebar .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 4px;
+    background: #10b981;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px #10b981;
+}
+
+body.dark-mode .admin-sidebar .nav-item.active::before {
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+}
+
+.admin-sidebar .nav-item {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s, color 0.2s !important;
+}
+
+.admin-sidebar .nav-item:hover {
+    transform: translateX(4px) scale(1.02);
+}
+
+.sidebar-search-input:focus ~ .search-shortcut-kbd {
+    opacity: 0;
+}
+
+/* Sidebar live badges */
+.sidebar-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    margin-left: 0.5rem;
+}
+
+.sidebar-badge.badge-danger {
+    background: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    animation: pulseBadge 2s infinite;
+}
+
+.sidebar-badge.badge-info {
+    background: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+@keyframes pulseBadge {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.85; }
+}
+
+/* Glassmorphic user card */
+.admin-sidebar .admin-user {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    margin: 1rem;
+    padding: 1rem !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-sidebar .admin-user:hover {
+    border-color: rgba(52, 211, 153, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Slim scrollbar */
+.admin-sidebar .admin-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar .admin-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar .admin-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.admin-sidebar .admin-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+
 
 
 
