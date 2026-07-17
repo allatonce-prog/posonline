@@ -861,6 +861,7 @@ function setupCommandPalette() {
     // Keyboard triggers
     let lastKey = '';
     window.addEventListener('keydown', (e) => {
+        if (!e || !e.key) return;
         const activeTag = document.activeElement.tagName;
         const isEditing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement.isContentEditable;
         
