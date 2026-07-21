@@ -22,13 +22,47 @@ async function loadCashierInventory() {
         const user = auth.getCurrentUser();
         if (!user) return;
 
-        const products = await db.getAll('products');
+        const [products, recipes, ingredients] = await Promise.all([
+            db.getAll('products'),
+            db.getAll('recipes'),
+            db.getAll('ingredients')
+        ]);
+
+        const ingMap = {};
+        (ingredients || []).forEach(i => { if (i && i.id) ingMap[i.id] = i; });
+
+        const recipeMap = {};
+        (recipes || []).forEach(r => { if (r && r.productId) recipeMap[r.productId] = r; });
 
         // Only show active, non-ingredient products for this store
         cashierInventoryAllProducts = products.filter(p =>
             p.storeId === user.storeId &&
             !p.isIngredient
-        );
+        ).map(p => {
+            const recipe = recipeMap[p.id] || (p.hasRecipe ? recipes.find(r => r.productId === p.id) : null);
+            let recipeOutOfStock = false;
+            let outOfStockIngs = [];
+
+            if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+                for (const ingItem of recipe.ingredients) {
+                    if (!ingItem || !ingItem.ingredientId) continue;
+                    const ing = ingMap[ingItem.ingredientId];
+                    const needed = Number(ingItem.quantity) || 1;
+                    const stock = ing ? Math.max(0, Number(ing.stock) || 0) : 0;
+
+                    if (!ing || stock <= 0 || stock < needed) {
+                        recipeOutOfStock = true;
+                        outOfStockIngs.push(ing ? ing.name : 'Ingredient');
+                    }
+                }
+            }
+
+            return {
+                ...p,
+                _recipeOutOfStock: recipeOutOfStock,
+                _outOfStockIngs: outOfStockIngs
+            };
+        });
 
         cashierInventoryAllProducts.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -63,7 +97,17 @@ function renderCashierInventory(products) {
         const lowThr = Number(p.lowStockThreshold) || 10;
 
         let statusClass, statusText, stockDisplay;
-        if (isAvailMode) {
+        if (p._recipeOutOfStock) {
+            statusClass = 'cinv-badge-out';
+            statusText = `Ingredient Out (${p._outOfStockIngs.join(', ')})`;
+            stockDisplay = `
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+                    <span class="cinv-stock-badge ${statusClass}">
+                        <i class="ph ph-x-circle cinv-icon-out" style="font-size:0.85rem;"></i>
+                        ${statusText}
+                    </span>
+                </div>`;
+        } else if (isAvailMode) {
             const avail = p.isAvailable !== false;
             statusClass = avail ? 'cinv-badge-ok' : 'cinv-badge-out';
             statusText = avail ? 'Available' : 'Unavailable';

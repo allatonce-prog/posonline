@@ -255,7 +255,7 @@ window.restoreHeldOrder = function (id) {
 window.deleteHeldOrder = function (id) {
     if (!confirm('Delete this held order permanently?')) return;
 
-    heldOrders = heldOrders.filter(o => o.id !== id);
+heldOrders = heldOrders.filter(o => o.id !== id);
     localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
 
     showHeldOrders(); // Refresh list
@@ -276,10 +276,50 @@ async function loadProducts() {
     modifiers = allModifiers || [];
     console.log('Loaded modifiers:', modifiers.length);
 
-    // Recipe-based auto-calculation has been removed per request.
-    // We now just use the base product stock or availability mode logic.
-    products = allProducts;
-    
+    // Build ingredient map for fast stock lookup
+    const ingredientMap = {};
+    (allIngredients || []).forEach(ing => {
+        if (ing && ing.id) {
+            ingredientMap[ing.id] = ing;
+        }
+    });
+
+    // Build recipe map by productId
+    const recipeMap = {};
+    (allRecipes || []).forEach(r => {
+        if (r && r.productId) {
+            recipeMap[r.productId] = r;
+        }
+    });
+
+    // Map products and check recipe ingredient availability
+    products = allProducts.map(product => {
+        const recipe = recipeMap[product.id] || (product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null);
+        let recipeOutOfStock = false;
+        let outOfStockIngredientNames = [];
+
+        if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+            for (const ingItem of recipe.ingredients) {
+                if (!ingItem || !ingItem.ingredientId) continue;
+                const ing = ingredientMap[ingItem.ingredientId];
+                const needed = Number(ingItem.quantity) || 1;
+                const currentStock = ing ? Math.max(0, Number(ing.stock) || 0) : 0;
+
+                // Mark unavailable if ingredient is missing or stock is 0 or less than needed
+                if (!ing || currentStock <= 0 || currentStock < needed) {
+                    recipeOutOfStock = true;
+                    outOfStockIngredientNames.push(ing ? ing.name : 'Ingredient');
+                }
+            }
+        }
+
+        return {
+            ...product,
+            _recipeOutOfStock: recipeOutOfStock,
+            _outOfStockIngredientNames: outOfStockIngredientNames
+        };
+    });
+
     // Pre-calculate search tags for high-speed query execution
     products.forEach(product => {
         product._searchTag = `${product.name.toLowerCase()} ${product.sku ? product.sku.toLowerCase() : ''} ${product.category ? product.category.toLowerCase() : ''}`;
@@ -299,6 +339,9 @@ async function loadProducts() {
 
 // Helper — is a product currently orderable?
 function isProductAvailable(product) {
+    if (product._recipeOutOfStock) {
+        return false;
+    }
     if (product.stockMode === 'availability') {
         return product.isAvailable !== false; // true by default
     }
@@ -360,7 +403,10 @@ function renderProducts(productsToRender) {
 
         // Stock label
         let stockText, stockClass;
-        if (product.stockMode === 'availability') {
+        if (product._recipeOutOfStock) {
+            stockText = `Out of stock (${product._outOfStockIngredientNames.join(', ')})`;
+            stockClass = 'low';
+        } else if (product.stockMode === 'availability') {
             stockText = available ? 'Available' : 'Not Available';
             stockClass = available ? '' : 'low';
         } else {
@@ -391,10 +437,17 @@ function renderProducts(productsToRender) {
 // Add to cart
 function addToCart(product) {
     if (!isProductAvailable(product)) {
-        showToast(
-            product.stockMode === 'availability' ? 'Item is not available' : 'Product out of stock',
-            'warning'
-        );
+        if (product._recipeOutOfStock) {
+            showToast(
+                `Cannot add: Linked ingredient (${product._outOfStockIngredientNames.join(', ')}) is out of stock`,
+                'warning'
+            );
+        } else {
+            showToast(
+                product.stockMode === 'availability' ? 'Item is not available' : 'Product out of stock',
+                'warning'
+            );
+        }
         return;
     }
 
