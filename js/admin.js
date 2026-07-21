@@ -1014,6 +1014,26 @@ function setupConnectionStatusListeners() {
 // 6. Global JS Crash Recovery Boundary Setup
 function setupCrashBoundary() {
     const handleGlobalError = (errorMsg, url, lineNumber, column, errorObj) => {
+        const msgStr = String(errorMsg || '');
+        const urlStr = String(url || '');
+
+        // Ignore cross-origin CDN script errors, network failures, or unlocalized errors
+        if (
+            msgStr === 'Script error.' ||
+            msgStr === 'Script error' ||
+            !urlStr ||
+            urlStr === ':0:0' ||
+            urlStr === '0:0' ||
+            urlStr === 'Promise Rejection' ||
+            msgStr.includes('net::ERR') ||
+            msgStr.includes('Failed to fetch') ||
+            msgStr.includes('NetworkError') ||
+            msgStr.includes('CERT_COMMON_NAME_INVALID')
+        ) {
+            console.warn('Suppressed non-fatal external script or network error:', errorMsg, urlStr);
+            return false; // Let default browser handling occur without breaking UI
+        }
+
         // Prevent duplicate overlays
         if (document.querySelector('.recovery-overlay')) return false;
 
@@ -1040,7 +1060,7 @@ function setupCrashBoundary() {
     window.onerror = handleGlobalError;
     window.addEventListener('unhandledrejection', (event) => {
         const reason = event.reason ? (event.reason.message || event.reason) : 'Promise rejection';
-        handleGlobalError(reason, 'Promise Rejection', 0, 0, event.reason);
+        console.warn('Unhandled promise rejection:', reason);
     });
 }
 

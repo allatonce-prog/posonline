@@ -75,16 +75,12 @@ class MobileStabilityManager {
     setupErrorRecovery() {
         // Global error handler
         window.addEventListener('error', (event) => {
-            console.error('Caught global error:', event.error);
-            this.handleCriticalError(event.error);
-            event.preventDefault();
+            console.warn('Mobile stability caught global error:', event.message || event.error);
         });
 
         // Unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
-            this.handleCriticalError(event.reason);
-            event.preventDefault();
+            console.warn('Mobile stability caught unhandled promise rejection:', event.reason);
         });
     }
 

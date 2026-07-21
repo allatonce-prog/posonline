@@ -88,13 +88,13 @@
    ========================================== */
 @media (max-width: 600px) {
 
-    /* Global Spacing Reductions */
+    /* Global Spacing Reductions with Safe Bottom Clearance for Mobile Nav Bar */
     .admin-main {
-        padding: 0.75rem !important;
+        padding: 0.75rem 0.75rem calc(100px + env(safe-area-inset-bottom, 0px)) 0.75rem !important;
     }
 
     .admin-content {
-        padding: 0.5rem 0 !important;
+        padding: 0.5rem 0 calc(100px + env(safe-area-inset-bottom, 0px)) 0 !important;
     }
 
     /* Header Spacing & Layout */
@@ -284,5 +284,653 @@
 
     .timeline-time {
         font-size: 0.65rem !important;
+    }
+}
+
+/* ==========================================================================
+   4. INVENTORY TAB MOBILE & TABLET RESPONSIVE LAYOUT OPTIMIZATIONS
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Global Tab Visibility Enforcement */
+    .tabs:not(.active) {
+        display: none !important;
+    }
+
+    /* Inventory Tab Container & Bottom Clearance for Mobile Nav Bar */
+    #inventory-tab.active {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    #inventory-tab .table-container {
+        padding: 0.85rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    #inventory-tab .table-container:last-child {
+        margin-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Remove 60vh container height limit on mobile so full card lists scroll naturally */
+    .table-responsive {
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+
+    /* Inventory Header Flex Wrap */
+    #inventory-tab .table-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    #inventory-tab .table-header h3 {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: var(--dark, #0f172a);
+    }
+
+    /* Action Buttons Bar: Grid of 2x2 on Mobile */
+    #inventory-tab .table-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    #inventory-tab .table-actions .btn {
+        width: 100% !important;
+        min-height: 42px !important;
+        justify-content: center !important;
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        border-radius: var(--radius-sm, 8px) !important;
+    }
+
+    /* Inventory Stats Overview Cards */
+    .inventory-stats {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .inventory-stats .stat-card {
+        padding: 0.75rem 0.5rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        border-radius: 10px !important;
+        background: var(--gray-50, #f8fafc) !important;
+        border: 1px solid var(--gray-200, #e2e8f0) !important;
+    }
+
+    .inventory-stats .stat-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 0.35rem !important;
+        border-radius: 50% !important;
+    }
+
+    .inventory-stats .stat-info h3 {
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        color: var(--gray-600, #475569) !important;
+        margin-bottom: 0.15rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .inventory-stats .stat-value {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+    }
+
+    /* Filter Controls Search & Select */
+    #inventory-tab .filter-controls.compact-filters {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 0.5rem !important;
+    }
+
+    #inventory-tab .filter-controls input#stockSearchInput,
+    #inventory-tab .filter-controls select#stockFilterSelect {
+        max-width: 100% !important;
+        width: 100% !important;
+        min-height: 42px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Modern Mobile Inventory Product Cards */
+    .inventory-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        border: none !important;
+    }
+
+    .inventory-table thead {
+        display: none !important;
+    }
+
+    .inventory-table tbody {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+
+    .inventory-table tbody tr {
+        display: flex !important;
+        flex-direction: column !important;
+        background: #ffffff !important;
+        border: 1px solid var(--gray-200, #e2e8f0) !important;
+        border-radius: 12px !important;
+        padding: 0.85rem 0.85rem 0.65rem 0.85rem !important;
+        margin-bottom: 0 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        position: relative !important;
+        gap: 0.5rem !important;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+    }
+
+    body.dark-mode .inventory-table tbody tr {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    /* Table Empty Row styling */
+    .inventory-table tbody tr:has(.table-empty) {
+        text-align: center !important;
+        padding: 2rem 1rem !important;
+    }
+
+    /* Reset cell block display */
+    .inventory-table tbody tr td {
+        display: block !important;
+        width: 100% !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* Top Section of Card: Image + Product Info + Status Badge */
+    .inventory-table td[data-label="Image"] {
+        position: absolute !important;
+        top: 0.85rem !important;
+        left: 0.85rem !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .inventory-table .product-image-small {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        font-size: 1.35rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--gray-100, #f1f5f9) !important;
+        border: 1px solid var(--gray-200, #e2e8f0) !important;
+    }
+
+    .inventory-table td[data-label="Product"] {
+        padding-left: 54px !important;
+        padding-right: 85px !important; /* room for status pill */
+        min-height: 44px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .inventory-table td[data-label="Product"] div:first-child {
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        color: var(--dark, #0f172a) !important;
+        line-height: 1.25 !important;
+    }
+
+    body.dark-mode .inventory-table td[data-label="Product"] div:first-child {
+        color: #f8fafc !important;
+    }
+
+    .inventory-table td[data-label="Product"] div:last-child {
+        font-size: 0.78rem !important;
+        color: var(--gray-500, #64748b) !important;
+        line-height: 1.2 !important;
+        margin-top: 2px !important;
+    }
+
+    /* Status Pill positioned top-right */
+    .inventory-table td[data-label="Status"] {
+        position: absolute !important;
+        top: 0.85rem !important;
+        right: 0.85rem !important;
+        width: auto !important;
+    }
+
+    .inventory-table .stock-status {
+        font-size: 0.7rem !important;
+        padding: 3px 8px !important;
+        border-radius: 20px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    /* Card Details Grid: SKU, Category, Current Stock, Unit Price, Total Value */
+    .inventory-table td[data-label="SKU"],
+    .inventory-table td[data-label="Category"],
+    .inventory-table td[data-label="Current Stock"],
+    .inventory-table td[data-label="Unit Price"],
+    .inventory-table td[data-label="Total Value"] {
+        font-size: 0.82rem !important;
+        color: var(--gray-600, #475569) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 4px 0 !important;
+        border-bottom: 1px dashed var(--gray-100, #f1f5f9) !important;
+    }
+
+    body.dark-mode .inventory-table td[data-label="SKU"],
+    body.dark-mode .inventory-table td[data-label="Category"],
+    body.dark-mode .inventory-table td[data-label="Current Stock"],
+    body.dark-mode .inventory-table td[data-label="Unit Price"],
+    body.dark-mode .inventory-table td[data-label="Total Value"] {
+        border-bottom-color: #334155 !important;
+        color: #94a3b8 !important;
+    }
+
+    .inventory-table td[data-label="SKU"]::before { content: "SKU / Unit:"; font-weight: 600; color: var(--gray-500); }
+    .inventory-table td[data-label="Category"]::before { content: "Category:"; font-weight: 600; color: var(--gray-500); }
+    .inventory-table td[data-label="Current Stock"]::before { content: "Current Stock:"; font-weight: 600; color: var(--gray-500); }
+    .inventory-table td[data-label="Unit Price"]::before { content: "Unit Price:"; font-weight: 600; color: var(--gray-500); }
+    .inventory-table td[data-label="Total Value"]::before { content: "Total Value:"; font-weight: 600; color: var(--gray-500); }
+
+    .inventory-table .stock-quantity {
+        font-size: 0.88rem !important;
+        font-weight: 800 !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        background: var(--gray-100, #f1f5f9) !important;
+    }
+
+    /* Actions Footer Bar */
+    .inventory-table td[data-label="Actions"] {
+        margin-top: 0.35rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid var(--gray-200, #e2e8f0) !important;
+        border-bottom: none !important;
+    }
+
+    body.dark-mode .inventory-table td[data-label="Actions"] {
+        border-top-color: #334155 !important;
+    }
+
+    .inventory-table .inventory-actions {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 0.5rem !important;
+    }
+
+    .inventory-table .inline-stock-adjuster {
+        margin-right: 0 !important;
+        height: 34px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .inventory-table .inline-stock-adjuster button {
+        width: 32px !important;
+        height: 34px !important;
+    }
+
+    .inventory-table .inline-stock-adjuster input {
+        height: 34px !important;
+        width: 44px !important;
+    }
+
+    .inventory-table .inventory-actions button.btn-sm {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 12px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+    }
+}
+
+/* Extra Mobile Screens (< 480px) adjustments */
+@media (max-width: 480px) {
+    .inventory-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.35rem !important;
+    }
+
+    .inventory-stats .stat-card {
+        padding: 0.6rem 0.25rem !important;
+    }
+
+    .inventory-stats .stat-icon {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.95rem !important;
+    }
+
+    .inventory-stats .stat-info h3 {
+        font-size: 0.65rem !important;
+    }
+
+    .inventory-stats .stat-value {
+        font-size: 1rem !important;
+    }
+}
+
+/* ==========================================================================
+   5. PRODUCTS TAB MOBILE & TABLET RESPONSIVE LAYOUT OPTIMIZATIONS
+   ========================================================================== */
+@media (max-width: 768px) {
+    #products-tab.active {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    #products-tab .table-container {
+        padding: 0.85rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Top Actions Header Layout */
+    #products-tab .table-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    #products-tab .table-header h3 {
+        font-size: 1.15rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 0 !important;
+    }
+
+    #products-tab .table-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        align-items: center !important;
+    }
+
+    #products-tab .table-actions input#productSearchInput,
+    #products-tab .table-actions select#productCategoryFilter {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        min-height: 42px !important;
+        font-size: 0.9rem !important;
+        margin-right: 0 !important;
+    }
+
+    /* Sub-row for controls: View Toggle, Column Vis, Add Product */
+    #products-tab .view-toggle-group {
+        flex: 0 0 auto !important;
+        margin-right: 0 !important;
+        height: 42px !important;
+        border-radius: 10px !important;
+        background: var(--gray-100, #f1f5f9) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 3px !important;
+        box-sizing: border-box !important;
+    }
+
+    #products-tab .view-toggle-btn {
+        height: 36px !important;
+        width: 44px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+    }
+
+    #products-tab .col-visibility-dropdown {
+        flex: 0 0 auto !important;
+        margin-right: 0 !important;
+    }
+
+    #products-tab .col-visibility-dropdown button {
+        height: 42px !important;
+        width: 42px !important;
+        border-radius: 10px !important;
+    }
+
+    #products-tab .table-actions button.btn-primary {
+        flex: 1 1 auto !important;
+        min-height: 42px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Reset Products Table Layout to Responsive Cards */
+    #productsTableContainer .table-responsive {
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+
+    #productsTableContainer .data-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        border: none !important;
+    }
+
+    #productsTableContainer .data-table thead {
+        display: none !important;
+    }
+
+    #productsTableContainer .data-table tbody {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+
+    /* Product Card Row - Flex Wrap with Order */
+    #productsTableContainer .data-table tbody tr {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        background: #ffffff !important;
+        border: 1px solid var(--gray-200, #e2e8f0) !important;
+        border-radius: 12px !important;
+        padding: 0.85rem !important;
+        margin-bottom: 0 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        position: relative !important;
+        gap: 0.4rem 0.5rem !important;
+        align-items: center !important;
+    }
+
+    body.dark-mode #productsTableContainer .data-table tbody tr {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    /* Reset Cell Display */
+    #productsTableContainer .data-table td {
+        display: block !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    /* Row 1 Header: Checkbox (order 1) + Thumbnail (order 2) + Name (order 3) */
+    #productsTableContainer .data-table td:first-child {
+        position: static !important;
+        order: 1 !important;
+        flex: 0 0 24px !important;
+        width: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 44px !important;
+    }
+
+    #productsTableContainer .data-table td:first-child input[type="checkbox"] {
+        width: 18px !important;
+        height: 18px !important;
+        accent-color: var(--primary) !important;
+        margin: 0 !important;
+        cursor: pointer;
+    }
+
+    #productsTableContainer .data-table td:first-child::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    #productsTableContainer .data-table td.col-thumbnail {
+        position: static !important;
+        order: 2 !important;
+        flex: 0 0 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #productsTableContainer .table-product-thumbnail {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        object-fit: cover !important;
+        font-size: 1.25rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--gray-100, #f1f5f9) !important;
+        border: 1px solid var(--gray-200, #e2e8f0) !important;
+    }
+
+    #productsTableContainer .data-table td.col-name {
+        order: 3 !important;
+        flex: 1 1 calc(100% - 85px) !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0 !important;
+        min-height: 44px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        font-size: 0.98rem !important;
+        font-weight: 700 !important;
+        color: var(--dark, #0f172a) !important;
+        line-height: 1.25 !important;
+    }
+
+    body.dark-mode #productsTableContainer .data-table td.col-name {
+        color: #f8fafc !important;
+    }
+
+    /* Row 2-5: SKU (order 4), Category (order 5), Price (order 6), Stock (order 7) */
+    #productsTableContainer .data-table td.col-sku {
+        order: 4 !important;
+        flex: 1 1 100% !important;
+    }
+
+    #productsTableContainer .data-table td.col-category {
+        order: 5 !important;
+        flex: 1 1 100% !important;
+    }
+
+    #productsTableContainer .data-table td.col-price {
+        order: 6 !important;
+        flex: 1 1 100% !important;
+    }
+
+    #productsTableContainer .data-table td.col-stock {
+        order: 7 !important;
+        flex: 1 1 100% !important;
+    }
+
+    #productsTableContainer .data-table td.col-sku,
+    #productsTableContainer .data-table td.col-category,
+    #productsTableContainer .data-table td.col-price,
+    #productsTableContainer .data-table td.col-stock {
+        font-size: 0.84rem !important;
+        color: var(--gray-600, #475569) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 4px 0 !important;
+        border-bottom: 1px dashed var(--gray-100, #f1f5f9) !important;
+    }
+
+    body.dark-mode #productsTableContainer .data-table td.col-sku,
+    body.dark-mode #productsTableContainer .data-table td.col-category,
+    body.dark-mode #productsTableContainer .data-table td.col-price,
+    body.dark-mode #productsTableContainer .data-table td.col-stock {
+        border-bottom-color: #334155 !important;
+        color: #94a3b8 !important;
+    }
+
+    #productsTableContainer .data-table td.col-sku::before { content: "SKU / Code:"; font-weight: 600; color: var(--gray-500); }
+    #productsTableContainer .data-table td.col-category::before { content: "Category:"; font-weight: 600; color: var(--gray-500); }
+    #productsTableContainer .data-table td.col-price::before { content: "Price:"; font-weight: 600; color: var(--gray-500); }
+    #productsTableContainer .data-table td.col-stock::before { content: "Stock Status:"; font-weight: 600; color: var(--gray-500); }
+
+    #productsTableContainer .data-table td.col-price {
+        font-weight: 800 !important;
+        font-size: 0.98rem !important;
+        color: var(--primary, #10b981) !important;
+    }
+
+    /* Card Footer: Action Buttons (order 8) */
+    #productsTableContainer .data-table td[data-label="Actions"] {
+        order: 8 !important;
+        flex: 1 1 100% !important;
+        margin-top: 0.35rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid var(--gray-200, #e2e8f0) !important;
+        border-bottom: none !important;
+    }
+
+    body.dark-mode #productsTableContainer .data-table td[data-label="Actions"] {
+        border-top-color: #334155 !important;
+    }
+
+    #productsTableContainer .data-table td[data-label="Actions"] > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    #productsTableContainer .data-table td[data-label="Actions"] button {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 }
