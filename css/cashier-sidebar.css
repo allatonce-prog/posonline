@@ -21,20 +21,22 @@
 .cashier-sidebar {
     position: fixed;
     top: 0;
-    left: -320px;
+    left: 0;
+    transform: translateX(-320px);
     width: 320px;
     height: 100vh;
     background: linear-gradient(180deg, #022c22 0%, #01120d 100%) !important;
     box-shadow: 10px 0 50px rgba(0, 0, 0, 0.25);
     z-index: 1001;
-    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
     display: flex;
     flex-direction: column;
     border-right: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .cashier-sidebar.open {
-    left: 0;
+    transform: translateX(0);
 }
 
 .sidebar-header {

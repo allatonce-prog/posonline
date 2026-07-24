@@ -945,14 +945,8 @@
             window.toggleCashierSidebar = function () {
                 const sidebar = document.getElementById('cashierSidebar');
                 const overlay = document.getElementById('sidebarOverlay');
-                const isOpening = !sidebar.classList.contains('open');
                 sidebar.classList.toggle('open');
                 overlay.classList.toggle('active');
-
-                // Refresh stock tracker every time sidebar opens
-                if (isOpening && typeof loadCashierStockTracker === 'function') {
-                    loadCashierStockTracker();
-                }
             };
 
             // Stock tracker accordion toggle

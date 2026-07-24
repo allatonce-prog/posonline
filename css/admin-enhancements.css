@@ -204,6 +204,25 @@ body.dark-mode .form-control:focus {
     border-color: var(--primary) !important;
 }
 
+/* Recipe and Modifiers Tab overrides */
+body.dark-mode .ingredient-card {
+    background: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode .ingredient-card .toggle-icon {
+    color: var(--primary) !important;
+}
+
+body.dark-mode .searchable-select .select-header {
+    border-color: #334155 !important;
+}
+
+body.dark-mode .select-option:hover {
+    background: #1f2937 !important;
+}
+
 /* Modals dark overrides */
 body.dark-mode .modal-content {
     background: #111827 !important;
@@ -1689,6 +1708,27 @@ body.dark-mode .admin-sidebar .nav-item.active::before {
 
 .admin-sidebar .admin-nav::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================
+   Dashboard Utility Bar and Quick Actions Overrides
+   ========================================== */
+.dashboard-utility-bar {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .dashboard-utility-bar {
+    background: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode .dashboard-quick-actions {
+    background: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 

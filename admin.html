@@ -340,7 +340,7 @@
             <div class="admin-content">
                 <div class="tabs active" id="dashboard-tab">
                     <!-- Dashboard Header & Utility Bar -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: white; padding: 1rem 1.5rem; border-radius: 20px; border: 1px solid var(--gray-200); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);">
+                    <div class="dashboard-utility-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.5rem; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 8px;">
                                 <i class="ph ph-gauge" style="color: var(--primary);"></i> Overview Dashboard
@@ -357,15 +357,15 @@
                                 Today
                             </button>
                             <button class="time-range-btn" data-range="week" onclick="switchTimeRange('week')"
-                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: var(--white); color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
                                 This Week
                             </button>
                             <button class="time-range-btn" data-range="month" onclick="switchTimeRange('month')"
-                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: var(--white); color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s;">
                                 This Month
                             </button>
                             <button class="time-range-btn" data-range="custom" onclick="showCustomRangeModal()"
-                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                                style="padding: 0.5rem 1.25rem; border: 1px solid var(--gray-300); background: var(--white); color: var(--gray-700); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
                                 <i class="ph ph-calendar-dots"></i> Custom
                             </button>
                         </div>
@@ -755,39 +755,39 @@
                     <div class="table-container"
                         style="margin-bottom: 2rem; background: transparent; border: none; box-shadow: none; padding: 0;">
                         <div class="table-header"
-                            style="background: white; padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                            style="background: var(--white); padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="ph ph-package" style="font-size: 1.25rem; color: var(--primary);"></i>
                                 <h3 style="margin: 0;">Ingredients Inventory</h3>
                             </div>
                             <div class="table-actions" style="flex: 1; justify-content: flex-end; min-width: 300px;">
                                 <input type="text" id="ingredientSearchInput" placeholder="Search ingredients..."
-                                    class="form-control" style="max-width: 100%; width: 100%; flex: 1;">
+                                     class="form-control" style="max-width: 100%; width: 100%; flex: 1;">
                                 <button class="btn btn-primary" onclick="showAddIngredientModal()"
                                     style="white-space: nowrap;">
                                     + Add Ingredient
                                 </button>
                             </div>
                         </div>
-
+ 
                         <!-- Responsive Grid/List -->
                         <div id="ingredientsList"
                             style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
                             <!-- Dynamic Cards -->
                         </div>
                         <div id="ingredientsEmpty"
-                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: white; border-radius: var(--radius-md);">
+                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: var(--white); border-radius: var(--radius-md);">
                             No ingredients found.
                         </div>
                     </div>
                 </div>
-
+ 
                 <!-- Modifiers Tab -->
                 <div class="tabs" id="modifiers-tab">
                     <div class="table-container"
                         style="margin-bottom: 2rem; background: transparent; border: none; box-shadow: none; padding: 0;">
                         <div class="table-header"
-                            style="background: white; padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                            style="background: var(--white); padding: 1rem; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="ph ph-list-plus" style="font-size: 1.25rem; color: var(--primary);"></i>
                                 <h3 style="margin: 0;">Modifiers & Extras</h3>
@@ -801,14 +801,14 @@
                                 </button>
                             </div>
                         </div>
-
+ 
                         <!-- Responsive Grid/List -->
                         <div id="modifiersList"
                             style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
                             <!-- Dynamic Modifier Cards -->
                         </div>
                         <div id="modifiersEmpty"
-                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: white; border-radius: var(--radius-md);">
+                            style="display: none; text-align: center; padding: 3rem; color: var(--gray-500); background: var(--white); border-radius: var(--radius-md);">
                             No modifiers found.
                         </div>
                     </div>
