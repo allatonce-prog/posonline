@@ -24,6 +24,44 @@ document.addEventListener('DOMContentLoaded', () => {
             renderIngredientsList(filtered);
         }, 150));
     }
+
+    // Close all open ingredient dropdowns if clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.ingredient-card')) {
+            const openDropdowns = document.querySelectorAll('.ingredient-card [id^="dropdown-"]');
+            openDropdowns.forEach(dd => {
+                if (dd.style.display === 'flex') {
+                    dd.style.display = 'none';
+                    const ingId = dd.id.replace('dropdown-', '');
+                    const caret = document.getElementById(`caret-${ingId}`);
+                    if (caret) caret.style.transform = 'rotate(0deg)';
+                    const card = dd.closest('.ingredient-card');
+                    if (card) {
+                        card.style.zIndex = 'auto';
+                        card.classList.remove('dropdown-open');
+                    }
+                }
+            });
+        }
+    });
+
+    // Close dropdowns on resize/scroll of content area to prevent layout mismatch
+    window.addEventListener('resize', () => {
+        const openDropdowns = document.querySelectorAll('.ingredient-card [id^="dropdown-"]');
+        openDropdowns.forEach(dd => {
+            if (dd.style.display === 'flex') {
+                dd.style.display = 'none';
+                const ingId = dd.id.replace('dropdown-', '');
+                const caret = document.getElementById(`caret-${ingId}`);
+                if (caret) caret.style.transform = 'rotate(0deg)';
+                const card = dd.closest('.ingredient-card');
+                if (card) {
+                    card.style.zIndex = 'auto';
+                    card.classList.remove('dropdown-open');
+                }
+            }
+        });
+    });
 });
 
 // ---------------------------------------------------------
@@ -227,6 +265,19 @@ window.toggleLinkedProducts = function(event, ingId) {
         if (card) {
             card.style.zIndex = '10';
             card.classList.add('dropdown-open');
+        }
+        
+        // Dynamically position dropdown: open upwards if it would go offscreen
+        const cardRect = card.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - cardRect.bottom;
+        if (spaceBelow < 180) {
+            dropdown.style.top = 'auto';
+            dropdown.style.bottom = 'calc(100% + 6px)';
+            dropdown.style.boxShadow = '0 -10px 15px -3px rgba(0,0,0,0.1), 0 -4px 6px -2px rgba(0,0,0,0.05)';
+        } else {
+            dropdown.style.top = 'calc(100% + 6px)';
+            dropdown.style.bottom = 'auto';
+            dropdown.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)';
         }
     } else {
         dropdown.style.display = 'none';

@@ -127,3 +127,14 @@
     z-index: 20 !important;
     border-color: var(--primary) !important;
 }
+
+/* Responsive Media Queries */
+@media (max-width: 640px) {
+    #ingredientsList {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .ingredient-card {
+        padding: 0.85rem !important;
+    }
+}
