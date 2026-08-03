@@ -342,7 +342,7 @@ function isProductAvailable(product) {
     if (product._recipeOutOfStock) {
         return false;
     }
-    if (product.stockMode === 'availability') {
+    if (product.hasRecipe || product.stockMode === 'availability') {
         return product.isAvailable !== false; // true by default
     }
     return product.stock > 0; // stock-based
@@ -404,9 +404,9 @@ function renderProducts(productsToRender) {
         // Stock label
         let stockText, stockClass;
         if (product._recipeOutOfStock) {
-            stockText = `Out of stock (${product._outOfStockIngredientNames.join(', ')})`;
+            stockText = `Not Available (${product._outOfStockIngredientNames.join(', ')})`;
             stockClass = 'low';
-        } else if (product.stockMode === 'availability') {
+        } else if (product.hasRecipe || product.stockMode === 'availability') {
             stockText = available ? 'Available' : 'Not Available';
             stockClass = available ? '' : 'low';
         } else {
@@ -1134,6 +1134,9 @@ async function completeTransaction() {
                 for (const item of cartCopy) {
                     const product = await db.get('products', item.id);
                     if (!product) continue;
+
+                    // Skip low stock check for availability mode or recipe products
+                    if (product.hasRecipe || product.stockMode === 'availability') continue;
 
                     const settings = typeof getSettings === 'function' ? getSettings() : { lowStockThreshold: 10 };
                     if (product.stock <= (settings.lowStockThreshold || 10)) {

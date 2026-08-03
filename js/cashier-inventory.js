@@ -92,7 +92,7 @@ function renderCashierInventory(products) {
     }
 
     container.innerHTML = products.map(p => {
-        const isAvailMode = p.stockMode === 'availability';
+        const isAvailMode = p.hasRecipe || p.stockMode === 'availability';
         const stock = isAvailMode ? null : (Number(p.stock) || 0);
         const lowThr = Number(p.lowStockThreshold) || 10;
 
@@ -152,8 +152,8 @@ function renderCashierInventory(products) {
 function updateCashierInventorySummary(products) {
     let outCount = 0, lowCount = 0, okCount = 0;
     products.forEach(p => {
-        if (p.stockMode === 'availability') {
-            if (p.isAvailable === false) outCount++; else okCount++;
+        if (p.hasRecipe || p.stockMode === 'availability') {
+            if (p.isAvailable === false || p._recipeOutOfStock) outCount++; else okCount++;
             return;
         }
         const stock = Number(p.stock) || 0;
@@ -184,19 +184,19 @@ window.filterCashierInventory = function (searchTerm, statusFilter) {
 
     if (status === 'out') {
         filtered = filtered.filter(p => {
-            if (p.stockMode === 'availability') return p.isAvailable === false;
+            if (p.hasRecipe || p.stockMode === 'availability') return p.isAvailable === false || p._recipeOutOfStock;
             return (Number(p.stock) || 0) <= 0;
         });
     } else if (status === 'low') {
         filtered = filtered.filter(p => {
-            if (p.stockMode === 'availability') return false;
+            if (p.hasRecipe || p.stockMode === 'availability') return false;
             const stock = Number(p.stock) || 0;
             const low = Number(p.lowStockThreshold) || 10;
             return stock > 0 && stock <= low;
         });
     } else if (status === 'ok') {
         filtered = filtered.filter(p => {
-            if (p.stockMode === 'availability') return p.isAvailable !== false;
+            if (p.hasRecipe || p.stockMode === 'availability') return p.isAvailable !== false && !p._recipeOutOfStock;
             const stock = Number(p.stock) || 0;
             const low = Number(p.lowStockThreshold) || 10;
             return stock > low;
