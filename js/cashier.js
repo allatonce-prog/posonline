@@ -1074,24 +1074,24 @@ async function completeTransaction() {
                                 });
                             }
                         }
-                    } else {
-                        // NORMAL PRODUCT DEDUCTION (Skip for availability-mode products)
-                        if (product.stockMode !== 'availability') {
-                            product.stock = Math.max(0, product.stock - item.quantity);
-                            await db.update('products', product);
+                    }
 
-                            await db.add('stockMovements', {
-                                productId: item.id,
-                                type: 'out',
-                                quantity: item.quantity,
-                                reason: `Sale - Transaction ${formatTransactionId(transactionId)}`,
-                                date: new Date().toISOString(),
-                                user: auth.getCurrentUser().username,
-                                stockBefore: stockBefore,
-                                stockAfter: product.stock,
-                                unitPrice: item.price
-                            });
-                        }
+                    // NORMAL PRODUCT DEDUCTION (Skip for availability-mode products)
+                    if (product.stockMode !== 'availability') {
+                        product.stock = Math.max(0, product.stock - item.quantity);
+                        await db.update('products', product);
+
+                        await db.add('stockMovements', {
+                            productId: item.id,
+                            type: 'out',
+                            quantity: item.quantity,
+                            reason: `Sale - Transaction ${formatTransactionId(transactionId)}`,
+                            date: new Date().toISOString(),
+                            user: auth.getCurrentUser().username,
+                            stockBefore: stockBefore,
+                            stockAfter: product.stock,
+                            unitPrice: item.price
+                        });
                     }
 
                     // DEDUCT MODIFIER INGREDIENTS
