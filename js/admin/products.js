@@ -447,7 +447,7 @@ async function loadProducts(forceRefresh = true) {
             }
 
             const imgHtml = product.image
-                ? `<img src="${product.image}" class="table-product-thumbnail" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" alt="${escapeHtml(product.name)}">`
+                ? `<img src="${product.image}" class="table-product-thumbnail" onerror="this.style.display='none'" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)" alt="${escapeHtml(product.name)}">`
                 : `<div class="table-product-thumbnail" onmouseenter="showProductTooltip(event, '${product.id}')" onmouseleave="hideProductTooltip()" onmousemove="moveProductTooltip(event)"><i class="ph ph-package"></i></div>`;
 
             return `

@@ -270,17 +270,21 @@
 
             <div class="admin-user">
                 <div class="user-info">
-                    <div class="user-avatar"><i class="ph ph-user"></i></div>
+                    <div class="user-avatar-wrap">
+                        <div class="user-avatar"><i class="ph ph-user"></i></div>
+                        <span class="user-status-dot" title="Online"></span>
+                    </div>
                     <div class="user-details">
-                        <h3 id="adminName">Administrator</h3>
-                        <p>Admin</p>
-                        <p id="adminStoreName" style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
-                            📍 Store Name</p>
+                        <div class="user-name-row">
+                            <h3 id="adminName">Administrator</h3>
+                            <span class="user-role-badge">ADMIN</span>
+                        </div>
+                        <p id="adminStoreName" class="user-store-name">📍 Store Name</p>
                     </div>
                 </div>
-                <button class="sidebar-logout" onclick="auth.logout()">
+                <button class="sidebar-logout" onclick="auth.logout()" title="Sign out of system">
                     <i class="ph ph-sign-out"></i>
-                    Logout
+                    <span>Logout</span>
                 </button>
             </div>
         </aside>

@@ -13,7 +13,7 @@
     --glass-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.1);
     --primary-glow: rgba(16, 185, 129, 0.15);
     --surface-light: #fdfdff;
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: transform 0.18s ease, opacity 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 /* Decorative Background */
@@ -983,7 +983,7 @@ body.dark-mode .action-btn:hover {
     padding: 6px 10px;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1017,7 +1017,7 @@ body.dark-mode .action-btn:hover {
     justify-content: center;
     cursor: pointer;
     color: var(--gray-600);
-    transition: all 0.2s;
+    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-layout-trigger:hover,

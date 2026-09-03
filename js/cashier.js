@@ -398,10 +398,9 @@ function renderProducts(productsToRender) {
 
     const lowStockThreshold = getLowStockThreshold();
 
-    const html = productsToRender.map(product => {
+    const createCardHtml = (product) => {
         const available = isProductAvailable(product);
 
-        // Stock label
         let stockText, stockClass;
         if (product._recipeOutOfStock) {
             stockText = `Not Available (${product._outOfStockIngredientNames.join(', ')})`;
@@ -419,7 +418,7 @@ function renderProducts(productsToRender) {
         return `
         <div class="product-card" data-product-id="${product.id}" ${opacityStyle}>
           <div class="product-image">
-            ${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">` : '📦'}
+            ${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
           </div>
           <div class="product-info">
             <div class="product-name">${escapeHtml(product.name)}</div>
@@ -429,9 +428,20 @@ function renderProducts(productsToRender) {
           </div>
         </div>
         `;
-    }).join('');
+    };
 
-    grid.innerHTML = html;
+    // Fast-path: Render first batch (36 items) instantly for 0ms initial lag
+    const INITIAL_BATCH = 36;
+    const firstBatch = productsToRender.slice(0, INITIAL_BATCH);
+    grid.innerHTML = firstBatch.map(createCardHtml).join('');
+
+    // Stream remaining catalog in non-blocking animation frame
+    if (productsToRender.length > INITIAL_BATCH) {
+        const remaining = productsToRender.slice(INITIAL_BATCH);
+        requestAnimationFrame(() => {
+            grid.insertAdjacentHTML('beforeend', remaining.map(createCardHtml).join(''));
+        });
+    }
 }
 
 // Add to cart

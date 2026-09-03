@@ -188,6 +188,20 @@ class LocalDB {
         });
     }
 
+    // High-performance batch put (single write transaction)
+    async putMany(storeName, itemsArray) {
+        if (!itemsArray || itemsArray.length === 0) return;
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([storeName], 'readwrite');
+            const store = tx.objectStore(storeName);
+            for (let i = 0; i < itemsArray.length; i++) {
+                store.put(itemsArray[i]);
+            }
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
     async delete(storeName, id) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction([storeName], 'readwrite');
@@ -577,7 +591,7 @@ class OfflineDB {
     async syncPendingData() {
         await this.ensureInitialized();
         console.log("🔄 Starting Sync...");
-        const collections = ['products', 'transactions', 'ingredients', 'recipes', 'modifiers', 'salaries', 'salesTargets'];
+        const collections = ['products', 'transactions', 'ingredients', 'recipes', 'modifiers', 'salaries', 'salesTargets', 'expenses', 'deliveries', 'collectibles'];
         let syncCount = 0;
 
         for (const col of collections) {
@@ -622,10 +636,8 @@ class OfflineDB {
 
             const cloudItems = snap.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
 
-            // Batch save to local
-            for (const item of cloudItems) {
-                await this.local.put(collectionName, item);
-            }
+            // High-speed single-transaction batch save to local IndexedDB
+            await this.local.putMany(collectionName, cloudItems);
             console.log(`Updated local cache for ${collectionName}: ${cloudItems.length} items`);
             return cloudItems;
         } catch (e) {
