@@ -138,10 +138,42 @@ document.addEventListener('click', (e) => {
 });
 
 // ---------------------------------------------------------
-// Order Type Toggle (Dine-in / Take-out)
+// Order Type Toggle (Dine-in / Take-out) & Deduction Helpers
 // ---------------------------------------------------------
+
+/**
+ * Normalizes order type input string to 'dinein' or 'takeout'.
+ */
+function normalizeOrderType(type) {
+    if (!type) return 'dinein';
+    const clean = String(type).trim().toLowerCase().replace(/[^a-z]/g, '');
+    return clean === 'takeout' ? 'takeout' : 'dinein';
+}
+
+/**
+ * Determines whether a recipe ingredient is designated as take-out packaging only
+ * (e.g. empty rice bowl cups, to-go lids, paper bags). Handles boolean, string, and number flags.
+ */
+function isTakeoutOnlyIngredient(ingItem) {
+    if (!ingItem) return false;
+    const val = ingItem.takeoutOnly;
+    return val === true || val === 'true' || val === 1 || val === '1';
+}
+
+/**
+ * Core business rule: Determines whether a recipe ingredient should be deducted
+ * based on order type. Take-out packaging is skipped on Dine-in because customers eat on plates.
+ */
+function shouldDeductRecipeIngredient(ingItem, orderType) {
+    const normalized = normalizeOrderType(orderType);
+    if (normalized === 'dinein' && isTakeoutOnlyIngredient(ingItem)) {
+        return false; // Skip deduction on Dine-in
+    }
+    return true; // Deduct on Take-out or if normal ingredient (rice, meat, etc.)
+}
+
 window.setOrderType = function (type) {
-    currentOrderType = type;
+    currentOrderType = normalizeOrderType(type);
     const dineBtn    = document.getElementById('btnDineIn');
     const takeoutBtn = document.getElementById('btnTakeOut');
     if (!dineBtn || !takeoutBtn) return;
@@ -149,7 +181,7 @@ window.setOrderType = function (type) {
     const activeStyle   = 'flex:1; padding:0.45rem 0.5rem; border-radius:8px; border:none; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.12);';
     const inactiveStyle = 'flex:1; padding:0.45rem 0.5rem; border-radius:8px; border:none; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--gray-500);';
 
-    if (type === 'dinein') {
+    if (currentOrderType === 'dinein') {
         dineBtn.style.cssText    = activeStyle + ' background:var(--primary); color:white;';
         takeoutBtn.style.cssText = inactiveStyle;
     } else {
@@ -301,11 +333,14 @@ async function loadProducts() {
         if (recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
             for (const ingItem of recipe.ingredients) {
                 if (!ingItem || !ingItem.ingredientId) continue;
+                // Take-out packaging (e.g. empty cup) does not make the product out of stock for dine-in
+                if (isTakeoutOnlyIngredient(ingItem)) continue;
+
                 const ing = ingredientMap[ingItem.ingredientId];
                 const needed = Number(ingItem.quantity) || 1;
                 const currentStock = ing ? Math.max(0, Number(ing.stock) || 0) : 0;
 
-                // Mark unavailable if ingredient is missing or stock is 0 or less than needed
+                // Mark unavailable if core ingredient is missing or stock is 0 or less than needed
                 if (!ing || currentStock <= 0 || currentStock < needed) {
                     recipeOutOfStock = true;
                     outOfStockIngredientNames.push(ing ? ing.name : 'Ingredient');
@@ -541,6 +576,7 @@ function clearCart() {
 
     if (confirmDialog('Clear all items from cart?')) {
         cart = [];
+        setOrderType('dinein');
         updateCart();
         showToast('Cart cleared', 'info');
     }
@@ -831,6 +867,14 @@ function checkout() {
     const total = parseFloat(document.getElementById('total').textContent.replace(/[₱,]/g, ''));
     document.getElementById('checkoutTotal').textContent = formatCurrency(total);
 
+    // Update Order Type badge in checkout modal
+    const orderBadge = document.getElementById('checkoutOrderTypeBadge');
+    if (orderBadge) {
+        const isTakeout = normalizeOrderType(currentOrderType) === 'takeout';
+        orderBadge.textContent = isTakeout ? '🥡 Take-out' : '🍽️ Dine-in';
+        orderBadge.style.background = isTakeout ? 'rgba(8, 145, 178, 0.5)' : 'rgba(255, 255, 255, 0.25)';
+    }
+
     // Reset form to single payment mode
     document.getElementById('paymentMethod').value = 'cash';
     document.getElementById('customerName').value = '';
@@ -1053,21 +1097,22 @@ async function completeTransaction() {
                     const stockBefore = product.stock;
 
                     // CHECK RECIPE LOGIC
-                    const recipe = product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null;
+                    const recipe = allRecipes.find(r => r.productId === product.id) || (product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null);
 
-                    if (recipe) {
+                    if (recipe && Array.isArray(recipe.ingredients)) {
                         // Deduct Ingredients — skip takeoutOnly ingredients when order is dine-in
                         for (const ingItem of recipe.ingredients) {
-                            if (ingItem.takeoutOnly === true && orderTypeCopy === 'dinein') {
+                            if (!shouldDeductRecipeIngredient(ingItem, orderTypeCopy)) {
                                 continue;
                             }
 
                             const ingredient = allIngredients.find(i => i.id === ingItem.ingredientId);
                             if (ingredient) {
                                 const qtyToDeduct = (parseFloat(ingItem.quantity) || 0) * item.quantity;
-                                const ingStockBefore = ingredient.stock;
+                                const currentStock = parseFloat(ingredient.stock) || 0;
+                                const ingStockBefore = currentStock;
 
-                                ingredient.stock = Math.max(0, ingredient.stock - qtyToDeduct);
+                                ingredient.stock = Math.max(0, currentStock - qtyToDeduct);
                                 await db.update('ingredients', ingredient);
 
                                 await db.add('stockMovements', {
@@ -1075,7 +1120,7 @@ async function completeTransaction() {
                                     ingredientId: ingredient.id,
                                     type: 'out',
                                     quantity: qtyToDeduct,
-                                    reason: `Ingredient Used (${orderTypeCopy === 'takeout' ? 'Take-out' : 'Dine-in'}) - Sale ${formatTransactionId(transactionId)}`,
+                                    reason: `Ingredient Used (${normalizeOrderType(orderTypeCopy) === 'takeout' ? 'Take-out' : 'Dine-in'}) - Sale ${formatTransactionId(transactionId)}`,
                                     date: new Date().toISOString(),
                                     user: auth.getCurrentUser().username,
                                     stockBefore: ingStockBefore,

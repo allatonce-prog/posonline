@@ -623,7 +623,10 @@
 
                 <!-- Bill Total Display -->
                 <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 600;">Bill Total</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 600;">Bill Total</span>
+                        <span id="checkoutOrderTypeBadge" style="background: rgba(255,255,255,0.25); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">🍽️ Dine-in</span>
+                    </div>
                     <span id="checkoutTotal" style="color: white; font-size: 1.5rem; font-weight: 800;">₱0.00</span>
                 </div>
 
