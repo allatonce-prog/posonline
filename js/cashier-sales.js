@@ -45,7 +45,7 @@ window.filterSales = async function (filter, keepPage = false) {
         if (!user) {
             salesList.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">⚠️</div>
+                    <div class="empty-state-icon"><i class="ph ph-warning-circle"></i></div>
                     <h3>Not logged in</h3>
                     <p>Please log in to view sales</p>
                 </div>
@@ -187,7 +187,7 @@ window.filterSales = async function (filter, keepPage = false) {
         if (transactions.length === 0) {
             salesList.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-icon"><i class="ph ph-clipboard-text" style="font-size: 3.5rem; color: var(--gray-300);"></i></div>
                     <h3>No sales found</h3>
                     <p>No transactions for this period</p>
                 </div>
@@ -211,24 +211,37 @@ window.filterSales = async function (filter, keepPage = false) {
             const total = transaction.total || transaction.amount || 0;
             const items = transaction.items || [];
             const itemCount = items.length;
-            const orderTypeLabel = transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in';
+            
+            const orderBadge = transaction.orderType === 'takeout'
+                ? `<span class="badge" style="background:rgba(245, 158, 11, 0.1); color:#d97706; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-bag"></i> Take-out</span>`
+                : `<span class="badge" style="background:rgba(99, 102, 241, 0.1); color:#6366f1; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-fork-knife"></i> Dine-in</span>`;
+
+            let paymentBadge = `<span class="badge" style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-money"></i> Cash</span>`;
+            if (transaction.paymentMethod === 'split') {
+                paymentBadge = `<span class="badge" style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-arrows-split"></i> Split</span>`;
+            } else if (transaction.paymentMethod?.toLowerCase() === 'gcash' || transaction.paymentMethod?.toLowerCase() === 'mobile') {
+                paymentBadge = `<span class="badge" style="background:rgba(59, 130, 246, 0.1); color:#2563eb; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ph ph-device-mobile"></i> GCash</span>`;
+            }
 
             return `
-                <div class="sale-card" onclick="viewTransactionDetails('${transaction.id}')">
-                    <div class="sale-header">
-                        <div>
-                            <div class="sale-id">${formatTransactionId(transaction.id)}</div>
-                            <div class="sale-date">${dateStr} at ${timeStr}</div>
+                <div class="sale-card" onclick="viewTransactionDetails('${transaction.id}')" style="cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="sale-id" style="font-family: monospace; font-weight: 700; font-size: 0.82rem; background: var(--gray-100); padding: 3px 8px; border-radius: 6px; color: var(--gray-800);">${formatTransactionId(transaction.id)}</span>
+                                <span style="font-size: 0.8rem; color: var(--gray-500); display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-clock"></i> ${dateStr} • ${timeStr}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap;">
+                                ${orderBadge}
+                                ${paymentBadge}
+                                <span style="font-size: 0.78rem; color: var(--gray-600); display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-package"></i> ${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                                ${transaction.customerName ? `<span style="font-size: 0.78rem; color: var(--gray-600); display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-user"></i> ${escapeHtml(transaction.customerName)}</span>` : ''}
+                            </div>
                         </div>
-                        <div class="sale-amount">${formatCurrency(total)}</div>
-                    </div>
-                    <div class="sale-details">
-                        <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
-                        <span>•</span>
-                        <span>${transaction.paymentMethod || 'Cash'}</span>
-                        <span>•</span>
-                        <span style="font-weight: 600;">${orderTypeLabel}</span>
-                        ${transaction.customerName ? `<span>•</span><span>${escapeHtml(transaction.customerName)}</span>` : ''}
+                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <span style="font-weight: 800; font-size: 1.15rem; color: var(--primary); letter-spacing: -0.02em;">${formatCurrency(total)}</span>
+                            <span style="font-size: 0.75rem; color: var(--gray-400); display: inline-flex; align-items: center; gap: 2px;">Details <i class="ph ph-caret-right"></i></span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -270,7 +283,7 @@ window.filterSales = async function (filter, keepPage = false) {
         console.error('Error loading sales:', error);
         salesList.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
+                <div class="empty-state-icon"><i class="ph ph-warning-circle" style="font-size:3rem;color:var(--danger);"></i></div>
                 <h3>Error loading sales</h3>
                 <p>${error.message}</p>
             </div>
@@ -281,7 +294,6 @@ window.filterSales = async function (filter, keepPage = false) {
 // Helper function to format transaction ID
 function formatTransactionId(id) {
     if (!id) return 'N/A';
-    // Show last 8 characters
     return 'TXN-' + id.slice(-8).toUpperCase();
 }
 
@@ -290,7 +302,6 @@ window.changeSalesPage = function (page) {
     currentSalesPage = page;
     filterSales(window.currentSalesFilter, true);
 
-    // Scroll to top of sales list
     const salesView = document.getElementById('salesView');
     if (salesView) {
         salesView.scrollTop = 0;
@@ -308,40 +319,37 @@ window.changeSalesPage = function (page) {
     style.id = 'saleBreakdownStyles';
     style.textContent = `
         @keyframes slideUpModal {
-            from { opacity: 0; transform: translateY(40px) scale(0.97); }
-            to   { opacity: 1; transform: translateY(0)   scale(1); }
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         #saleBreakdownModal { display: none; }
         #saleBreakdownModal.open { display: flex !important; }
         .sale-breakdown-item {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            padding: 0.55rem 0;
-            border-bottom: 1px dashed rgba(0,0,0,0.07);
-            font-size: 0.9rem;
+            align-items: center;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid var(--gray-100, #f1f5f9);
+            font-size: 0.88rem;
         }
         .sale-breakdown-item:last-child { border-bottom: none; }
-        .sale-breakdown-item-name { font-weight: 500; color: var(--gray-800, #1f2937); }
-        .sale-breakdown-item-qty  { font-size: 0.8rem; color: var(--gray-500, #6b7280); margin-top: 0.1rem; }
-        .sale-breakdown-item-subtotal { font-weight: 700; color: var(--gray-800, #1f2937); white-space: nowrap; }
         .sale-breakdown-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.88rem;
         }
         .sale-breakdown-row.total {
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-weight: 800;
             margin-top: 0.5rem;
             padding-top: 0.5rem;
-            border-top: 2px solid rgba(16,185,129,0.2);
+            border-top: 1px dashed rgba(0,0,0,0.1);
             color: var(--primary);
         }
-        .sale-breakdown-row .label { color: var(--gray-600, #4b5563); }
-        .sale-breakdown-row .value { font-weight: 600; }
+        .sale-breakdown-row .label { color: var(--gray-500, #64748b); font-size: 0.84rem; }
+        .sale-breakdown-row .value { font-weight: 600; color: var(--gray-800, #1e293b); }
     `;
     document.head.appendChild(style);
 })();
@@ -353,8 +361,8 @@ window.viewTransactionDetails = async function (transactionId) {
     // Show loading state
     modal.classList.add('open');
     document.getElementById('saleBreakdownId').textContent = 'Loading...';
-    document.getElementById('saleBreakdownDate').textContent = '';
-    document.getElementById('saleBreakdownItems').innerHTML = '<div style="text-align:center;padding:1rem;color:#9ca3af;">Loading...</div>';
+    document.getElementById('saleBreakdownDate').innerHTML = '';
+    document.getElementById('saleBreakdownItems').innerHTML = '<div style="text-align:center;padding:1rem;color:#9ca3af;">Loading details...</div>';
     document.getElementById('saleBreakdownTotals').innerHTML = '';
     document.getElementById('saleBreakdownPaymentInfo').innerHTML = '';
     document.getElementById('saleBreakdownVoidedBadge').style.display = 'none';
@@ -362,7 +370,6 @@ window.viewTransactionDetails = async function (transactionId) {
     document.body.style.overflow = 'hidden';
 
     try {
-        // Fetch transaction from DB
         const transaction = await db.get('transactions', transactionId);
         if (!transaction) {
             document.getElementById('saleBreakdownItems').innerHTML = '<div style="text-align:center;padding:1rem;color:#ef4444;">Transaction not found.</div>';
@@ -378,40 +385,39 @@ window.viewTransactionDetails = async function (transactionId) {
 
         // Header info
         document.getElementById('saleBreakdownId').textContent = '#' + formatTransactionId(transaction.id);
-        document.getElementById('saleBreakdownDate').textContent = dateStr + ' at ' + timeStr;
+        document.getElementById('saleBreakdownDate').innerHTML = `<i class="ph ph-calendar-blank"></i> <span>${dateStr} at ${timeStr}</span>`;
 
         // Voided badge
         if (isVoided) {
             document.getElementById('saleBreakdownVoidedBadge').style.display = 'block';
-            document.getElementById('saleBreakdownHeader').style.background = 'linear-gradient(135deg,#ef4444 0%,#dc2626 100%)';
-        } else {
-            document.getElementById('saleBreakdownHeader').style.background = 'linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%)';
         }
 
         // Void reason
         if (isVoided && transaction.voidReason) {
             const voidDiv = document.getElementById('saleBreakdownVoidReason');
             voidDiv.style.display = 'block';
-            voidDiv.innerHTML = `<strong>⚠️ Void Reason:</strong> ${escapeHtml(transaction.voidReason)}`;
+            voidDiv.innerHTML = `<strong>Void Reason:</strong> ${escapeHtml(transaction.voidReason)}`;
         }
 
         // Items list
         if (items.length === 0) {
-            document.getElementById('saleBreakdownItems').innerHTML = '<div style="color:#9ca3af;font-size:0.9rem;text-align:center;padding:0.5rem;">No items recorded</div>';
+            document.getElementById('saleBreakdownItems').innerHTML = '<div style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:0.75rem;">No items recorded</div>';
         } else {
             document.getElementById('saleBreakdownItems').innerHTML = items.map(item => {
                 const itemSubtotal = item.subtotal || (item.price * item.quantity) || 0;
                 const modifiers = item.modifiers && item.modifiers.length > 0
-                    ? `<div style="font-size:0.75rem;color:#9ca3af;margin-top:0.15rem;">${item.modifiers.map(m => `+ ${escapeHtml(m.name || m)}`).join(', ')}</div>`
+                    ? `<div style="font-size:0.75rem;color:var(--primary);margin-top:0.15rem;">${item.modifiers.map(m => `+ ${escapeHtml(m.name || m)}`).join(', ')}</div>`
                     : '';
                 return `
                     <div class="sale-breakdown-item">
                         <div>
-                            <div class="sale-breakdown-item-name">${escapeHtml(item.name)}</div>
-                            <div class="sale-breakdown-item-qty">${item.quantity} × ${formatCurrency(item.price)}</div>
+                            <div style="font-weight:600; color:var(--gray-900, #0f172a); font-size:0.88rem;">${escapeHtml(item.name)}</div>
+                            <div style="font-size:0.78rem; color:var(--gray-500, #64748b); margin-top:2px;">
+                                <span style="font-weight:700; color:var(--primary);">${item.quantity}×</span> ${formatCurrency(item.price)}
+                            </div>
                             ${modifiers}
                         </div>
-                        <div class="sale-breakdown-item-subtotal">${formatCurrency(itemSubtotal)}</div>
+                        <div style="font-weight:700; font-size:0.92rem; color:var(--gray-900, #0f172a);">${formatCurrency(itemSubtotal)}</div>
                     </div>
                 `;
             }).join('');
@@ -442,43 +448,54 @@ window.viewTransactionDetails = async function (transactionId) {
         }
         totalsHtml += `
             <div class="sale-breakdown-row total">
-                <span>Total</span>
-                <span>${formatCurrency(total)}</span>
+                <span class="label" style="font-size: 1rem; font-weight: 700; color: var(--gray-700);">Total</span>
+                <span class="value" style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">${formatCurrency(total)}</span>
             </div>`;
         document.getElementById('saleBreakdownTotals').innerHTML = totalsHtml;
 
-        // Payment info
+        // Payment info with Phosphor icons
         const amountPaid = transaction.amountPaid || total;
         const change = transaction.change || Math.max(0, amountPaid - total);
-        const orderTypeLabel = transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in';
+        
+        const orderTypeLabel = transaction.orderType === 'takeout'
+            ? `<span style="display:inline-flex; align-items:center; gap:4px; font-weight:600;"><i class="ph ph-bag" style="color:#d97706;"></i> Take-out</span>`
+            : `<span style="display:inline-flex; align-items:center; gap:4px; font-weight:600;"><i class="ph ph-fork-knife" style="color:#6366f1;"></i> Dine-in</span>`;
+
+        let paymentMethodLabel = `<span style="display:inline-flex; align-items:center; gap:4px; font-weight:600;"><i class="ph ph-money" style="color:#059669;"></i> Cash</span>`;
+        if (transaction.paymentMethod === 'split') {
+            paymentMethodLabel = `<span style="display:inline-flex; align-items:center; gap:4px; font-weight:600;"><i class="ph ph-arrows-split" style="color:#059669;"></i> Split (Cash + GCash)</span>`;
+        } else if (transaction.paymentMethod?.toLowerCase() === 'gcash' || transaction.paymentMethod?.toLowerCase() === 'mobile') {
+            paymentMethodLabel = `<span style="display:inline-flex; align-items:center; gap:4px; font-weight:600;"><i class="ph ph-device-mobile" style="color:#2563eb;"></i> GCash</span>`;
+        }
 
         document.getElementById('saleBreakdownPaymentInfo').innerHTML = `
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
-                <i class="ph ph-credit-card" style="font-size:1.1rem;color:var(--primary);"></i>
-                <span style="font-weight:700;font-size:0.95rem;color:var(--primary);">Payment Info</span>
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem;color:var(--primary);font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;">
+                <i class="ph-bold ph-credit-card"></i> Payment Summary
             </div>
-            <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
-                <span class="label">Method</span>
-                <span class="value">${escapeHtml(transaction.paymentMethod || 'Cash')}</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.84rem;">
+                <div>
+                    <span style="color:var(--gray-500); display:block; font-size:0.74rem;">Payment Method</span>
+                    <span style="display:block; margin-top:2px;">${paymentMethodLabel}</span>
+                </div>
+                <div>
+                    <span style="color:var(--gray-500); display:block; font-size:0.74rem;">Order Type</span>
+                    <span style="display:block; margin-top:2px;">${orderTypeLabel}</span>
+                </div>
+                ${amountPaid > 0 && amountPaid !== total ? `
+                <div>
+                    <span style="color:var(--gray-500); display:block; font-size:0.74rem;">Amount Tendered</span>
+                    <span style="font-weight:600; color:var(--gray-800); display:block; margin-top:2px;">${formatCurrency(amountPaid)}</span>
+                </div>
+                <div>
+                    <span style="color:var(--gray-500); display:block; font-size:0.74rem;">Change</span>
+                    <span style="font-weight:700; color:var(--primary); display:block; margin-top:2px;">${formatCurrency(change)}</span>
+                </div>` : ''}
+                ${transaction.customerName ? `
+                <div style="grid-column: 1 / -1; margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.06);">
+                    <span style="color:var(--gray-500); font-size:0.74rem;">Customer: </span>
+                    <span style="font-weight:600; color:var(--gray-800);">${escapeHtml(transaction.customerName)}</span>
+                </div>` : ''}
             </div>
-            <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
-                <span class="label">Order Type</span>
-                <span class="value" style="font-weight:700;">${orderTypeLabel}</span>
-            </div>
-            ${amountPaid > 0 && amountPaid !== total ? `
-            <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
-                <span class="label">Amount Paid</span>
-                <span class="value">${formatCurrency(amountPaid)}</span>
-            </div>
-            <div class="sale-breakdown-row" style="margin-bottom:0.25rem;">
-                <span class="label">Change</span>
-                <span class="value" style="color:#10b981;">${formatCurrency(change)}</span>
-            </div>` : ''}
-            ${transaction.customerName ? `
-            <div class="sale-breakdown-row" style="margin-bottom:0;">
-                <span class="label"><i class="ph ph-user" style="font-size:0.9rem;"></i> Customer</span>
-                <span class="value">${escapeHtml(transaction.customerName)}</span>
-            </div>` : ''}
         `;
 
         // Reprint button

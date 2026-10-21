@@ -46,63 +46,42 @@ function formatTime(date) {
     }).format(date);
 }
 
-// Show premium toast notification
+// Show sleek, modern toast notification (Clean, non-AI design)
 function showToast(message, type = 'info') {
-    // Remove existing premium toasts
-    const existingToast = document.querySelector('.premium-toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
+    // Remove existing toasts smoothly
+    const existingToasts = document.querySelectorAll('.modern-toast, .premium-toast');
+    existingToasts.forEach(t => t.remove());
 
-    // Create toast element
     const toast = document.createElement('div');
-    toast.className = `premium-toast ${type}`;
+    toast.className = `modern-toast modern-toast-${type}`;
     
-    // Choose icon based on type
     const icons = {
         success: 'ph-check-circle',
         error: 'ph-x-circle',
-        warning: 'ph-warning',
+        warning: 'ph-warning-circle',
         info: 'ph-info'
     };
     const iconClass = icons[type] || 'ph-info';
-    
-    // Choose title based on type
-    const titles = {
-        success: 'Success',
-        error: 'Error',
-        warning: 'Warning',
-        info: 'Notification'
-    };
-    const titleText = titles[type] || 'Info';
 
     toast.innerHTML = `
-        <i class="ph ${iconClass} premium-toast-icon"></i>
-        <div class="premium-toast-body">
-            <h5 class="premium-toast-title">${titleText}</h5>
-            <p class="premium-toast-message">${message}</p>
+        <div class="modern-toast-icon">
+            <i class="ph-bold ${iconClass}"></i>
         </div>
-        <div class="premium-toast-progress">
-            <div class="premium-toast-progress-bar"></div>
-        </div>
+        <span class="modern-toast-message">${message}</span>
     `;
 
     document.body.appendChild(toast);
 
-    // Trigger animation
-    setTimeout(() => {
+    // Trigger smooth enter animation
+    requestAnimationFrame(() => {
         toast.classList.add('show');
-        const progressBar = toast.querySelector('.premium-toast-progress-bar');
-        if (progressBar) {
-            progressBar.style.width = '0%';
-        }
-    }, 50);
+    });
 
-    // Auto-dismiss after 3 seconds
+    // Auto-dismiss cleanly after 2.6s
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 350);
-    }, 3000);
+        setTimeout(() => toast.remove(), 250);
+    }, 2600);
 }
 
 // Show loading overlay

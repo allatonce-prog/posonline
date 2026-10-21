@@ -42,7 +42,7 @@ async function loadCashierRecipes() {
         if (storeRecipes.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center;padding:3rem 1rem;color:var(--gray-400);">
-                    <div style="font-size:2.5rem;margin-bottom:0.75rem;">🍳</div>
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem;"><i class="ph ph-cooking-pot"></i></div>
                     <div style="font-weight:600;">No recipes found</div>
                     <div style="font-size:0.85rem;margin-top:0.25rem;">Ask admin to create product recipes first.</div>
                 </div>`;
@@ -141,7 +141,7 @@ async function loadCashierRecipes() {
             // Product image or emoji
             const imgHtml = product.image
                 ? `<img src="${product.image}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
-                : `<div style="width:32px;height:32px;background:var(--gray-100);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🍳</div>`;
+                : `<div style="width:32px;height:32px;background:var(--gray-100);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--gray-500);font-size:1.1rem;flex-shrink:0;"><i class="ph ph-cooking-pot"></i></div>`;
 
             html += `
             <div class="cst-group">

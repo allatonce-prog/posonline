@@ -92,7 +92,7 @@ async function filterExpenses(filter) {
         if (expenses.length === 0) {
             expensesList.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">💰</div>
+                    <div class="empty-state-icon"><i class="ph ph-receipt-x"></i></div>
                     <h3>No expenses found</h3>
                     <p>No expenses for this period</p>
                 </div>
@@ -171,7 +171,7 @@ async function filterExpenses(filter) {
         console.error('Error loading expenses:', error);
         expensesList.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
+                <div class="empty-state-icon"><i class="ph ph-warning-circle"></i></div>
                 <h3>Error loading expenses</h3>
                 <p>${error.message}</p>
             </div>

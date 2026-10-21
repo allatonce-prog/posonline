@@ -84,7 +84,7 @@ function renderCashierInventory(products) {
     if (products.length === 0) {
         container.innerHTML = `
             <div style="text-align:center;padding:3rem 1rem;color:var(--gray-400);">
-                <div style="font-size:2.5rem;margin-bottom:0.75rem;">📦</div>
+                <div style="font-size:2.5rem;margin-bottom:0.75rem;"><i class="ph ph-package"></i></div>
                 <div style="font-weight:600;">No products found</div>
                 <div style="font-size:0.85rem;margin-top:0.25rem;">Try a different search or filter.</div>
             </div>`;
@@ -131,7 +131,7 @@ function renderCashierInventory(products) {
 
         const imgHtml = p.image
             ? `<img src="${p.image}" alt="" class="cinv-product-img">`
-            : `<div class="cinv-product-img cinv-img-placeholder">📦</div>`;
+            : `<div class="cinv-product-img cinv-img-placeholder"><i class="ph ph-package"></i></div>`;
 
         return `
         <div class="cinv-row">

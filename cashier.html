@@ -13,10 +13,10 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
-    <link rel="stylesheet" href="css/styles.css?v=5.0">
-    <link rel="stylesheet" href="css/cashier.css?v=5.0">
-    <link rel="stylesheet" href="css/cashier-sidebar.css?v=5.0">
-    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=5.0">
+    <link rel="stylesheet" href="css/styles.css?v=6.5">
+    <link rel="stylesheet" href="css/cashier.css?v=6.5">
+    <link rel="stylesheet" href="css/cashier-sidebar.css?v=6.5">
+    <link rel="stylesheet" href="css/mobile-no-zoom.css?v=6.5">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
 </head>
 
@@ -37,8 +37,8 @@
                 style="margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: white;">New Sale
             </h1>
             <p id="cashierStoreName"
-                style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin: 0.25rem 0 0 0; font-weight: 500;">📍
-                Store Name</p>
+                style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin: 0.25rem 0 0 0; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                <i class="ph ph-map-pin"></i> <span id="cashierStoreNameText">Store Name</span></p>
         </div>
         <div class="cashier-user">
             <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark Mode">
@@ -132,7 +132,7 @@
                 <!-- Controls -->
                 <div class="cashier-controls">
                     <div class="search-box">
-                        <span class="search-icon">🔍</span>
+                        <span class="search-icon"><i class="ph ph-magnifying-glass"></i></span>
                         <input type="text" id="searchInput" placeholder="Search products by name or SKU...">
                     </div>
 
@@ -180,7 +180,7 @@
 
                 <!-- Empty State -->
                 <div class="empty-state" id="emptyState" style="display: none;">
-                    <div class="empty-state-icon">📦</div>
+                    <div class="empty-state-icon"><i class="ph ph-package" style="font-size: 3.5rem; color: var(--gray-300);"></i></div>
                     <h3>No products found</h3>
                     <p>Try adjusting your search or filter</p>
                 </div>
@@ -188,30 +188,59 @@
 
             <!-- Sales View -->
             <div id="salesView" style="display: none;">
-                <div class="sales-filters">
-                    <button class="sales-filter-btn active" onclick="filterSales('today')">Today</button>
-                    <button class="sales-filter-btn" onclick="filterSales('yesterday')">Yesterday</button>
+                <div class="sales-filters" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+                    <button class="sales-filter-btn active" onclick="filterSales('today')">
+                        <i class="ph ph-calendar"></i> Today
+                    </button>
+                    <button class="sales-filter-btn" onclick="filterSales('yesterday')">
+                        <i class="ph ph-clock-counter-clockwise"></i> Yesterday
+                    </button>
                 </div>
 
                 <div class="sales-stats">
                     <div class="stat-card">
-                        <div class="stat-label">Total Sales</div>
+                        <div class="stat-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span class="stat-label" style="margin: 0;">Total Sales</span>
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="ph ph-trend-up"></i>
+                            </div>
+                        </div>
                         <div class="stat-value" id="salesTotalAmount">₱0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Cash Received</div>
+                        <div class="stat-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span class="stat-label" style="margin: 0;">Cash Received</span>
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="ph ph-money"></i>
+                            </div>
+                        </div>
                         <div class="stat-value" id="salesCashReceived">₱0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">GCash Received</div>
+                        <div class="stat-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span class="stat-label" style="margin: 0;">GCash Received</span>
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="ph ph-device-mobile"></i>
+                            </div>
+                        </div>
                         <div class="stat-value" id="salesGcashReceived">₱0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Transactions</div>
+                        <div class="stat-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span class="stat-label" style="margin: 0;">Transactions</span>
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="ph ph-receipt"></i>
+                            </div>
+                        </div>
                         <div class="stat-value" id="salesTotalCount">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Net Profit</div>
+                        <div class="stat-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span class="stat-label" style="margin: 0;">Net Profit</span>
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="ph ph-coins"></i>
+                            </div>
+                        </div>
                         <div class="stat-value" id="salesNetProfit">₱0.00</div>
                     </div>
                 </div>
@@ -219,53 +248,6 @@
                 <div class="sales-list" id="salesList">
                     <!-- Sales will be loaded here -->
                     <div class="loading-spinner">Loading...</div>
-                </div>
-            </div>
-
-            <!-- Sale Breakdown Modal -->
-            <div id="saleBreakdownModal" class="modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;">
-                <div style="background:var(--card-bg, #fff); border-radius:20px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.3); position:relative; animation: slideUpModal 0.3s cubic-bezier(0.34,1.56,0.64,1);">
-                    <!-- Modal Header -->
-                    <div id="saleBreakdownHeader" style="background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%); padding:1.5rem; border-radius:20px 20px 0 0; color:white; text-align:center;">
-                        <div style="font-size:2.5rem; margin-bottom:0.5rem;">🧾</div>
-                        <h3 style="margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-0.01em;">Transaction Details</h3>
-                        <p id="saleBreakdownId" style="margin:0.25rem 0 0; font-size:0.85rem; opacity:0.85;"></p>
-                        <p id="saleBreakdownDate" style="margin:0.1rem 0 0; font-size:0.8rem; opacity:0.7;"></p>
-                        <div id="saleBreakdownVoidedBadge" style="display:none; margin-top:0.75rem;">
-                            <span style="background:rgba(239,68,68,0.9); color:white; border-radius:20px; padding:0.3rem 1rem; font-size:0.85rem; font-weight:700;">⚠️ VOIDED</span>
-                        </div>
-                    </div>
-
-                    <!-- Close Button -->
-                    <button onclick="closeSaleBreakdownModal()" style="position:absolute; top:1rem; right:1rem; background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; font-weight:700;">×</button>
-
-                    <!-- Modal Body -->
-                    <div style="padding:1.25rem;">
-                        <!-- Items List -->
-                        <div style="margin-bottom:1rem;">
-                            <h4 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--gray-500, #6b7280); margin:0 0 0.75rem; font-weight:600;">Items Ordered</h4>
-                            <div id="saleBreakdownItems" style="background:var(--light, #f9fafb); border-radius:12px; padding:0.75rem 1rem;"></div>
-                        </div>
-
-                        <!-- Totals -->
-                        <div style="background:var(--light, #f9fafb); border-radius:12px; padding:1rem; margin-bottom:1rem;">
-                            <div id="saleBreakdownTotals"></div>
-                        </div>
-
-                        <!-- Payment Info -->
-                        <div id="saleBreakdownPaymentInfo" style="background:linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(5,150,105,0.08) 100%); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:1rem; margin-bottom:1rem;"></div>
-
-                        <!-- Void Reason -->
-                        <div id="saleBreakdownVoidReason" style="display:none; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:0.75rem 1rem; margin-bottom:1rem; color:#dc2626; font-size:0.9rem;"></div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div style="padding:0 1.25rem 1.25rem; display:flex; gap:0.75rem;">
-                        <button onclick="closeSaleBreakdownModal()" class="btn btn-secondary" style="flex:1; border-radius:12px; padding:0.85rem;">Close</button>
-                        <button id="saleBreakdownReprintBtn" class="btn btn-primary" style="flex:1; border-radius:12px; padding:0.85rem; background:linear-gradient(135deg,var(--primary),var(--secondary)); border:none;">
-                            <i class="ph ph-printer"></i> Reprint
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -347,7 +329,7 @@
 
                         <!-- 3. SEARCH -->
                         <div class="search-box mb-3">
-                            <span class="search-icon">🔍</span>
+                            <span class="search-icon"><i class="ph ph-magnifying-glass"></i></span>
                             <input type="text" id="collectiblesSearchInput" placeholder="Search by customer name...">
                         </div>
 
@@ -538,8 +520,8 @@
                     <h2>Cart</h2>
                     <div class="cart-count" id="cartCount">0</div>
                     <button class="btn btn-sm btn-outline-primary" onclick="showHeldOrders()" title="Recall Held Orders"
-                        style="border: none; padding: 4px 8px; font-size: 1.2rem;">
-                        📂 <span id="heldOrdersCount" class="badge badge-sm badge-danger"
+                        style="border: none; padding: 4px 8px; font-size: 1.2rem; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-folder-open"></i> <span id="heldOrdersCount" class="badge badge-sm badge-danger"
                             style="display:none; margin-left:2px;">0</span>
                     </button>
                 </div>
@@ -548,18 +530,18 @@
             <!-- Order Type Toggle -->
             <div id="orderTypeToggle" style="display:flex; margin: 0 0.75rem 0; gap: 0; background: var(--gray-100); border-radius: 10px; padding: 3px; border: 1px solid var(--gray-200);">
                 <button id="btnDineIn" onclick="setOrderType('dinein')"
-                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: var(--primary); color: white; box-shadow: 0 1px 4px rgba(0,0,0,0.12);">
-                    🍽️ Dine-in
+                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: var(--primary); color: white; box-shadow: 0 1px 4px rgba(0,0,0,0.12); display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                    <i class="ph ph-fork-knife"></i> Dine-in
                 </button>
                 <button id="btnTakeOut" onclick="setOrderType('takeout')"
-                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--gray-500);">
-                    🥡 Take-out
+                    style="flex:1; padding: 0.45rem 0.5rem; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--gray-500); display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                    <i class="ph ph-bag"></i> Take-out
                 </button>
             </div>
 
             <div class="cart-items" id="cartItems">
                 <div class="cart-empty">
-                    <div class="cart-empty-icon">🛒</div>
+                    <div class="cart-empty-icon"><i class="ph ph-shopping-cart"></i></div>
                     <p>Your cart is empty</p>
                 </div>
             </div>
@@ -584,8 +566,8 @@
                     <button class="btn btn-secondary btn-sm" onclick="clearCart()" style="flex: 1;">
                         Clear
                     </button>
-                    <button class="btn btn-warning btn-sm" onclick="holdOrder()" style="flex: 1;">
-                        ⏸️ Hold
+                    <button class="btn btn-warning btn-sm" onclick="holdOrder()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                        <i class="ph ph-pause"></i> Hold
                     </button>
                     <button class="btn btn-primary btn-lg" onclick="checkout()" style="flex: 2;">
                         Checkout
@@ -598,7 +580,7 @@
         <div class="mobile-cart-bar" id="mobileCartBar">
             <div class="mobile-cart-left">
                 <div class="mobile-cart-icon-wrapper">
-                    <span class="mobile-cart-icon">🛒</span>
+                    <i class="ph ph-shopping-cart mobile-cart-icon"></i>
                     <span class="mobile-cart-badge" id="mobileCartCount">0</span>
                 </div>
                 <div class="mobile-cart-info">
@@ -625,7 +607,7 @@
                 <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 600;">Bill Total</span>
-                        <span id="checkoutOrderTypeBadge" style="background: rgba(255,255,255,0.25); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">🍽️ Dine-in</span>
+                        <span id="checkoutOrderTypeBadge" style="background: rgba(255,255,255,0.25); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-fork-knife"></i> Dine-in</span>
                     </div>
                     <span id="checkoutTotal" style="color: white; font-size: 1.5rem; font-weight: 800;">₱0.00</span>
                 </div>
@@ -674,7 +656,7 @@
                         <!-- Cash -->
                         <div style="background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 0.85rem;">
                             <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
-                                <span style="font-size: 1.1rem;">💵</span>
+                                <span style="font-size: 1.1rem; display: flex; align-items: center;"><i class="ph ph-money" style="color: #059669;"></i></span>
                                 <span style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em;">Cash</span>
                             </div>
                             <input type="number" id="splitCashAmount" step="0.01" min="0" placeholder="0.00"
@@ -684,7 +666,7 @@
                         <!-- GCash -->
                         <div style="background: rgba(16,185,129,0.07); border: 1.5px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 0.85rem;">
                             <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;">
-                                <span style="font-size: 1.1rem;">📱</span>
+                                <span style="font-size: 1.1rem; display: flex; align-items: center;"><i class="ph ph-device-mobile" style="color: var(--primary);"></i></span>
                                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em;">GCash</span>
                             </div>
                             <input type="number" id="splitGcashAmount" step="0.01" min="0" placeholder="0.00"
@@ -726,6 +708,68 @@
         </div>
     </div>
 
+    <!-- Clean Modern Sale Breakdown Modal (Global Viewport) -->
+    <div id="saleBreakdownModal" class="modal modern-sale-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15, 23, 42, 0.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:1rem;">
+        <div class="modern-sale-card" style="background:var(--card-bg, #ffffff); border-radius:20px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px -15px rgba(0,0,0,0.3); position:relative; border: 1px solid rgba(0,0,0,0.06); animation: slideUpModal 0.28s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <!-- Clean Modal Header -->
+            <div id="saleBreakdownHeader" style="padding: 1.5rem 1.5rem 1.25rem; border-bottom: 1px solid var(--gray-100, #f1f5f9); display: flex; align-items: flex-start; justify-content: space-between; position: relative;">
+                <div style="display: flex; align-items: center; gap: 0.875rem;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: var(--primary, #10b981); display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0;">
+                        <i class="ph ph-receipt"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--gray-900, #0f172a); letter-spacing: -0.01em;">Transaction Details</h3>
+                            <span id="saleBreakdownId" style="font-family: monospace; font-size: 0.78rem; font-weight: 700; color: var(--gray-600, #475569); background: var(--gray-100, #f1f5f9); padding: 2px 8px; border-radius: 6px;"></span>
+                        </div>
+                        <p id="saleBreakdownDate" style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--gray-500, #64748b); display: flex; align-items: center; gap: 4px;">
+                            <i class="ph ph-calendar-blank"></i> <span></span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeSaleBreakdownModal()" style="background: var(--gray-100, #f1f5f9); border: none; color: var(--gray-500, #64748b); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s;">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Voided Banner (if voided) -->
+            <div id="saleBreakdownVoidedBadge" style="display: none; margin: 1rem 1.5rem 0; padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; color: #dc2626; font-size: 0.85rem; font-weight: 600;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <i class="ph-bold ph-prohibit"></i> <span>This transaction has been VOIDED</span>
+                </div>
+                <div id="saleBreakdownVoidReason" style="display: none; margin-top: 4px; font-size: 0.8rem; opacity: 0.9;"></div>
+            </div>
+
+            <!-- Modal Body -->
+            <div style="padding: 1.25rem 1.5rem;">
+                <!-- Items Ordered Section -->
+                <div style="margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-400, #94a3b8); margin-bottom: 0.65rem; font-weight: 700;">
+                        Items Ordered
+                    </div>
+                    <div id="saleBreakdownItems" style="background: var(--gray-50, #f8fafc); border: 1px solid var(--gray-100, #f1f5f9); border-radius: 12px; padding: 0.5rem 1rem; max-height: 220px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Totals Section -->
+                <div style="background: var(--gray-50, #f8fafc); border: 1px solid var(--gray-100, #f1f5f9); border-radius: 12px; padding: 0.875rem 1rem; margin-bottom: 1.25rem;">
+                    <div id="saleBreakdownTotals"></div>
+                </div>
+
+                <!-- Payment & Order Information -->
+                <div id="saleBreakdownPaymentInfo" style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 12px; padding: 0.875rem 1rem;"></div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 0 1.5rem 1.5rem; display: flex; gap: 0.75rem;">
+                <button onclick="closeSaleBreakdownModal()" class="btn btn-secondary" style="flex: 1; border-radius: 12px; padding: 0.75rem; font-weight: 600;">Close</button>
+                <button id="saleBreakdownReprintBtn" class="btn btn-primary" style="flex: 1.2; border-radius: 12px; padding: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="ph ph-printer"></i> Reprint Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="transactionDetailsModal">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
@@ -739,7 +783,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeTransactionModal()">Close</button>
-                <button class="btn btn-primary" id="reprintBtn">🖨️ Reprint</button>
+                <button class="btn btn-primary" id="reprintBtn"><i class="ph ph-printer"></i> Reprint</button>
             </div>
         </div>
     </div>
@@ -747,7 +791,7 @@
     <div class="modal" id="heldOrdersModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📂 Held Orders</h2>
+                <h2><i class="ph ph-folder-open"></i> Held Orders</h2>
                 <button class="modal-close" onclick="closeHeldOrdersModal()">×</button>
             </div>
             <div class="modal-body">
@@ -911,17 +955,17 @@
     <!-- Printable Area (Hidden by default, shown while printing) -->
     <div id="receipt-printable" style="display: none;"></div>
 
-    <script type="module" src="js/offline-db.js?v=5.0"></script>
-    <script src="js/auth.js?v=5.0"></script>
-    <script src="js/utils.js?v=5.0"></script>
-    <script src="js/mobile-stability.js?v=5.0"></script>
-    <script src="js/admin/settings.js?v=5.0"></script>
-    <script src="js/collectibles-payment.js?v=5.0"></script>
-    <script src="js/cashier.js?v=5.0"></script>
-    <script src="js/cashier-sales.js?v=5.0"></script>
-    <script src="js/cashier-expenses.js?v=5.0"></script>
-    <script src="js/cashier-collectibles.js?v=5.0"></script>
-    <script src="js/cashier-stock-tracker.js?v=5.0"></script>
+    <script type="module" src="js/offline-db.js?v=6.5"></script>
+    <script src="js/auth.js?v=6.5"></script>
+    <script src="js/utils.js?v=6.5"></script>
+    <script src="js/mobile-stability.js?v=6.5"></script>
+    <script src="js/admin/settings.js?v=6.5"></script>
+    <script src="js/collectibles-payment.js?v=6.5"></script>
+    <script src="js/cashier.js?v=6.5"></script>
+    <script src="js/cashier-sales.js?v=6.5"></script>
+    <script src="js/cashier-expenses.js?v=6.5"></script>
+    <script src="js/cashier-collectibles.js?v=6.5"></script>
+    <script src="js/cashier-stock-tracker.js?v=6.5"></script>
     <script>
         // Apply custom settings to cashier page
         document.addEventListener('DOMContentLoaded', () => {
@@ -933,9 +977,9 @@
                 // Update header title
                 const headerTitle = document.getElementById('cashierHeaderTitle');
                 if (headerTitle) {
-                    const icon = settings.systemIcon || '🛒';
+                    const icon = settings.systemIcon ? `${settings.systemIcon} ` : '<i class="ph ph-shopping-bag"></i> ';
                     const name = settings.systemName || 'POS System';
-                    headerTitle.textContent = `${icon} ${name}`;
+                    headerTitle.innerHTML = `${icon}${escapeHtml(name)}`;
                 }
 
                 // Update page title
@@ -1644,7 +1688,7 @@
                     if (collectibles.length === 0) {
                         targetList.innerHTML = `
                             <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
-                                <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                                <div style="font-size: 3rem; margin-bottom: 1rem;"><i class="ph ph-clipboard-text" style="color: var(--gray-300);"></i></div>
                                 <p>No ${currentCollectiblesTab === 'active' ? 'active collectibles' : 'archives'} yet</p>
                                 <p style="font-size: 0.9rem;">${currentCollectiblesTab === 'active' ? 'Add your first collectible to get started' : 'Paid collectibles will appear here'}</p>
                             </div>
@@ -2007,9 +2051,9 @@
         }
     </script>
 
-    <script src="js/cashier-inventory.js?v=5.0"></script>
-    <script src="js/cashier-recipes.js?v=5.0"></script>
-    <script src="js/pull-to-refresh.js?v=5.0"></script>
+    <script src="js/cashier-inventory.js?v=6.5"></script>
+    <script src="js/cashier-recipes.js?v=6.5"></script>
+    <script src="js/pull-to-refresh.js?v=6.5"></script>
 </body>
 
 </html>

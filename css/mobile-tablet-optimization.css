@@ -224,6 +224,202 @@
     .chart-card {
         height: 300px !important;
     }
+
+    /* Dashboard Layout Overrides - Strict containment to prevent clipping */
+    .dashboard-grid-container {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .dashboard-stats-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.625rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .compact-stat-card {
+        padding: 0.875rem 0.75rem !important;
+        border-radius: 16px !important;
+        gap: 0.5rem !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .compact-stat-card .stat-icon {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        border-radius: 10px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .compact-stat-card .stat-icon i {
+        font-size: 18px !important;
+    }
+
+    .compact-stat-card .stat-info {
+        min-width: 0 !important;
+        flex: 1 !important;
+        overflow: hidden !important;
+    }
+
+    .compact-stat-card .stat-info h3 {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: 0.2px !important;
+    }
+
+    .compact-stat-card .stat-value {
+        font-size: 1.05rem !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: -0.3px !important;
+    }
+
+    .compact-stat-card .trend-badge {
+        font-size: 0.65rem !important;
+        padding: 1px 5px !important;
+        border-radius: 6px !important;
+        margin-top: 2px !important;
+    }
+
+    /* Hide sparkline in small stat cards on mobile to prevent overlapping numbers */
+    .compact-stat-card .sparkline-container {
+        display: none !important;
+    }
+
+    /* Item 7 (Items Sold) Full Width on Mobile */
+    .compact-stat-card[onclick*="item-sales"] {
+        grid-column: 1 / -1 !important;
+        min-height: auto !important;
+        padding: 1rem !important;
+    }
+
+    /* Hero Total Sales Card Mobile Scale */
+    .hero-sales-card {
+        padding: 1.5rem 1.25rem !important;
+        border-radius: 20px !important;
+        min-height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .hero-sales-card .stat-value {
+        font-size: 2.25rem !important;
+        margin: 0.5rem 0 !important;
+        line-height: 1.1 !important;
+    }
+
+    .hero-sales-card .sparkline-container {
+        width: 85px !important;
+        height: 38px !important;
+        right: 1rem !important;
+        top: 1.25rem !important;
+    }
+
+    .hero-sales-card-details {
+        gap: 0.75rem !important;
+        padding-top: 0.875rem !important;
+    }
+
+    .hero-sales-detail-label {
+        font-size: 0.7rem !important;
+    }
+
+    .hero-sales-detail-value {
+        font-size: 1.05rem !important;
+    }
+
+    /* Quick Actions Mobile */
+    .dashboard-quick-actions {
+        padding: 1rem !important;
+        border-radius: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .dashboard-quick-actions .quick-actions-title {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .quick-actions-grid {
+        gap: 0.5rem !important;
+    }
+
+    .quick-action-btn {
+        padding: 0.75rem 0.5rem !important;
+        border-radius: 12px !important;
+    }
+
+    .quick-action-btn i {
+        font-size: 1.35rem !important;
+    }
+
+    .quick-action-btn span {
+        font-size: 0.78rem !important;
+    }
+
+    /* Dashboard Utility Bar Mobile */
+    .dashboard-utility-bar {
+        padding: 0.75rem 1rem !important;
+        border-radius: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.625rem !important;
+    }
+
+    .dashboard-utility-bar h2 {
+        font-size: 1.15rem !important;
+    }
+
+    .dashboard-utility-bar > div:last-child {
+        display: flex !important;
+        width: 100% !important;
+        gap: 4px !important;
+    }
+
+    .time-range-btn {
+        flex: 1 !important;
+        padding: 0.45rem 0.25rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 10px !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    /* Mobile Container & Page Protection - Zero Horizontal Scroll */
+    .admin-layout,
+    .admin-main,
+    .admin-content,
+    .tabs {
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
 }
 
 @media (max-width: 600px) {
@@ -253,6 +449,29 @@
     .stats-grid {
         grid-template-columns: 1fr !important;
         gap: 0.75rem !important;
+    }
+
+    .dashboard-stats-grid {
+        gap: 0.5rem !important;
+    }
+
+    .compact-stat-card {
+        padding: 0.75rem 0.625rem !important;
+        gap: 0.375rem !important;
+    }
+
+    .compact-stat-card .stat-icon {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+    }
+
+    .compact-stat-card .stat-icon i {
+        font-size: 16px !important;
+    }
+
+    .compact-stat-card .stat-value {
+        font-size: 0.95rem !important;
     }
 
     /* Redefine small card widths to allow text and sparklines to breathe */

@@ -35,7 +35,7 @@ async function loadCashierStockTracker() {
         if (storeMods.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center;padding:3rem 1rem;color:var(--gray-400);">
-                    <div style="font-size:2.5rem;margin-bottom:0.75rem;">📋</div>
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem;"><i class="ph ph-stack"></i></div>
                     <div style="font-weight:600;">No modifier groups found</div>
                     <div style="font-size:0.85rem;margin-top:0.25rem;">Ask admin to set up modifier groups first.</div>
                 </div>`;
@@ -124,7 +124,7 @@ async function loadCashierStockTracker() {
         if (!html) {
             container.innerHTML = `
                 <div style="text-align:center;padding:3rem 1rem;color:var(--gray-400);">
-                    <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔗</div>
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem;"><i class="ph ph-link"></i></div>
                     <div style="font-weight:600;">No ingredients linked</div>
                     <div style="font-size:0.85rem;margin-top:0.25rem;">Link ingredients to modifier options in admin.</div>
                 </div>`;

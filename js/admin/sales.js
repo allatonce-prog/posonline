@@ -1,10 +1,63 @@
 // Sales Management
 const salesPaginator = new PaginationManager(5);
 
-// Load sales
-async function loadSales() {
-  const transactions = await db.getAll('transactions');
-  const users = await db.getAll('users');
+// In-memory caches to make Sales tab load instantly (0ms) and filter/paginate in memory
+let _salesTransactionsCache = null;
+let _salesUsersCache = null;
+
+// Expose cache invalidator
+window.invalidateSalesCache = function() {
+  _salesTransactionsCache = null;
+  _salesUsersCache = null;
+};
+
+// Load sales (Cache-first with non-blocking background refresh)
+async function loadSales(forceRefresh = false) {
+  // 1. If memory cache is available and forceRefresh is false, render immediately!
+  if (!forceRefresh && _salesTransactionsCache && _salesUsersCache) {
+    renderSalesTable();
+    return;
+  }
+
+  // 2. Stale-While-Revalidate: Try fast local IndexedDB read first (<20ms)
+  if (!forceRefresh && !_salesTransactionsCache) {
+    try {
+      const [localTransactions, localUsers] = await Promise.all([
+        db.getAllLocal('transactions'),
+        db.getAllLocal('users')
+      ]);
+      if (localTransactions && localTransactions.length > 0) {
+        _salesTransactionsCache = localTransactions;
+        _salesUsersCache = localUsers || [];
+        renderSalesTable(); // Instant render from local cache!
+
+        // Background cloud sync non-blockingly
+        syncSalesFromCloud().catch(err => console.warn('Background sales sync error:', err));
+        return;
+      }
+    } catch (e) {
+      console.warn('Local sales read failed, falling back to cloud:', e);
+    }
+  }
+
+  // 3. Fallback or forceRefresh: Fetch from cloud
+  await syncSalesFromCloud();
+}
+
+async function syncSalesFromCloud() {
+  const [transactions, users] = await Promise.all([
+    db.getAll('transactions'),
+    db.getAll('users')
+  ]);
+  _salesTransactionsCache = transactions || [];
+  _salesUsersCache = users || [];
+  renderSalesTable();
+}
+
+// Render sales table purely from in-memory cache (0ms instant pagination & filtering)
+function renderSalesTable() {
+  const transactions = _salesTransactionsCache || [];
+  const users = _salesUsersCache || [];
   const userMap = {};
   const roleMap = {};
   users.forEach(u => {
@@ -13,7 +66,9 @@ async function loadSales() {
   });
 
   const tbody = document.getElementById('salesTable');
-  const dateFilter = document.getElementById('salesFilter').value;
+  if (!tbody) return;
+
+  const dateFilter = document.getElementById('salesFilter')?.value || 'today';
   const cashierFilter = document.getElementById('salesCashierFilter');
   const cashierFilterValue = cashierFilter?.value || 'all';
 
@@ -21,22 +76,15 @@ async function loadSales() {
   // Populate Cashier Filter Dropdown (Dynamic)
   // ------------------------------------------
   if (cashierFilter) {
-    // Get unique cashiers from transactions + existing users
     const uniqueCashiers = new Set();
-
-    // Add existing cashiers
     users.forEach(u => {
       if (u.role === 'cashier') uniqueCashiers.add(u.username);
     });
-
-    // Add checks from transactions
     transactions.forEach(t => {
       if (t.cashier) uniqueCashiers.add(t.cashier);
     });
 
     const sortedCashiers = Array.from(uniqueCashiers).sort();
-
-    // Save current selection to restore after rebuild
     const currentSelection = cashierFilter.value;
 
     let optionsHtml = '<option value="all">All Cashiers</option>';
@@ -45,23 +93,21 @@ async function loadSales() {
       optionsHtml += `<option value="${username}">${escapeHtml(displayName)}</option>`;
     });
 
-    // Only update innerHTML if options changed (simple check: length) or force update
-    if (cashierFilter.innerHTML.length < 50 || cashierFilter.childElementCount !== (document.querySelectorAll('#salesCashierFilter option').length)) {
+    if (cashierFilter.childElementCount !== (sortedCashiers.length + 1)) {
       cashierFilter.innerHTML = optionsHtml;
-      // Restore selection if valid, else default to all
       const optionExists = Array.from(cashierFilter.options).some(o => o.value === currentSelection);
       cashierFilter.value = optionExists ? currentSelection : 'all';
     }
   }
 
   if (transactions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">No sales yet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="table-empty">No sales yet</td></tr>';
     const container = document.getElementById('salesPaginationContainer');
     if (container) container.innerHTML = '';
     return;
   }
 
-  // Filter transactions
+  // Filter transactions in memory
   let filteredTransactions = transactions.filter(t => t.type !== 'collectible_payment');
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -94,7 +140,7 @@ async function loadSales() {
   }
 
   if (filteredTransactions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">No sales found for this period</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="table-empty">No sales found for this period</td></tr>';
     const container = document.getElementById('salesPaginationContainer');
     if (container) container.innerHTML = '';
     return;
@@ -103,7 +149,7 @@ async function loadSales() {
   // Sort by date (newest first)
   const sortedTransactions = filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Pagination
+  // Pagination (pure in-memory slice)
   const paginated = salesPaginator.paginate(sortedTransactions);
   const displayTransactions = paginated.data;
 
@@ -161,7 +207,7 @@ async function loadSales() {
     `;
   }).join('');
 
-  // Pagination Controls
+  // Pagination Controls - 0ms instant click
   let paginationContainer = document.getElementById('salesPaginationContainer');
   if (!paginationContainer && tbody) {
     paginationContainer = document.createElement('div');
@@ -171,7 +217,7 @@ async function loadSales() {
 
   salesPaginator.renderControls('salesPaginationContainer', paginated.totalPages, (page) => {
     salesPaginator.setPage(page);
-    loadSales();
+    renderSalesTable(); // 0ms instant in-memory pagination!
   });
 }
 
@@ -328,6 +374,14 @@ async function processVoidTransaction(id, reason) {
     transaction.voidedAt = new Date().toISOString();
     await db.update('transactions', transaction);
 
+    // Update in-memory cache immediately
+    if (_salesTransactionsCache) {
+      const idx = _salesTransactionsCache.findIndex(t => t.id === id);
+      if (idx !== -1) {
+        _salesTransactionsCache[idx] = { ..._salesTransactionsCache[idx], ...transaction };
+      }
+    }
+
     // 2. Restore Inventory
     for (const item of transaction.items) {
       if (!item.id) {
@@ -364,7 +418,7 @@ async function processVoidTransaction(id, reason) {
     hideLoading();
     showToast('Transaction voided successfully', 'success');
     closeTransactionModal();
-    await loadSales(); // Reload list to show status updates
+    renderSalesTable(); // Instantly update row in table without re-fetching
 
     // Refresh dashboard stats if function exists
     if (typeof loadDashboard === 'function') {
@@ -384,9 +438,18 @@ function closeTransactionModal() {
   document.body.classList.remove('modal-open');
 }
 
-// Helper to get filtered transactions
+// Helper to get filtered transactions (uses memory or local cache for fast export)
 async function getFilteredTransactions() {
-  const transactions = await db.getAll('transactions');
+  let transactions = _salesTransactionsCache;
+  if (!transactions || transactions.length === 0) {
+    try {
+      transactions = await db.getAllLocal('transactions');
+    } catch (e) {}
+  }
+  if (!transactions || transactions.length === 0) {
+    transactions = await db.getAll('transactions');
+  }
+  transactions = transactions || [];
   const dateFilter = document.getElementById('salesFilter')?.value || 'today';
   const cashierFilter = document.getElementById('salesCashierFilter')?.value || 'all';
 

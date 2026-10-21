@@ -127,7 +127,7 @@ async function renderCollectibles() {
         if (displayList.length === 0) {
             targetList.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-icon"><i class="ph ph-clipboard-text"></i></div>
                     <h3>No ${window.currentCollectiblesTab === 'active' ? 'active' : 'archived'} collectibles</h3>
                     <p>No collectibles found</p>
                 </div>
@@ -246,7 +246,7 @@ async function renderCollectibles() {
         console.error('Error loading collectibles:', error);
         targetList.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
+                <div class="empty-state-icon"><i class="ph ph-warning-circle"></i></div>
                 <h3>Error loading collectibles</h3>
                 <p>${error.message}</p>
             </div>

@@ -15,7 +15,8 @@
     }
 
     const cache = new Map();
-    const CACHE_TTL = 15000; // 15 seconds TTL for database reads
+    const inFlightPromises = new Map();
+    const CACHE_TTL = 20000; // 20 seconds TTL for fast database reads
 
     // Helper to get cache key
     function getCacheKey(method, storeName, args) {
@@ -30,12 +31,18 @@
                 cache.delete(key);
             }
         }
+        for (const key of inFlightPromises.keys()) {
+            if (key.includes(`:${storeName}:`)) {
+                inFlightPromises.delete(key);
+            }
+        }
     }
 
     // Clear all caches
     window.clearDbCache = function() {
         console.log("🧹 Clearing all database read caches...");
         cache.clear();
+        inFlightPromises.clear();
     };
 
     // Intercept and throttle window resize dispatching
@@ -64,7 +71,7 @@
 
         console.log("🎯 Wrapping db instance for read-caching...");
 
-        // Wrap getAll
+        // Wrap getAll with in-flight deduplication and TTL cache
         const originalGetAll = db.getAll;
         db.getAll = async function(collectionName, forceCloud = false) {
             if (forceCloud) {
@@ -73,19 +80,32 @@
             const key = getCacheKey('getAll', collectionName, [forceCloud]);
             const cached = cache.get(key);
             if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-                // Return a deep/shallow clone to prevent accidental mutations of cached objects
                 return JSON.parse(JSON.stringify(cached.data));
             }
-            
-            const result = await originalGetAll.apply(this, arguments);
-            cache.set(key, {
-                timestamp: Date.now(),
-                data: result
-            });
-            return result;
+
+            // Return in-flight promise if identical query is already running
+            if (inFlightPromises.has(key)) {
+                return inFlightPromises.get(key);
+            }
+
+            const promise = (async () => {
+                try {
+                    const result = await originalGetAll.apply(this, arguments);
+                    cache.set(key, {
+                        timestamp: Date.now(),
+                        data: result
+                    });
+                    return result;
+                } finally {
+                    inFlightPromises.delete(key);
+                }
+            })();
+
+            inFlightPromises.set(key, promise);
+            return promise;
         };
 
-        // Wrap getAllByIndex
+        // Wrap getAllByIndex with in-flight deduplication
         const originalGetAllByIndex = db.getAllByIndex;
         db.getAllByIndex = async function(collectionName, indexName, value, forceCloud = false) {
             if (forceCloud) {
@@ -96,13 +116,26 @@
             if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
                 return JSON.parse(JSON.stringify(cached.data));
             }
-            
-            const result = await originalGetAllByIndex.apply(this, arguments);
-            cache.set(key, {
-                timestamp: Date.now(),
-                data: result
-            });
-            return result;
+
+            if (inFlightPromises.has(key)) {
+                return inFlightPromises.get(key);
+            }
+
+            const promise = (async () => {
+                try {
+                    const result = await originalGetAllByIndex.apply(this, arguments);
+                    cache.set(key, {
+                        timestamp: Date.now(),
+                        data: result
+                    });
+                    return result;
+                } finally {
+                    inFlightPromises.delete(key);
+                }
+            })();
+
+            inFlightPromises.set(key, promise);
+            return promise;
         };
 
         // Wrap get
@@ -176,6 +209,26 @@
             // Clean up interval after 10s to prevent leak
             setTimeout(() => clearInterval(ptrInterval), 10000);
         }
+
+        // Proactive background pre-warming of catalog data in idle time for 0ms tab switching
+        const prewarmData = () => {
+            const runner = () => {
+                if (typeof db.getAll === 'function') {
+                    db.getAll('products').catch(() => {});
+                    db.getAll('ingredients').catch(() => {});
+                    db.getAll('recipes').catch(() => {});
+                    // Prewarm sales and users so the Sales tab opens instantaneously (0ms)
+                    db.getAll('transactions').catch(() => {});
+                    db.getAll('users').catch(() => {});
+                }
+            };
+            if (window.requestIdleCallback) {
+                window.requestIdleCallback(runner, { timeout: 3000 });
+            } else {
+                setTimeout(runner, 1500);
+            }
+        };
+        prewarmData();
     }
 
     // Run when DOM is ready or immediately if already loaded

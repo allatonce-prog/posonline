@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pos-system-v23';
+const CACHE_NAME = 'pos-system-v24';
 const urlsToCache = [
   './',
   './index.html',
@@ -10,6 +10,8 @@ const urlsToCache = [
   './css/cashier-sidebar.css',
   './css/mobile-no-zoom.css',
   './css/recipes.css',
+  './css/mobile-tablet-optimization.css',
+  './css/admin-enhancements.css',
   './js/firebase-db.js',
   './js/offline-db.js',
   './js/auth.js',

@@ -5,6 +5,7 @@ let modifiers = []; // Global modifiers list
 let categories = new Set(['all']);
 let currentEditingCartItemIndex = null; // Track which item is being modified
 let currentOrderType = 'dinein'; // 'dinein' or 'takeout' — controls whether takeoutOnly ingredients are deducted
+let cashierRealtimeUnsubscribe = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -22,38 +23,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Initialize database first
-    showLoading('Loading...');
     try {
         await db.init();
 
-        // Fetch and display store name from Firebase based on storeId
+        // Display store name from session if available
+        const storeNameText = document.getElementById('cashierStoreNameText');
         if (storeNameElement && user?.storeId) {
-            try {
-                const store = await db.get('stores', user.storeId);
+            const updateStoreDisplay = (name) => {
+                if (storeNameText) {
+                    storeNameText.textContent = name;
+                } else {
+                    storeNameElement.innerHTML = `<i class="ph ph-map-pin"></i> ${escapeHtml(name)}`;
+                }
+                storeNameElement.style.display = 'flex';
+            };
+            if (user.storeName) {
+                updateStoreDisplay(user.storeName);
+            }
+            // Background fetch to ensure store name is up-to-date
+            db.get('stores', user.storeId).then(store => {
                 if (store && store.name) {
-                    storeNameElement.textContent = `📍 ${store.name}`;
-                    storeNameElement.style.display = 'block';
-
-                    // Update session with store name for future use
+                    updateStoreDisplay(store.name);
                     user.storeName = store.name;
                     auth.saveSession(user);
-                } else {
-                    storeNameElement.style.display = 'none';
                 }
-            } catch (error) {
-                console.warn('Could not fetch store name:', error);
-                storeNameElement.style.display = 'none';
-            }
-        } else {
-            if (storeNameElement) {
-                storeNameElement.style.display = 'none';
-            }
+            }).catch(e => console.warn('Could not fetch store name:', e));
         }
 
-        // Load products
-        showLoading('Loading products...');
-        await loadProducts();
-        hideLoading();
+        // Fast Stale-While-Revalidate loading:
+        // 1. Instant render from local IndexedDB cache (<25ms)
+        const hasCached = await loadProducts(true);
+        if (!hasCached) {
+            showLoading('Loading products...');
+            await loadProducts(false);
+            hideLoading();
+        } else {
+            // Already loaded instantly from cache, do background sync without blocking UI
+            loadProducts(false).catch(e => console.warn('Background sync:', e));
+        }
+
+        // 2. Establish real-time live listener for products, ingredients, recipes, modifiers
+        setupRealtimeCatalogSync();
     } catch (error) {
         hideLoading();
         showToast('Error loading products: ' + error.message, 'error');
@@ -237,21 +247,21 @@ window.showHeldOrders = function () {
     if (heldOrders.length === 0) {
         list.innerHTML = `
             <div class="empty-state">
-                <div style="font-size: 2rem;">📂</div>
+                <div style="font-size: 2.2rem; color: var(--text-secondary); opacity: 0.5; margin-bottom: 0.5rem;"><i class="ph ph-folder-open"></i></div>
                 <p>No held orders</p>
             </div>`;
     } else {
         list.innerHTML = heldOrders.map(order => `
-            <div class="held-order-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div class="held-order-card" style="border: 1px solid var(--border-color, #e2e8f0); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff);">
                 <div>
                     <strong>${escapeHtml(order.name)}</strong>
-                    <div style="font-size: 0.85rem; color: #666;">
-                        ${new Date(order.date).toLocaleTimeString()} • ${order.items.length} items • ${formatCurrency(order.total)}
+                    <div style="font-size: 0.85rem; color: var(--text-secondary, #64748b); margin-top: 2px;">
+                        ${new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${order.items.length} items • ${formatCurrency(order.total)}
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteHeldOrder('${order.id}')">🗑️</button>
-                    <button class="btn btn-sm btn-primary" onclick="restoreHeldOrder('${order.id}')">Restore</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteHeldOrder('${order.id}')" title="Delete" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border-radius: 8px;"><i class="ph ph-trash" style="font-size: 1rem;"></i></button>
+                    <button class="btn btn-sm btn-primary" onclick="restoreHeldOrder('${order.id}')" style="border-radius: 8px; font-weight: 600;">Restore</button>
                 </div>
             </div>
         `).join('');
@@ -295,18 +305,31 @@ heldOrders = heldOrders.filter(o => o.id !== id);
     showToast('Held order deleted', 'info');
 }
 
-// Load products types with recipe support
-async function loadProducts() {
-    // Fetch all necessary data
-    const [allProducts, allRecipes, allIngredients, allModifiers] = await Promise.all([
-        db.getAll('products'),
-        db.getAll('recipes'),
-        db.getAll('ingredients'),
-        db.getAll('modifiers')
-    ]);
+// Load products types with recipe support (instant local cache or cloud sync)
+async function loadProducts(useLocalCacheOnly = false) {
+    let allProducts, allRecipes, allIngredients, allModifiers;
+
+    if (useLocalCacheOnly && typeof db.getAllLocal === 'function') {
+        [allProducts, allRecipes, allIngredients, allModifiers] = await Promise.all([
+            db.getAllLocal('products'),
+            db.getAllLocal('recipes'),
+            db.getAllLocal('ingredients'),
+            db.getAllLocal('modifiers')
+        ]);
+        // If local cache is empty, signal false so caller falls back to cloud
+        if (!allProducts || allProducts.length === 0) {
+            return false;
+        }
+    } else {
+        [allProducts, allRecipes, allIngredients, allModifiers] = await Promise.all([
+            db.getAll('products'),
+            db.getAll('recipes'),
+            db.getAll('ingredients'),
+            db.getAll('modifiers')
+        ]);
+    }
 
     modifiers = allModifiers || [];
-    console.log('Loaded modifiers:', modifiers.length);
 
     // Build ingredient map for fast stock lookup
     const ingredientMap = {};
@@ -325,7 +348,7 @@ async function loadProducts() {
     });
 
     // Map products and check recipe ingredient availability
-    products = allProducts.map(product => {
+    products = (allProducts || []).map(product => {
         const recipe = recipeMap[product.id] || (product.hasRecipe ? allRecipes.find(r => r.productId === product.id) : null);
         let recipeOutOfStock = false;
         let outOfStockIngredientNames = [];
@@ -357,10 +380,11 @@ async function loadProducts() {
 
     // Pre-calculate search tags for high-speed query execution
     products.forEach(product => {
-        product._searchTag = `${product.name.toLowerCase()} ${product.sku ? product.sku.toLowerCase() : ''} ${product.category ? product.category.toLowerCase() : ''}`;
+        product._searchTag = `${(product.name || '').toLowerCase()} ${(product.sku || '').toLowerCase()} ${(product.category || '').toLowerCase()}`;
     });
 
     // Extract categories
+    const prevCategories = new Set(categories);
     categories = new Set(['all']);
     products.forEach(product => {
         if (product.category) {
@@ -368,8 +392,47 @@ async function loadProducts() {
         }
     });
 
-    renderCategoryFilters();
-    renderProducts(products);
+    // Only rebuild category filter buttons if categories actually changed
+    const categoriesChanged = categories.size !== prevCategories.size || ![...categories].every(c => prevCategories.has(c));
+    if (categoriesChanged) {
+        renderCategoryFilters();
+    }
+
+    // Preserve active category and search filter when re-rendering
+    const activeFilterBtn = document.querySelector('.filter-btn.active');
+    const activeCategory = activeFilterBtn ? activeFilterBtn.dataset.category : 'all';
+    const searchInput = document.getElementById('searchInput');
+    const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    if (searchQuery) {
+        const filtered = products.filter(product =>
+            product._searchTag && product._searchTag.includes(searchQuery)
+        );
+        renderProducts(filtered);
+    } else if (activeCategory && activeCategory !== 'all') {
+        const filtered = products.filter(p => p.category === activeCategory);
+        renderProducts(filtered);
+    } else {
+        renderProducts(products);
+    }
+
+    return true;
+}
+
+// Setup real-time listener for cashier catalog
+function setupRealtimeCatalogSync() {
+    if (cashierRealtimeUnsubscribe) {
+        try { cashierRealtimeUnsubscribe(); } catch (e) {}
+        cashierRealtimeUnsubscribe = null;
+    }
+
+    if (typeof db !== 'undefined' && typeof db.subscribeToCashierUpdates === 'function') {
+        cashierRealtimeUnsubscribe = db.subscribeToCashierUpdates(async () => {
+            console.log('⚡ Real-time updates detected from cloud, refreshing catalog...');
+            await loadProducts(true); // reload instantly from freshly updated local IndexedDB
+        });
+        console.log('⚡ Real-time catalog listener active for Cashier');
+    }
 }
 
 // Helper — is a product currently orderable?
@@ -453,7 +516,7 @@ function renderProducts(productsToRender) {
         return `
         <div class="product-card" data-product-id="${product.id}" ${opacityStyle}>
           <div class="product-image">
-            ${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
+            ${product.image ? `<img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\\'ph ph-package\\\' style=\\\'font-size: 1.8rem; opacity: 0.4;\\\'></i>';">` : '<i class="ph ph-package" style="font-size: 1.8rem; opacity: 0.4;"></i>'}
           </div>
           <div class="product-info">
             <div class="product-name">${escapeHtml(product.name)}</div>
@@ -595,7 +658,7 @@ function updateCart() {
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = `
       <div class="cart-empty">
-        <div class="cart-empty-icon">🛒</div>
+        <div class="cart-empty-icon"><i class="ph ph-shopping-cart" style="font-size: 2.5rem; opacity: 0.4;"></i></div>
         <p>Your cart is empty</p>
       </div>
     `;
@@ -608,7 +671,7 @@ function updateCart() {
         </div>
         <div class="cart-item" data-product-id="${item.id}">
           <div class="cart-item-image">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}">` : '📦'}
+            ${item.image ? `<img src="${item.image}" alt="${item.name}">` : '<i class="ph ph-package" style="font-size: 1.4rem; opacity: 0.4;"></i>'}
           </div>
           <div class="cart-item-info">
               <div class="cart-item-name">
@@ -624,9 +687,9 @@ function updateCart() {
                  
                  <div style="display: inline-flex; gap: 4px; margin-left: 8px;">
                     ${item.alternativePrices && item.alternativePrices.length > 0 ?
-                `<button class="btn btn-sm btn-outline-primary" style="padding: 2px 8px; font-size: 0.9rem;" onclick="event.stopPropagation(); showPriceSelector('${item.id}')" title="Change Price">🏷️</button>`
+                `<button class="btn btn-sm btn-outline-primary" style="padding: 2px 8px; font-size: 0.85rem; display: inline-flex; align-items: center;" onclick="event.stopPropagation(); showPriceSelector('${item.id}')" title="Change Price"><i class="ph ph-tag"></i></button>`
                 : ''}
-                    <button class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 0.9rem;" onclick="event.stopPropagation(); showModifiersModal('${item.id}', ${index})" title="Add Modifiers">📝</button>
+                    <button class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 0.85rem; display: inline-flex; align-items: center;" onclick="event.stopPropagation(); showModifiersModal('${item.id}', ${index})" title="Add Modifiers"><i class="ph ph-sliders"></i></button>
                  </div>
               </div>
             <div class="cart-item-controls">
@@ -871,7 +934,7 @@ function checkout() {
     const orderBadge = document.getElementById('checkoutOrderTypeBadge');
     if (orderBadge) {
         const isTakeout = normalizeOrderType(currentOrderType) === 'takeout';
-        orderBadge.textContent = isTakeout ? '🥡 Take-out' : '🍽️ Dine-in';
+        orderBadge.innerHTML = isTakeout ? '<i class="ph ph-bag"></i> Take-out' : '<i class="ph ph-fork-knife"></i> Dine-in';
         orderBadge.style.background = isTakeout ? 'rgba(8, 145, 178, 0.5)' : 'rgba(255, 255, 255, 0.25)';
     }
 
@@ -961,13 +1024,13 @@ function updateSplitPayment() {
         statusEl.style.display  = 'block';
         statusEl.style.background = 'rgba(239,68,68,0.1)';
         statusEl.style.color      = 'var(--danger)';
-        statusEl.textContent      = `⚠️ Still need ${formatCurrency(remaining)} more`;
+        statusEl.innerHTML      = `<i class="ph ph-warning-circle" style="vertical-align: -2px; margin-right: 4px;"></i> Still need ${formatCurrency(remaining)} more`;
         btn.disabled = true;
     } else {
         statusEl.style.display  = 'block';
         statusEl.style.background = 'rgba(16,185,129,0.1)';
         statusEl.style.color      = '#059669';
-        statusEl.textContent      = '✅ Payment complete!';
+        statusEl.innerHTML      = '<i class="ph ph-check-circle" style="vertical-align: -2px; margin-right: 4px;"></i> Payment complete!';
         btn.disabled = false;
     }
 }
@@ -1233,11 +1296,11 @@ function printTransactionReceipt(transaction, transactionId) {
       <span>SPLIT</span>
     </div>
     <div class="receipt-item" style="font-size: 11px; padding-left: 12px;">
-      <span>💵 Cash:</span>
+      <span>Cash:</span>
       <span>${formatCurrency(transaction.cashAmount || 0)}</span>
     </div>
     <div class="receipt-item" style="font-size: 11px; padding-left: 12px;">
-      <span>📱 GCash:</span>
+      <span>GCash:</span>
       <span>${formatCurrency(transaction.gcashAmount || 0)}</span>
     </div>
     <div class="receipt-item">
@@ -1573,7 +1636,7 @@ async function loadSalesHistory() {
         console.error('Error loading sales:', error);
         listContainer.innerHTML = `
             <div class="no-sales">
-                <div class="no-sales-icon">⚠️</div>
+                <div class="no-sales-icon"><i class="ph ph-warning-circle"></i></div>
                 <h3>Error Loading Sales</h3>
                 <p>${error.message}</p>
             </div>
@@ -1663,7 +1726,7 @@ function renderSalesList(sales) {
     if (sales.length === 0) {
         listContainer.innerHTML = `
             <div class="no-sales">
-                <div class="no-sales-icon">📜</div>
+                <div class="no-sales-icon"><i class="ph ph-receipt"></i></div>
                 <h3>No Sales Found</h3>
                 <p>No transactions match your filter.</p>
             </div>
@@ -1683,21 +1746,21 @@ function renderSalesList(sales) {
         if (sale.paymentMethod === 'split') {
             paymentBadge = `
                 <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
-                        💵 ₱${(sale.cashAmount || 0).toFixed(2)}
+                    <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                        <i class="ph ph-money"></i> ₱${(sale.cashAmount || 0).toFixed(2)}
                     </span>
-                    <span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
-                        📱 ₱${(sale.gcashAmount || 0).toFixed(2)}
+                    <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                        <i class="ph ph-device-mobile"></i> ₱${(sale.gcashAmount || 0).toFixed(2)}
                     </span>
                 </div>`;
         } else if (sale.paymentMethod === 'cash') {
-            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💵 Cash</span>`;
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;"><i class="ph ph-money"></i> Cash</span>`;
         } else if (sale.paymentMethod === 'mobile') {
-            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📱 GCash</span>`;
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;"><i class="ph ph-device-mobile"></i> GCash</span>`;
         } else if (sale.paymentMethod === 'card') {
-            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">💳 Card</span>`;
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;"><i class="ph ph-credit-card"></i> Card</span>`;
         } else {
-            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 3px; background: var(--light); color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">${sale.paymentMethod || 'Cash'}</span>`;
+            paymentBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: var(--light); color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 20px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">${sale.paymentMethod || 'Cash'}</span>`;
         }
 
         return `
@@ -1715,7 +1778,7 @@ function renderSalesList(sales) {
                 ${!isVoided ? `<div style="padding: 0 0 0.4rem 0;">${paymentBadge}</div>` : ''}
                 <div class="sale-footer">
                     <div class="sale-items-count" style="${isVoided ? 'text-decoration: line-through; color: #888;' : ''}">
-                        <span>🛍️</span> ${itemCount} items
+                        <i class="ph ph-package" style="margin-right: 3px;"></i> ${itemCount} items
                     </div>
                     <div class="sale-id" style="${isVoided ? 'text-decoration: line-through; color: #888;' : ''}">#${formatTransactionId(sale.id)}</div>
                 </div>
@@ -1794,11 +1857,11 @@ window.viewTransactionDetails = function (transactionId) {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
                 <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #059669;">💵 Cash</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 4px;"><i class="ph ph-money"></i> Cash</div>
                     <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.cashAmount || 0)}</div>
                 </div>
                 <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.5rem 0.75rem;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">📱 GCash</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px;"><i class="ph ph-device-mobile"></i> GCash</div>
                     <div style="font-size: 1rem; font-weight: 800; color: var(--dark);">${formatCurrency(transaction.gcashAmount || 0)}</div>
                 </div>
             </div>
@@ -1810,7 +1873,7 @@ window.viewTransactionDetails = function (transactionId) {
     } else if (transaction.paymentMethod === 'cash') {
         paymentInfoHtml = `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
-                <span>Payment</span><span style="font-weight: 600;">💵 Cash</span>
+                <span>Payment</span><span style="font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-money"></i> Cash</span>
             </div>
             ${transaction.change > 0 ? `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
@@ -1821,13 +1884,13 @@ window.viewTransactionDetails = function (transactionId) {
         paymentInfoHtml = `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--gray-600); margin-top: 0.25rem;">
                 <span>Payment</span>
-                <span style="font-weight: 600;">📱 ${(transaction.paymentMethod || 'Mobile').toUpperCase()}</span>
+                <span style="font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-device-mobile"></i> ${(transaction.paymentMethod || 'Mobile').toUpperCase()}</span>
             </div>`;
     }
 
     content.innerHTML = `
         <div style="text-align: center; margin-bottom: 1rem;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🧾</div>
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--primary);"><i class="ph ph-receipt"></i></div>
             <h3 style="margin: 0;">Transaction Details</h3>
             <p style="color: var(--gray-500); margin: 0.25rem 0;">#${formatTransactionId(transaction.id)}</p>
             <p style="color: var(--gray-500); margin: 0;">${formatDateTime(transaction.date)}</p>
@@ -1944,7 +2007,7 @@ async function loadExpenses(filter = 'today') {
         if (filteredExpenses.length === 0) {
             listContainer.innerHTML = `
                 <div class="empty-state" style="padding: 2rem;">
-                    <div style="font-size: 2rem;">💸</div>
+                    <div style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-secondary); opacity: 0.5;"><i class="ph ph-receipt-x"></i></div>
                     <p>No expenses found for ${filter}</p>
                 </div>`;
             return;
@@ -1960,7 +2023,7 @@ async function loadExpenses(filter = 'today') {
                 </div>
                 <div class="sale-footer">
                     <div class="sale-items-count">
-                        <span>📝</span> ${escapeHtml(exp.reason)}
+                        <i class="ph ph-note" style="margin-right: 4px;"></i> ${escapeHtml(exp.reason)}
                     </div>
                 </div>
             </div>

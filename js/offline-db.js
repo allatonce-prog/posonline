@@ -405,14 +405,10 @@ class OfflineDB {
                 const snap = await getDocs(q);
                 const cloudItems = snap.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
 
-                // Batch update local cache
-                for (const item of cloudItems) {
-                    await this.local.put(collectionName, item);
-                }
+                // High-performance single-transaction batch save to local IndexedDB
+                await this.local.putMany(collectionName, cloudItems);
 
-                // If we fetched everything, we should ideally clear local items that are no longer in cloud 
-                // but for an offline-enabled POS, we keep them or mark them. 
-                // For now, we just return the fresh cloud data.
+                // For now, we return the fresh cloud data.
                 return cloudItems;
             } catch (e) {
                 console.warn(`Cloud getAll failed for ${collectionName}, falling back to local:`, e);
@@ -420,6 +416,12 @@ class OfflineDB {
         }
 
         // 2. Fallback to Local
+        return await this.getAllLocal(collectionName);
+    }
+
+    // Fast direct read from local IndexedDB cache without network latency
+    async getAllLocal(collectionName) {
+        await this.ensureInitialized();
         const localData = await this.local.getAll(collectionName);
         const storeId = this.getCurrentStoreId();
         return localData.filter(item => !item.storeId || item.storeId === storeId);
@@ -474,10 +476,8 @@ class OfflineDB {
                 const snap = await getDocs(q);
                 const cloudItems = snap.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
 
-                // Update local cache with matches
-                for (const item of cloudItems) {
-                    await this.local.put(collectionName, item);
-                }
+                // Update local cache with matches in a single batch transaction
+                await this.local.putMany(collectionName, cloudItems);
 
                 return cloudItems;
             } catch (e) {
@@ -831,6 +831,85 @@ class OfflineDB {
         }, (error) => {
             console.error("Notification listener error:", error);
         });
+    }
+
+    /**
+     * Real-time listener for Cashier catalog & inventory (products, ingredients, recipes, modifiers).
+     * Automatically syncs changes into IndexedDB using putMany and invokes the callback debounced.
+     */
+    subscribeToCashierUpdates(callback) {
+        if (!this.isOnline || !this.firestore) return () => {};
+
+        const storeId = this.getCurrentStoreId();
+        const collectionsToWatch = ['products', 'ingredients', 'recipes', 'modifiers'];
+        const unsubscribers = [];
+        let debounceTimer = null;
+
+        const notifyDebounced = () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }, 250);
+        };
+
+        collectionsToWatch.forEach(colName => {
+            try {
+                const colRef = collection(this.firestore, colName);
+                const q = query(colRef, where('storeId', '==', storeId));
+
+                const unsubscribe = onSnapshot(q, async (snapshot) => {
+                    const items = snapshot.docs.map(d => ({
+                        id: d.id,
+                        ...d.data(),
+                        syncStatus: 'synced'
+                    }));
+
+                    // High-speed single-transaction batch save to local IndexedDB
+                    await this.local.putMany(colName, items);
+                    notifyDebounced();
+                }, (error) => {
+                    console.warn(`Real-time listener error for ${colName}:`, error);
+                });
+
+                unsubscribers.push(unsubscribe);
+            } catch (err) {
+                console.warn(`Failed to attach real-time listener for ${colName}:`, err);
+            }
+        });
+
+        // Return unsubscribe function
+        return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            unsubscribers.forEach(unsub => {
+                try { unsub(); } catch (e) {}
+            });
+        };
+    }
+
+    /**
+     * Generic single-collection real-time listener with automatic IndexedDB caching.
+     */
+    subscribeToCollection(collectionName, callback) {
+        if (!this.isOnline || !this.firestore) return () => {};
+        const storeId = this.getCurrentStoreId();
+        try {
+            const colRef = collection(this.firestore, collectionName);
+            const q = query(colRef, where('storeId', '==', storeId));
+            return onSnapshot(q, async (snapshot) => {
+                const items = snapshot.docs.map(d => ({ id: d.id, ...d.data(), syncStatus: 'synced' }));
+                await this.local.putMany(collectionName, items);
+                if (typeof callback === 'function') {
+                    callback(items);
+                }
+            }, (err) => {
+                console.warn(`Realtime listener error on ${collectionName}:`, err);
+            });
+        } catch (e) {
+            console.warn(`Failed to listen to ${collectionName}:`, e);
+            return () => {};
+        }
     }
 
     // Helper to send a notification
