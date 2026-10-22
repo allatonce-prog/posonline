@@ -1,7 +1,7 @@
 // Products Management
 let editingProductId = null;
 let currentProductsViewMode = 'table'; // 'table' or 'grid'
-const productsPaginator = new PaginationManager(5);
+const productsPaginator = new PaginationManager(window.innerWidth <= 768 ? 8 : (window.innerWidth >= 1025 ? 12 : 8));
 
 window.setProductsViewMode = function (mode) {
     currentProductsViewMode = mode;
@@ -551,6 +551,9 @@ async function loadProducts(forceRefresh = true) {
         productsPaginator.renderControls('productsPaginationContainer', paginated.totalPages, (page) => {
             productsPaginator.setPage(page);
             loadProducts(false);
+            if (window.innerWidth <= 1024) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     } else if (typeof renderPagination === 'function') {
         // Fallback to old pagination if class not working as expected
@@ -562,6 +565,9 @@ async function loadProducts(forceRefresh = true) {
             (page) => {
                 productsPaginator.currentPage = page;
                 loadProducts(false);
+                if (window.innerWidth <= 1024) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             }
         );
     }

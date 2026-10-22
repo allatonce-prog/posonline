@@ -1400,32 +1400,19 @@ textarea.form-control {
         justify-content: space-between;
         align-items: center;
         padding: var(--spacing-md) var(--spacing-lg);
-        background: var(--dark);
-        border-bottom: 1px solid var(--dark-light);
         width: 100%;
     }
 
     .admin-logo h1 {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         margin-bottom: 0;
     }
 
     .admin-logo p {
-        display: none;
+        font-size: 0.72rem;
     }
 
     .mobile-logout {
-        display: block;
-        margin-left: var(--spacing-md);
-    }
-
-    .mobile-logout .btn {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
-        white-space: nowrap;
-    }
-
-    .admin-user {
         display: none !important;
     }
 
@@ -2430,93 +2417,7 @@ textarea.form-control {
         font-size: 1rem;
     }
 
-    /* Mobile Sales Table Specifics (Clean Card) */
-    /* Row 1: Date | Total */
-    .data-table td[data-label="Date"] {
-        order: 1;
-        width: 60%;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: var(--dark);
-    }
-
-    .data-table td[data-label="Total"] {
-        order: 2;
-        width: 40%;
-        text-align: right;
-        font-size: 1rem;
-        font-weight: 800;
-        /* Extra Bold */
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-    }
-
-    /* Row 2: ID */
-    .data-table td[data-label="ID"] {
-        order: 3;
-        width: 100%;
-        font-size: 0.65rem;
-        color: var(--gray-400);
-        margin-top: -0.4rem;
-        /* Tucked under date */
-        font-family: monospace;
-        letter-spacing: -0.5px;
-    }
-
-    /* Row 3: Customer • Items */
-    .data-table td[data-label="Customer"] {
-        order: 4;
-        width: auto;
-        font-size: 0.85rem;
-        margin-right: 0.5rem;
-        font-weight: 500;
-    }
-
-    .data-table td[data-label="Items"] {
-        order: 5;
-        width: auto;
-        font-size: 0.85rem;
-        color: var(--gray-500);
-        margin-right: 50%;
-    }
-
-    /* Add separator between Cust and Items? pseudo element? */
-    .data-table td[data-label="Customer"]::after {
-        content: "•";
-        margin-left: 0.5rem;
-        color: var(--gray-400);
-    }
-
-    /* Row 4: Payment | Actions */
-    .data-table td[data-label="Payment"] {
-        order: 6;
-        width: 50%;
-        margin-top: 0.4rem;
-        display: flex;
-        align-items: center;
-    }
-
-    .data-table td[data-label="Actions"] {
-        order: 7;
-        width: 50%;
-        margin-top: 0.4rem;
-        display: flex;
-        justify-content: flex-end;
-        padding-bottom: 0.1rem;
-    }
-
-    .data-table td[data-label="Actions"] .btn {
-        width: auto;
-        padding: 0.3rem 0.75rem;
-        font-size: 0.8rem;
-        border-radius: 6px;
-    }
-
-    /* Hide Cashier */
-    .data-table td[data-label="Cashier"] {
-        display: none !important;
-    }
+    /* Mobile Sales Table is now fully optimized in css/mobile-tablet-optimization.css */
 
     /* Mobile Reports Improvements */
     #reports-tab .stats-grid {

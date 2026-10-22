@@ -163,18 +163,23 @@ function openMobileMenu() {
     const sidebar = document.querySelector('.admin-sidebar');
     const overlay = document.getElementById('overlay');
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const bottomMenuToggle = document.getElementById('bottomMenuToggle');
 
-    if (!sidebar || !overlay || !mobileMenuToggle) return;
+    if (!sidebar || !overlay) return;
 
     // Add classes
     sidebar.classList.add('open');
     overlay.classList.add('active');
-    mobileMenuToggle.classList.add('active');
+    document.body.classList.add('sidebar-open');
 
-    // Update toggle icon
-    const icon = mobileMenuToggle.querySelector('i');
-    if (icon) {
-        icon.className = 'ph ph-x';
+    if (mobileMenuToggle) {
+        mobileMenuToggle.classList.add('active');
+        const icon = mobileMenuToggle.querySelector('i');
+        if (icon) icon.className = 'ph ph-x';
+    }
+
+    if (bottomMenuToggle) {
+        bottomMenuToggle.classList.add('active');
     }
 }
 
@@ -183,78 +188,143 @@ function closeMobileMenu() {
     const sidebar = document.querySelector('.admin-sidebar');
     const overlay = document.getElementById('overlay');
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const bottomMenuToggle = document.getElementById('bottomMenuToggle');
 
-    if (!sidebar || !overlay || !mobileMenuToggle) return;
+    if (!sidebar || !overlay) return;
 
     // Remove classes
     sidebar.classList.remove('open');
     overlay.classList.remove('active');
-    mobileMenuToggle.classList.remove('active');
+    document.body.classList.remove('sidebar-open');
 
-    // Update toggle icon
-    const icon = mobileMenuToggle.querySelector('i');
-    if (icon) {
-        icon.className = 'ph ph-list';
+    if (mobileMenuToggle) {
+        mobileMenuToggle.classList.remove('active');
+        const icon = mobileMenuToggle.querySelector('i');
+        if (icon) icon.className = 'ph ph-list';
+    }
+
+    if (bottomMenuToggle) {
+        bottomMenuToggle.classList.remove('active');
     }
 }
 
-// Setup navigation
+// Setup navigation (Scroll-safe touch handling for mobile devices)
 function setupNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
+    let lastNavTriggerTime = 0;
 
     navItems.forEach(item => {
-        // iOS FIX: Use both click and touchend events
-        const handleNavClick = (e) => {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isScrolling = false;
+
+        item.addEventListener('touchstart', (e) => {
+            isScrolling = false;
+            if (e.touches && e.touches[0]) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        item.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches[0]) {
+                const diffX = Math.abs(e.touches[0].clientX - touchStartX);
+                const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+                if (diffX > 8 || diffY > 8) {
+                    isScrolling = true;
+                }
+            }
+        }, { passive: true });
+
+        item.addEventListener('touchend', (e) => {
+            // If finger was scrolling / dragging, DO NOT switch tab!
+            if (isScrolling) {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+            lastNavTriggerTime = Date.now();
+
+            const tab = item.dataset.tab;
+            if (tab) {
+                switchTab(tab);
+                closeMobileMenu();
+            }
+        }, { passive: false });
+
+        item.addEventListener('click', (e) => {
+            // Prevent double-triggering right after touchend
+            if (Date.now() - lastNavTriggerTime < 400) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
 
             const tab = item.dataset.tab;
-            switchTab(tab);
-
-            // Close mobile menu when switching tabs
-            closeMobileMenu();
-        };
-
-        // Add both click and touch events for maximum iOS compatibility
-        item.addEventListener('click', handleNavClick);
-        item.addEventListener('touchend', handleNavClick, { passive: false });
-
-        // iOS: Ensure item is always interactive
-        item.style.cssText = `
-            cursor: pointer !important;
-            -webkit-tap-highlight-color: rgba(255,255,255,0.1) !important;
-            -webkit-user-select: none !important;
-            user-select: none !important;
-            pointer-events: auto !important;
-            position: relative !important;
-            z-index: 100 !important;
-        `;
+            if (tab) {
+                switchTab(tab);
+                closeMobileMenu();
+            }
+        });
     });
 
-    // Setup collapsible section toggling dynamically (prevents inline handler errors)
+    // Setup collapsible section toggling with identical scroll-safe logic
     const sectionHeaders = document.querySelectorAll('.nav-section-header');
+    let lastHeaderTriggerTime = 0;
+
     sectionHeaders.forEach(header => {
-        const handleHeaderClick = (e) => {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isScrolling = false;
+
+        header.addEventListener('touchstart', (e) => {
+            isScrolling = false;
+            if (e.touches && e.touches[0]) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        header.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches[0]) {
+                const diffX = Math.abs(e.touches[0].clientX - touchStartX);
+                const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+                if (diffX > 8 || diffY > 8) {
+                    isScrolling = true;
+                }
+            }
+        }, { passive: true });
+
+        header.addEventListener('touchend', (e) => {
+            if (isScrolling) return;
+
             e.preventDefault();
             e.stopPropagation();
+            lastHeaderTriggerTime = Date.now();
+
             const section = header.closest('.nav-section');
             if (section) {
                 section.classList.toggle('collapsed');
             }
-        };
+        }, { passive: false });
 
-        header.addEventListener('click', handleHeaderClick);
-        header.addEventListener('touchend', handleHeaderClick, { passive: false });
+        header.addEventListener('click', (e) => {
+            if (Date.now() - lastHeaderTriggerTime < 400) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
 
-        header.style.cssText = `
-            cursor: pointer !important;
-            -webkit-tap-highlight-color: rgba(255,255,255,0.1) !important;
-            -webkit-user-select: none !important;
-            user-select: none !important;
-            pointer-events: auto !important;
-            position: relative !important;
-            z-index: 100 !important;
-        `;
+            const section = header.closest('.nav-section');
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        });
     });
 }
 
@@ -460,7 +530,7 @@ async function switchTab(tab) {
     }
 
     if (window.Tawk_API) {
-        if (isDashboard) {
+        if (isDashboard && window.innerWidth > 1024) {
             if (window.Tawk_API.showWidget) window.Tawk_API.showWidget();
         } else {
             if (window.Tawk_API.hideWidget) window.Tawk_API.hideWidget();

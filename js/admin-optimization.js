@@ -2,12 +2,14 @@
 (function() {
     console.log("🚀 Admin Dashboard optimization active!");
 
-    // Dynamic Pagination Limit for Desktop Mode to occupy empty space via Prototype Interception
+    // Dynamic Pagination Limit to occupy empty space via Prototype Interception
     if (typeof PaginationManager !== 'undefined') {
         const originalPaginate = PaginationManager.prototype.paginate;
         PaginationManager.prototype.paginate = function(items) {
-            if (window.innerWidth >= 1025 && this.itemsPerPage === 5) {
-                this.itemsPerPage = 12;
+            if (window.innerWidth >= 1025) {
+                if (this.itemsPerPage === 5 || this.itemsPerPage === 8) this.itemsPerPage = 12;
+            } else if (window.innerWidth <= 768) {
+                if (this.itemsPerPage === 5 || this.itemsPerPage === 12) this.itemsPerPage = 8;
             }
             return originalPaginate.apply(this, arguments);
         };

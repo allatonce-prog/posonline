@@ -14,21 +14,21 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 
     <link rel="stylesheet" href="css/styles.css?v=6.0">
-    <link rel="stylesheet" href="css/admin.css?v=6.5">
+    <link rel="stylesheet" href="css/admin.css?v=6.7">
     <link rel="stylesheet" href="css/mobile-no-zoom.css?v=6.0">
-    <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.1">
+    <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.8">
     <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=6.0">
     <link rel="stylesheet" href="css/recipes.css?v=6.1">
-    <link rel="stylesheet" href="css/admin-enhancements.css?v=6.0">
+    <link rel="stylesheet" href="css/admin-enhancements.css?v=6.1">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/pagination.js"></script>
-    <script src="js/admin-optimization.js?v=6.2"></script>
+    <script src="js/admin-optimization.js?v=6.3"></script>
 
     <!-- Cache Buster - Force reload if old version detected -->
     <script>
         (function () {
-            const CURRENT_VERSION = '6.2';
+            const CURRENT_VERSION = '6.8';
             const storedVersion = localStorage.getItem('admin_js_version');
 
             // If version mismatch or first load, clear everything and reload
@@ -100,8 +100,8 @@
     <!-- Mobile Menu Toggle -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle"><i class="ph ph-list"></i></button>
 
-    <!-- Overlay (iOS Fix: pointer-events none to prevent blocking sidebar) -->
-    <div class="overlay" id="overlay" style="pointer-events: none;"></div>
+    <!-- Overlay Backdrop -->
+    <div class="overlay" id="overlay" onclick="closeMobileMenu()"></div>
 
     <div class="admin-layout">
         <!-- Desktop Sidebar Toggle Button (Floating vertical handle) -->
@@ -110,16 +110,16 @@
         </button>
 
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="adminSidebar">
             <div class="admin-logo">
                 <div class="logo-content">
                     <h1 id="adminLogoTitle">🛒 POS System</h1>
                     <p id="adminSidebarSubTitle">Admin Dashboard</p>
                 </div>
-                <!-- Mobile logout button -->
-                <div class="mobile-logout">
-                    <button class="btn btn-danger btn-sm" onclick="auth.logout()">Logout</button>
-                </div>
+                <!-- Mobile sidebar close button -->
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" onclick="closeMobileMenu()" title="Close menu" aria-label="Close menu">
+                    <i class="ph ph-x"></i>
+                </button>
             </div>
 
             <nav class="admin-nav">
@@ -992,7 +992,7 @@
                             </thead>
                             <tbody id="salesTable">
                                 <tr>
-                                    <td colspan="8" class="table-empty">Loading...</td>
+                                    <td colspan="9" class="table-empty">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1991,15 +1991,15 @@
 
     <!-- Transaction Details Modal -->
     <div class="modal" id="transactionModal">
-        <div class="modal-content">
+        <div class="modal-content transaction-modal-content">
             <div class="modal-header">
-                <h2>Transaction Details</h2>
+                <h2><i class="ph ph-receipt"></i> Transaction Details</h2>
                 <button class="modal-close" onclick="closeTransactionModal()">×</button>
             </div>
             <div class="modal-body" id="transactionDetails">
                 <!-- Details will be loaded here -->
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="transactionModalFooter">
                 <button class="btn btn-secondary" onclick="closeTransactionModal()">Close</button>
             </div>
         </div>
@@ -2494,13 +2494,13 @@
     <script src="js/auth.js?v=6.0"></script>
     <script src="js/utils.js?v=6.0"></script>
     <script src="js/admin/dashboard-charts.js?v=6.0"></script>
-    <script src="js/admin.js?v=6.0"></script>
+    <script src="js/admin.js?v=6.5"></script>
     <script src="js/admin/time-range.js?v=6.1"></script>
-    <script src="js/admin/products.js?v=6.0"></script>
+    <script src="js/admin/products.js?v=6.1"></script>
     <script src="js/admin/recipes.js?v=6.1"></script>
     <script src="js/admin/modifiers.js?v=6.0"></script>
     <script src="js/admin/inventory.js?v=6.2"></script>
-    <script src="js/admin/sales.js?v=6.2"></script>
+    <script src="js/admin/sales.js?v=6.3"></script>
     <script src="js/admin/daily-collections.js?v=6.0"></script>
     <script src="js/admin/expenses.js?v=6.0"></script>
     <script src="js/admin/salaries.js?v=6.0"></script>
@@ -2512,7 +2512,7 @@
     <script src="js/admin/store-switcher.js?v=6.0"></script>
     <script src="js/admin/notifications.js?v=6.0"></script>
     <script src="js/admin/item-sales.js?v=6.0"></script>
-    <script src="js/tawk-to.js"></script>
+    <script src="js/tawk-to.js?v=6.1"></script>
     <script src="js/pull-to-refresh.js?v=6.0"></script>
     <!-- Floating Bulk Actions Toolbar -->
     <div class="bulk-actions-toolbar" id="bulkActionsToolbar" style="display: none;">

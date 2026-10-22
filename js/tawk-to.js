@@ -19,11 +19,17 @@ const TAWK_PROPERTY_ID = '6972524c194607197bcce7e1';
 const TAWK_WIDGET_ID = '1jfj92ulp';
 
 var Tawk_API = Tawk_API || {};
-// Offset the widget so it doesn't block the "Online" indicator
+// Disable on mobile so it doesn't block the bottom navigation menu
+Tawk_API.onLoad = function () {
+    if (window.innerWidth <= 1024 && window.Tawk_API && window.Tawk_API.hideWidget) {
+        window.Tawk_API.hideWidget();
+    }
+};
+
 Tawk_API.customStyle = {
     visibility: {
         desktop: { position: 'br', xOffset: '20px', yOffset: '60px' },
-        mobile: { position: 'br', xOffset: '10px', yOffset: '70px' }
+        mobile: { position: 'br', xOffset: '10px', yOffset: '120px' }
     }
 };
 var Tawk_LoadStart = new Date();
@@ -31,6 +37,11 @@ var Tawk_LoadStart = new Date();
 (function () {
     if (TAWK_PROPERTY_ID === 'YOUR_PROPERTY_ID') {
         console.warn('Tawk.to: Please set your PROPERTY_ID in js/tawk-to.js');
+        return;
+    }
+
+    // Do not load Tawk widget on mobile devices to prevent blocking bottom navigation
+    if (window.innerWidth <= 1024) {
         return;
     }
 

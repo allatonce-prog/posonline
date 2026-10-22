@@ -155,43 +155,45 @@ function renderSalesTable() {
 
   tbody.innerHTML = displayTransactions.map(transaction => {
     const isVoided = transaction.status === 'voided';
-    const cashierDisplay = transaction.cashierName || userMap[transaction.cashier] || transaction.cashier;
+    const cashierDisplay = transaction.cashierName || userMap[transaction.cashier] || transaction.cashier || 'Cashier';
+    const customerDisplay = transaction.customerName || 'Walk-in';
+    const isTakeout = transaction.orderType === 'takeout';
+    const itemsCount = transaction.items ? transaction.items.length : 0;
+    const totalAmount = Number(transaction.total) || Number(transaction.amount) || 0;
+    const dateFormatted = formatDateTime(transaction.date);
+    const shortTxnId = formatTransactionId(transaction.id);
     
-    // Order type badge
-    let orderTypeBadge = '';
-    if (transaction.orderType === 'takeout') {
-        orderTypeBadge = `<span class="badge" style="background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;"><i class="ph ph-shopping-bag"></i> Takeout</span>`;
-    } else {
-        orderTypeBadge = `<span class="badge" style="background: rgba(99, 102, 241, 0.08); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;"><i class="ph ph-house"></i> Dine-in</span>`;
-    }
+    // Order type badge with Phosphor icons (no emojis)
+    const orderTypeBadge = isTakeout
+      ? `<span class="badge-pill badge-takeout"><i class="ph ph-bag"></i> Takeout</span>`
+      : `<span class="badge-pill badge-dinein"><i class="ph ph-fork-knife"></i> Dine-in</span>`;
 
-    // Payment method badge
+    // Payment method badge with Phosphor icons (no emojis)
     let paymentBadge = '';
     if (transaction.paymentMethod === 'split') {
-        paymentBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">💵 Cash + 📱 GCash</span>`;
-    } else if (transaction.paymentMethod?.toLowerCase() === 'gcash') {
-        paymentBadge = `<span class="badge" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">📱 GCash</span>`;
+      paymentBadge = `<span class="badge-pill badge-split"><i class="ph ph-arrows-split"></i> Split</span>`;
+    } else if (transaction.paymentMethod?.toLowerCase() === 'gcash' || transaction.paymentMethod?.toLowerCase() === 'mobile') {
+      paymentBadge = `<span class="badge-pill badge-gcash"><i class="ph ph-device-mobile"></i> GCash</span>`;
     } else {
-        paymentBadge = `<span class="badge" style="background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">💵 Cash</span>`;
+      paymentBadge = `<span class="badge-pill badge-cash"><i class="ph ph-money"></i> Cash</span>`;
     }
 
-    const itemsCount = transaction.items ? transaction.items.length : 0;
-    
     return `
-    <tr class="clickable-row ${isVoided ? 'voided-row' : ''}" onclick="viewTransaction('${transaction.id}')" style="cursor: pointer; ${isVoided ? 'opacity: 0.7;' : ''}">
-      <td style="font-weight: 700; font-family: monospace; color: var(--gray-700); font-size: 0.85rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-        ${formatTransactionId(transaction.id)}
+    <tr class="clickable-row sales-row ${isVoided ? 'voided-row' : ''}" onclick="viewTransaction('${transaction.id}')" style="cursor: pointer;">
+      <!-- Desktop Columns (Hidden on screens <= 768px) -->
+      <td class="desktop-col col-txnid" style="font-weight: 700; font-family: monospace; color: var(--gray-700); font-size: 0.85rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        ${shortTxnId}
       </td>
-      <td style="font-size: 0.82rem; color: var(--gray-600);">${formatDateTime(transaction.date)}</td>
-      <td style="font-weight: 600; color: var(--gray-800);">${escapeHtml(cashierDisplay)}</td>
-      <td style="color: var(--gray-700);">${escapeHtml(transaction.customerName || 'Walk-in')}</td>
-      <td>${orderTypeBadge}</td>
-      <td style="font-weight: 700; color: var(--primary);">${itemsCount} item${itemsCount !== 1 ? 's' : ''}</td>
-      <td style="text-align: right; font-weight: 800; color: ${isVoided ? 'var(--gray-400)' : 'var(--success)'}; ${isVoided ? 'text-decoration: line-through;' : ''} font-size: 0.95rem;">
-        ${formatCurrency(Number(transaction.total) || Number(transaction.amount) || 0)}
+      <td class="desktop-col col-date" style="font-size: 0.82rem; color: var(--gray-600);">${dateFormatted}</td>
+      <td class="desktop-col col-cashier" style="font-weight: 600; color: var(--gray-800);">${escapeHtml(cashierDisplay)}</td>
+      <td class="desktop-col col-customer" style="color: var(--gray-700);">${escapeHtml(customerDisplay)}</td>
+      <td class="desktop-col col-ordertype">${orderTypeBadge}</td>
+      <td class="desktop-col col-items" style="font-weight: 700; color: var(--primary);">${itemsCount} item${itemsCount !== 1 ? 's' : ''}</td>
+      <td class="desktop-col col-total" style="text-align: right; font-weight: 800; color: ${isVoided ? 'var(--gray-400)' : 'var(--success)'}; ${isVoided ? 'text-decoration: line-through;' : ''} font-size: 0.95rem;">
+        ${formatCurrency(totalAmount)}
       </td>
-      <td>${paymentBadge}</td>
-      <td style="text-align: right;" onclick="event.stopPropagation();">
+      <td class="desktop-col col-payment">${paymentBadge}</td>
+      <td class="desktop-col col-actions" style="text-align: right;" onclick="event.stopPropagation();">
         <div style="display: flex; gap: 6px; justify-content: flex-end;">
             <button class="btn btn-secondary btn-icon" onclick="viewTransaction('${transaction.id}')" style="height: 32px; width: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;" title="View Details">
                 <i class="ph ph-eye" style="font-size: 1.05rem;"></i>
@@ -201,6 +203,50 @@ function renderSalesTable() {
                 <i class="ph ph-prohibit" style="font-size: 1.05rem;"></i>
             </button>
             `}
+        </div>
+      </td>
+
+      <!-- Mobile Clean Card Column (Visible ONLY on screens <= 768px) -->
+      <td class="mobile-col" colspan="9">
+        <div class="sales-mobile-card ${isVoided ? 'is-voided-card' : ''}">
+          <!-- Top Row: ID, Date, Amount -->
+          <div class="smc-top">
+            <div class="smc-id-meta">
+              <span class="smc-txn-code">#${shortTxnId}</span>
+              <span class="smc-date"><i class="ph ph-calendar"></i> ${dateFormatted}</span>
+            </div>
+            <div class="smc-amount-box">
+              <span class="smc-amount ${isVoided ? 'is-voided-amount' : ''}">${formatCurrency(totalAmount)}</span>
+            </div>
+          </div>
+
+          <!-- Middle Row: Cashier, Customer, Badges -->
+          <div class="smc-meta-row">
+            <div class="smc-people">
+              <span class="smc-person"><i class="ph ph-user"></i> ${escapeHtml(cashierDisplay)}</span>
+              <span class="smc-dot">•</span>
+              <span class="smc-person"><i class="ph ph-users"></i> ${escapeHtml(customerDisplay)}</span>
+            </div>
+            <div class="smc-badges-wrap">
+              ${orderTypeBadge}
+              ${paymentBadge}
+              <span class="badge-pill badge-items"><i class="ph ph-package"></i> ${itemsCount} item${itemsCount !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Bar: Beautifully Aligned Buttons -->
+          <div class="smc-actions-bar" onclick="event.stopPropagation();">
+            ${isVoided ? `
+              <span class="smc-voided-label"><i class="ph ph-prohibit"></i> VOIDED</span>
+            ` : `
+              <button type="button" class="smc-btn smc-btn-void" onclick="initiateVoidTransaction('${transaction.id}'); event.stopPropagation();" title="Void Transaction">
+                <i class="ph ph-prohibit"></i> <span>Void</span>
+              </button>
+            `}
+            <button type="button" class="smc-btn smc-btn-view" onclick="viewTransaction('${transaction.id}')" title="View Details">
+              <i class="ph ph-eye"></i> <span>Details</span>
+            </button>
+          </div>
         </div>
       </td>
     </tr>
@@ -230,116 +276,170 @@ async function viewTransaction(id) {
     return;
   }
 
-  const detailsHtml = `
-    <div class="transaction-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--gray-100);">
-      <div class="transaction-title" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px;">Transaction Reference</span>
-        <span class="transaction-id" style="font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--gray-800); background: var(--gray-100); padding: 0.35rem 0.75rem; border-radius: 8px; width: fit-content; border: 1px solid var(--gray-200);">${transaction.id}</span>
+  const isVoided = transaction.status === 'voided';
+  const isTakeout = transaction.orderType === 'takeout';
+  const cashierDisplay = transaction.cashierName || transaction.cashier || 'Cashier';
+  const customerDisplay = transaction.customerName || 'Walk-in Customer';
+
+  // Build clean payment method display with Phosphor icons
+  let paymentMethodHtml = '';
+  if (transaction.paymentMethod === 'split') {
+    paymentMethodHtml = `
+      <div class="txn-split-payment-box">
+        <span class="badge-pill badge-split" style="margin-bottom: 6px;"><i class="ph ph-arrows-split"></i> Split Payment</span>
+        <div class="txn-split-subgrid">
+          <div class="txn-split-subcard cash">
+            <span class="split-subcard-label"><i class="ph ph-money"></i> Cash</span>
+            <strong class="split-subcard-val">${formatCurrency(transaction.cashAmount || 0)}</strong>
+          </div>
+          <div class="txn-split-subcard gcash">
+            <span class="split-subcard-label"><i class="ph ph-device-mobile"></i> GCash</span>
+            <strong class="split-subcard-val">${formatCurrency(transaction.gcashAmount || 0)}</strong>
+          </div>
+        </div>
+        ${transaction.change > 0 ? `
+          <div class="txn-split-change"><i class="ph ph-hand-coins"></i> Change: ${formatCurrency(transaction.change)}</div>
+        ` : ''}
       </div>
-      <div class="transaction-actions">
-        ${transaction.status === 'voided'
-      ? '<span class="badge-voided" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); font-weight: 700; padding: 0.5rem 1rem; border-radius: 30px; font-size: 0.8rem; letter-spacing: 0.5px;">VOIDED</span>'
-      : `<button onclick="initiateVoidTransaction('${transaction.id}')" class="btn btn-danger btn-sm" style="border-radius: var(--radius-md); font-weight: 600; padding: 0.5rem 1.25rem;"><i class="ph ph-trash" style="margin-right: 4px;"></i> Void Transaction</button>`}
+    `;
+  } else if (transaction.paymentMethod?.toLowerCase() === 'gcash' || transaction.paymentMethod?.toLowerCase() === 'mobile') {
+    paymentMethodHtml = `
+      <span class="badge-pill badge-gcash"><i class="ph ph-device-mobile"></i> GCash</span>
+    `;
+  } else {
+    paymentMethodHtml = `
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span class="badge-pill badge-cash"><i class="ph ph-money"></i> Cash</span>
+        ${transaction.change > 0 ? `<span class="txn-inline-change"><i class="ph ph-hand-coins"></i> Change: ${formatCurrency(transaction.change)}</span>` : ''}
+      </div>
+    `;
+  }
+
+  const detailsHtml = `
+    <!-- 1. Transaction Reference Banner Card (Full Width, No Squished Buttons) -->
+    <div class="txn-modal-ref-card">
+      <div class="txn-modal-ref-content">
+        <span class="txn-modal-ref-label">Transaction Reference</span>
+        <span class="txn-modal-ref-code">${escapeHtml(transaction.id)}</span>
+      </div>
+      <div class="txn-modal-ref-badge">
+        ${isVoided 
+          ? '<span class="badge-voided-pill"><i class="ph ph-prohibit"></i> VOIDED</span>' 
+          : '<span class="badge-completed-pill"><i class="ph ph-check-circle"></i> Completed</span>'}
       </div>
     </div>
-      
-    ${transaction.status === 'voided' ? `
-    <div style="background-color: #fee2e2; color: #b91c1c; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #fecaca; display: flex; gap: 0.75rem; align-items: flex-start;">
-      <i class="ph ph-warning-circle" style="font-size: 1.5rem; margin-top: 2px;"></i>
+
+    <!-- 2. Void Reason Banner (if voided) -->
+    ${isVoided ? `
+    <div class="txn-modal-void-alert">
+      <i class="ph ph-warning-circle"></i>
       <div>
-        <strong style="display: block; margin-bottom: 0.25rem;">Voided Transaction</strong>
-        <p style="margin: 0; font-size: 0.9rem;"><strong>Reason:</strong> ${escapeHtml(transaction.voidReason || 'No reason provided')}</p>
-        <small style="opacity: 0.8; display: block; margin-top: 0.25rem;">Voided at: ${formatDateTime(transaction.voidedAt)}</small>
+        <strong>Transaction Voided</strong>
+        <p><strong>Reason:</strong> ${escapeHtml(transaction.voidReason || 'No reason provided')}</p>
+        <small>Voided at: ${formatDateTime(transaction.voidedAt)}</small>
       </div>
     </div>` : ''}
 
-    <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; background: var(--gray-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--gray-100);">
-      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-calendar"></i> Date & Time</span>
-        <span style="font-weight: 600; color: var(--gray-800);">${formatDateTime(transaction.date)}</span>
+    <!-- 3. Key Details 2-Column Grid -->
+    <div class="txn-modal-grid">
+      <div class="txn-grid-cell">
+        <span class="txn-cell-label"><i class="ph ph-calendar"></i> Date & Time</span>
+        <span class="txn-cell-val">${formatDateTime(transaction.date)}</span>
       </div>
-      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-user"></i> Cashier</span>
-        <span style="font-weight: 600; color: var(--gray-800);">${escapeHtml(transaction.cashier)}</span>
+      <div class="txn-grid-cell">
+        <span class="txn-cell-label"><i class="ph ph-user"></i> Cashier</span>
+        <span class="txn-cell-val">${escapeHtml(cashierDisplay)}</span>
       </div>
-      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-users"></i> Customer</span>
-        <span style="font-weight: 600; color: var(--gray-800);">${escapeHtml(transaction.customerName || 'Walk-in')}</span>
+      <div class="txn-grid-cell">
+        <span class="txn-cell-label"><i class="ph ph-users"></i> Customer</span>
+        <span class="txn-cell-val">${escapeHtml(customerDisplay)}</span>
       </div>
-      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-shopping-bag"></i> Order Type</span>
-        <span style="font-weight: 600; color: var(--gray-800);">${transaction.orderType === 'takeout' ? '🥡 Take-out' : '🍽️ Dine-in'}</span>
+      <div class="txn-grid-cell">
+        <span class="txn-cell-label"><i class="ph ph-bag"></i> Order Type</span>
+        <span class="txn-cell-val">
+          ${isTakeout 
+            ? '<span class="badge-pill badge-takeout"><i class="ph ph-bag"></i> Takeout</span>' 
+            : '<span class="badge-pill badge-dinein"><i class="ph ph-fork-knife"></i> Dine-in</span>'}
+        </span>
       </div>
-      <div class="detail-item" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--gray-400); letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Payment Method</span>
-        ${transaction.paymentMethod === 'split' ? `
-          <span class="payment-method-badge split" style="font-weight: 700; color: var(--primary); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; margin-bottom: 0.25rem;"><i class="ph ph-arrows-split"></i> Split Payment</span>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem; width: 100%;">
-            <div style="flex: 1; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-size: 0.65rem; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.5px;">💵 Cash</span>
-              <strong style="font-size: 0.95rem; font-weight: 800; color: #065f46;">${formatCurrency(transaction.cashAmount || 0)}</strong>
-            </div>
-            <div style="flex: 1; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-size: 0.65rem; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px;">📱 GCash</span>
-              <strong style="font-size: 0.95rem; font-weight: 800; color: #3730a3;">${formatCurrency(transaction.gcashAmount || 0)}</strong>
-            </div>
-          </div>
-          ${transaction.change > 0 ? `<p style="font-size: 0.8rem; font-weight: 700; color: var(--success); margin: 0.25rem 0 0 0; display: flex; align-items: center; gap: 2px;"><i class="ph ph-hand-coins"></i> Change: ${formatCurrency(transaction.change)}</p>` : ''}` : 
-          (transaction.paymentMethod === 'gcash' ? `
-            <span class="payment-method-badge gcash" style="background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.2); font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0.75rem; border-radius: 30px; width: fit-content; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-device-mobile"></i> GCash</span>
-          ` : `
-            <span class="payment-method-badge cash" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0.75rem; border-radius: 30px; width: fit-content; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-money"></i> Cash</span>
-          `)}
-      </div>
-    </div>
-
-    <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--dark); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--gray-100); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;"><i class="ph ph-shopping-bag"></i> Items Purchased</h4>
-    
-    <div class="transaction-items-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 4px;">
-      ${transaction.items.map(item => `
-        <div class="transaction-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--white); border: 1px solid var(--gray-100); border-radius: 12px; transition: all 0.2s;">
-          <div class="item-info" style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1;">
-            <span class="item-name" style="font-weight: 700; color: var(--gray-800); font-size: 0.95rem;">${escapeHtml(item.name)}</span>
-            <span class="item-meta" style="font-size: 0.85rem; color: var(--gray-500); font-weight: 500;">
-              <span style="background: var(--gray-100); padding: 2px 6px; border-radius: 6px; font-weight: 600; margin-right: 4px;">${formatCurrency(item.price)}</span> × ${item.quantity}
-            </span>
-            ${(item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) ? `
-              <div class="item-modifiers" style="margin-top: 6px; padding: 6px 10px; background-color: var(--gray-50); border-radius: 8px; border: 1px dashed var(--gray-200); max-width: 90%;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--gray-400); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 2px;"><i class="ph ph-plus-circle"></i> Extras / Customizations</div>
-                ${item.modifiers.map(m => `
-                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--gray-600); margin-bottom: 2px;">
-                      <span>+ ${escapeHtml(m.name || 'Unknown')} ${m.quantity > 1 ? `<strong style="color: var(--primary);">(x${m.quantity})</strong>` : ''}</span>
-                      <span style="font-weight: 600; color: var(--gray-700);">${formatCurrency((m.price || 0) * (m.quantity || 1))}</span>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
-          </div>
-          <div class="item-total" style="font-weight: 800; color: var(--dark); font-size: 1.05rem;">
-            ${formatCurrency(item.subtotal || ((item.price + (item.modifiers ? item.modifiers.reduce((s, m) => s + (m.price * (m.quantity || 1)), 0) : 0)) * item.quantity))}
-          </div>
+      <div class="txn-grid-cell full-width">
+        <span class="txn-cell-label"><i class="ph ph-credit-card"></i> Payment Method</span>
+        <div class="txn-cell-val" style="margin-top: 4px;">
+          ${paymentMethodHtml}
         </div>
-      `).join('')}
+      </div>
     </div>
 
-    <div class="transaction-summary" style="margin-top: 1.5rem; background: var(--gray-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--gray-100); display: flex; flex-direction: column; gap: 0.5rem;">
-      <div class="summary-row" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--gray-500); font-weight: 500;">
+    <!-- 4. Items Purchased List -->
+    <div class="txn-modal-items-section">
+      <h4 class="txn-modal-section-title"><i class="ph ph-receipt"></i> Items Purchased</h4>
+      <div class="txn-modal-items-list">
+        ${transaction.items.map(item => `
+          <div class="txn-modal-item">
+            <div class="txn-item-main">
+              <span class="txn-item-name">${escapeHtml(item.name)}</span>
+              <div class="txn-item-meta">
+                <span class="txn-item-price-tag">${formatCurrency(item.price)}</span>
+                <span class="txn-item-qty">× ${item.quantity}</span>
+              </div>
+              ${(item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) ? `
+                <div class="txn-item-modifiers">
+                  <div class="txn-modifiers-header"><i class="ph ph-sliders"></i> Extras / Modifiers</div>
+                  ${item.modifiers.map(m => `
+                    <div class="txn-modifier-row">
+                      <span>+ ${escapeHtml(m.name || 'Extra')} ${m.quantity > 1 ? `<strong style="color: var(--primary);">(x${m.quantity})</strong>` : ''}</span>
+                      <span class="txn-modifier-price">${formatCurrency((m.price || 0) * (m.quantity || 1))}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+            <div class="txn-item-subtotal">
+              ${formatCurrency(item.subtotal || ((item.price + (item.modifiers ? item.modifiers.reduce((s, m) => s + (m.price * (m.quantity || 1)), 0) : 0)) * item.quantity))}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 5. Totals Summary Card -->
+    <div class="txn-modal-summary">
+      <div class="txn-summary-row">
         <span>Subtotal</span>
-        <strong style="color: var(--gray-800);">${formatCurrency(transaction.subtotal)}</strong>
+        <strong>${formatCurrency(transaction.subtotal || transaction.total)}</strong>
       </div>
       ${transaction.tax > 0 ? `
-      <div class="summary-row" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--gray-500); font-weight: 500;">
+      <div class="txn-summary-row">
         <span>Tax</span>
-        <strong style="color: var(--gray-800);">${formatCurrency(transaction.tax)}</strong>
+        <strong>${formatCurrency(transaction.tax)}</strong>
       </div>` : ''}
-      <div class="summary-row total" style="display: flex; justify-content: space-between; align-items: center; font-size: 1.35rem; font-weight: 800; color: var(--primary); border-top: 1px dashed var(--gray-200); padding-top: 0.75rem; margin-top: 0.25rem;">
+      <div class="txn-summary-row total-row">
         <span>Total Amount</span>
-        <span>${formatCurrency(transaction.total)}</span>
+        <span class="txn-total-price">${formatCurrency(transaction.total)}</span>
       </div>
     </div>
   `;
 
   document.getElementById('transactionDetails').innerHTML = detailsHtml;
+
+  // 6. Update Aligned Action Buttons in Modal Footer
+  const footer = document.getElementById('transactionModalFooter') || document.querySelector('#transactionModal .modal-footer');
+  if (footer) {
+    if (isVoided) {
+      footer.innerHTML = `
+        <span class="modal-footer-void-note"><i class="ph ph-info"></i> This transaction is voided</span>
+        <button class="btn btn-secondary btn-modal-close" onclick="closeTransactionModal()">Close</button>
+      `;
+    } else {
+      footer.innerHTML = `
+        <button class="btn btn-danger-soft btn-modal-void" onclick="initiateVoidTransaction('${transaction.id}')">
+          <i class="ph ph-prohibit"></i> <span>Void Transaction</span>
+        </button>
+        <button class="btn btn-secondary btn-modal-close" onclick="closeTransactionModal()">Close</button>
+      `;
+    }
+  }
+
   document.getElementById('transactionModal').classList.add('active');
   document.body.classList.add('modal-open');
 }
