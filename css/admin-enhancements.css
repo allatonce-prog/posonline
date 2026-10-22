@@ -354,33 +354,110 @@ body.dark-mode .data-table tbody tr:hover {
 }
 
 /* ==========================================
-   8. PWA Mobile Bottom Navigation Bar
+   8. Curved Notch Active Indicator Mobile Bottom Navigation Bar
    ========================================== */
+:root {
+    --mobile-nav-bg: #ffffff;
+    --mobile-nav-page-bg: #f8fafc;
+    --mobile-nav-notch-stroke: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode {
+    --mobile-nav-bg: #1e293b;
+    --mobile-nav-page-bg: #0b0f19;
+    --mobile-nav-notch-stroke: rgba(255, 255, 255, 0.07);
+}
+
 .mobile-bottom-nav {
     display: none;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--mobile-nav-bg);
+    border-top: 1px solid var(--mobile-nav-notch-stroke);
     z-index: 999;
     flex-direction: row;
     justify-content: space-around;
-    align-items: center;
-    padding: 0 0.5rem;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.03);
+    align-items: flex-start;
+    padding-left: 0;
+    padding-right: 0;
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.04);
+    overflow: visible !important;
 }
 
 body.dark-mode .mobile-bottom-nav {
-    background: rgba(17, 24, 39, 0.85);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    background: var(--mobile-nav-bg);
+    border-top-color: var(--mobile-nav-notch-stroke);
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.35);
 }
 
+/* Sliding Indicator Container */
+.bottom-nav-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20%;
+    height: 64px;
+    pointer-events: none;
+    z-index: 2;
+    transform: translateX(0%);
+    transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* SVG Cutout Notch */
+.nav-notch-svg {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 84px;
+    height: 24px;
+    z-index: 2;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.nav-notch-svg .notch-fill {
+    fill: var(--mobile-nav-page-bg);
+    transition: fill 0.3s ease;
+}
+
+.nav-notch-svg .notch-stroke {
+    stroke: var(--mobile-nav-notch-stroke);
+    stroke-width: 1.2px;
+    transition: stroke 0.3s ease;
+}
+
+/* Elevated Circular Bubble */
+.indicator-bubble {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--mobile-nav-bg);
+    border: 3.5px solid var(--mobile-nav-page-bg);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.32), 0 3px 8px rgba(0, 0, 0, 0.08);
+    z-index: 3;
+    pointer-events: none;
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.dark-mode .indicator-bubble {
+    background: var(--mobile-nav-bg);
+    border-color: var(--mobile-nav-page-bg);
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.45), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Nav Item Buttons */
 .bottom-nav-item {
     background: transparent;
     border: none;
@@ -389,31 +466,65 @@ body.dark-mode .mobile-bottom-nav {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    color: var(--gray-400, #94a3b8);
-    font-size: 0.7rem;
-    font-weight: 600;
     cursor: pointer;
     flex: 1;
-    height: 100%;
+    height: 64px;
+    position: relative;
+    z-index: 6;
+    padding: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
     transition: all 0.2s ease;
 }
 
 .bottom-nav-item i {
     font-size: 1.35rem;
-    transition: transform 0.2s ease;
+    color: var(--gray-400, #94a3b8);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease, font-size 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 7;
 }
 
-.bottom-nav-item:hover {
+.bottom-nav-item span {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--gray-400, #94a3b8);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease, opacity 0.25s ease, font-weight 0.2s ease;
+    margin-top: 3px;
+    position: relative;
+    z-index: 7;
+    white-space: nowrap;
+}
+
+.bottom-nav-item:hover i,
+.bottom-nav-item:hover span {
     color: var(--primary, #10b981);
 }
 
-.bottom-nav-item.active {
-    color: var(--primary, #10b981);
-}
-
+/* Active State - Elevates Icon into the Circular Bubble */
 .bottom-nav-item.active i {
-    transform: scale(1.1);
+    transform: translateY(-24px);
+    color: var(--primary, #10b981) !important;
+    font-size: 1.55rem !important;
+}
+
+.bottom-nav-item.active span {
+    transform: translateY(11px);
+    color: var(--primary, #10b981) !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+}
+
+/* Micro-interaction on tap */
+.bottom-nav-item:active i {
+    transform: scale(0.9);
+}
+
+.bottom-nav-item.active:active i {
+    transform: translateY(-24px) scale(1.08);
 }
 
 /* Responsiveness overrides */

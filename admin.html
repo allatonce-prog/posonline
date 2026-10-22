@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/mobile-tablet-optimization.css?v=6.8">
     <link rel="stylesheet" href="css/desktop-theme-enhancement.css?v=6.0">
     <link rel="stylesheet" href="css/recipes.css?v=6.1">
-    <link rel="stylesheet" href="css/admin-enhancements.css?v=6.1">
+    <link rel="stylesheet" href="css/admin-enhancements.css?v=6.2">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/pagination.js"></script>
@@ -28,7 +28,7 @@
     <!-- Cache Buster - Force reload if old version detected -->
     <script>
         (function () {
-            const CURRENT_VERSION = '6.8';
+            const CURRENT_VERSION = '6.9';
             const storedVersion = localStorage.getItem('admin_js_version');
 
             // If version mismatch or first load, clear everything and reload
@@ -75,6 +75,14 @@
 <body>
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
+        <!-- Animated Curved Notch & Floating Active Bubble Indicator -->
+        <div class="bottom-nav-indicator" id="bottomNavIndicator">
+            <svg class="nav-notch-svg" viewBox="0 0 84 24" preserveAspectRatio="none">
+                <path d="M 0 0 C 17 0, 19 24, 42 24 C 65 24, 67 0, 84 0 Z" class="notch-fill"></path>
+                <path d="M 0 0 C 17 0, 19 24, 42 24 C 65 24, 67 0, 84 0" fill="none" class="notch-stroke"></path>
+            </svg>
+            <div class="indicator-bubble"></div>
+        </div>
         <button class="bottom-nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
             <i class="ph ph-gauge"></i>
             <span>Dashboard</span>
@@ -2494,7 +2502,7 @@
     <script src="js/auth.js?v=6.0"></script>
     <script src="js/utils.js?v=6.0"></script>
     <script src="js/admin/dashboard-charts.js?v=6.0"></script>
-    <script src="js/admin.js?v=6.5"></script>
+    <script src="js/admin.js?v=6.6"></script>
     <script src="js/admin/time-range.js?v=6.1"></script>
     <script src="js/admin/products.js?v=6.1"></script>
     <script src="js/admin/recipes.js?v=6.1"></script>

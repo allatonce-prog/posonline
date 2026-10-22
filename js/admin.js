@@ -179,7 +179,14 @@ function openMobileMenu() {
     }
 
     if (bottomMenuToggle) {
+        document.querySelectorAll('.mobile-bottom-nav .bottom-nav-item').forEach(btn => {
+            if (btn !== bottomMenuToggle) btn.classList.remove('active');
+        });
         bottomMenuToggle.classList.add('active');
+    }
+
+    if (typeof window.updateMobileBottomNavIndicator === 'function') {
+        window.updateMobileBottomNavIndicator();
     }
 }
 
@@ -205,6 +212,15 @@ function closeMobileMenu() {
 
     if (bottomMenuToggle) {
         bottomMenuToggle.classList.remove('active');
+    }
+
+    const currentTabBtn = document.querySelector(`.mobile-bottom-nav .bottom-nav-item[data-tab="${currentTab}"]`);
+    if (currentTabBtn) {
+        currentTabBtn.classList.add('active');
+    }
+
+    if (typeof window.updateMobileBottomNavIndicator === 'function') {
+        window.updateMobileBottomNavIndicator();
     }
 }
 
@@ -326,7 +342,31 @@ function setupNavigation() {
             }
         });
     });
+
+    // Mobile Bottom Nav animated indicator initial sync & resize listener
+    if (typeof window.updateMobileBottomNavIndicator === 'function') {
+        setTimeout(window.updateMobileBottomNavIndicator, 60);
+    }
+    window.addEventListener('resize', () => {
+        if (typeof window.updateMobileBottomNavIndicator === 'function') {
+            window.updateMobileBottomNavIndicator();
+        }
+    });
 }
+
+// Function to smoothly animate the curved notch active indicator on mobile
+window.updateMobileBottomNavIndicator = function() {
+    const indicator = document.getElementById('bottomNavIndicator');
+    if (!indicator) return;
+
+    const navItems = Array.from(document.querySelectorAll('.mobile-bottom-nav .bottom-nav-item'));
+    if (!navItems.length) return;
+
+    let activeIndex = navItems.findIndex(item => item.classList.contains('active'));
+    if (activeIndex === -1) activeIndex = 0;
+
+    indicator.style.transform = `translateX(${activeIndex * 100}%)`;
+};
 
 // Switch tab (optimized for mobile stability and white screen prevention)
 async function switchTab(tab) {
@@ -403,10 +443,25 @@ async function switchTab(tab) {
     }
 
     // Update active highlight on mobile bottom nav bar
-    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    let matchedBottomNav = false;
+    document.querySelectorAll('.mobile-bottom-nav .bottom-nav-item').forEach(btn => {
         const isActive = btn.dataset.tab === tab;
         btn.classList.toggle('active', isActive);
+        if (isActive) matchedBottomNav = true;
     });
+
+    const bottomMenuToggle = document.getElementById('bottomMenuToggle');
+    if (bottomMenuToggle) {
+        if (!matchedBottomNav && tab !== 'dashboard') {
+            bottomMenuToggle.classList.add('active');
+        } else {
+            bottomMenuToggle.classList.remove('active');
+        }
+    }
+
+    if (typeof window.updateMobileBottomNavIndicator === 'function') {
+        window.updateMobileBottomNavIndicator();
+    }
 
     // Update dynamic header breadcrumbs path
     const parentSections = {
